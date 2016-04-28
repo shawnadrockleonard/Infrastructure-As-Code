@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B7B1C486-1E21-4F6C-8710-4A8E09965A9B}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\PostBuild.ps1 = Scripts\PostBuild.ps1
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.IaC.Core", "Microsoft.IaC.Core\Microsoft.IaC.Core.csproj", "{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.IaC.Powershell", "Microsoft.IaC.Powershell\Microsoft.IaC.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
