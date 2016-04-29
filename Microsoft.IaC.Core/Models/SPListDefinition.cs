@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.IaC.Core.Models
+namespace IaC.Core.Models
 {
     /// <summary>
     /// Defines a SharePoint List or Library

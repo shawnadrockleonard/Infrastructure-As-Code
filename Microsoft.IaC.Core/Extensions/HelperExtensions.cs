@@ -1,4 +1,4 @@
-﻿using Microsoft.IaC.Core.Enums;
+﻿using IaC.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Microsoft.IaC.Core.Extensions
+namespace IaC.Core.Extensions
 {
     /// <summary>
     /// Provides common helper extensions for Office365 interactions

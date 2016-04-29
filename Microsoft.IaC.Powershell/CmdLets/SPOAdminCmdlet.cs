@@ -3,13 +3,16 @@ using System.Management.Automation;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.PowerShell.Commands;
 using Microsoft.SharePoint.Client;
-using Microsoft.IaC.Core.Enums;
-using Resources = Microsoft.IaC.Powershell.Properties.Resources;
+using IaC.Core.Enums;
+using Resources = IaC.Core.Properties.Resources;
 using Microsoft.Online.SharePoint.TenantManagement;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
-    public class SPOAdminCmdlet : SPIaCCmdlet
+    /// <summary>
+    /// SharePoint Online base command for tenant level administration
+    /// </summary>
+    public abstract class SPOAdminCmdlet :IaCCmdlet
     {
         private Tenant _tenant;
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using Microsoft.IaC.Core.Models;
+﻿using IaC.Core.Models;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core;
@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Microsoft.IaC.Core.Extensions
+namespace IaC.Core.Extensions
 {
     public static partial class ListExtensions
     {
@@ -185,42 +185,17 @@ namespace Microsoft.IaC.Core.Extensions
         /// </summary>
         /// <param name="hostList">The instantiated list/library to which the field will be added</param>
         /// <param name="fieldDef">The definition for the field</param>
-        /// <param name="logger">Provides a method for logging</param>
+        /// <param name="loggerVerbose">Provides a method for verbose logging</param>
+        /// <param name="loggerError">Provides a method for exception logging</param>
         /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
         /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
-        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        public static Field CreateColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
         {
-            var idguid = fieldDef.FieldGuid;
-            var choiceXml = string.Empty;
-            var defaultChoiceXml = string.Empty;
-            var attributes = new List<KeyValuePair<string, string>>();
-
-            if (string.IsNullOrEmpty(fieldDef.InternalName))
-            {
-                throw new ArgumentNullException("InternalName");
-            }
-
-            if (string.IsNullOrEmpty(fieldDef.DisplayName))
-            {
-                throw new ArgumentNullException("DisplayName");
-            }
-
-            if(!string.IsNullOrEmpty(fieldDef.LoadFromJSON) && string.IsNullOrEmpty(JsonFilePath))
-            {
-                throw new ArgumentNullException("JsonFilePath", "You must specify a file path to the JSON file if loading from JSON");
-            }
-
-            if(!string.IsNullOrEmpty(fieldDef.PeopleGroupName) && (SiteGroups == null || SiteGroups.Count() <= 0))
-            {
-                throw new ArgumentNullException("SiteGroups", string.Format("You must specify a collection of group for the field {0}", fieldDef.DisplayName));
-            }
-
-
             if (!hostList.IsPropertyAvailable("Context"))
             {
-                
+
             }
 
             var fields = hostList.Fields;
@@ -230,113 +205,18 @@ namespace Microsoft.IaC.Core.Extensions
             var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
             if (returnField == null)
             {
-                var finfo = fieldDef.ToCreationObject();
-
+                var finfoXml = fieldDef.CreateFieldDefinition(SiteGroups, JsonFilePath);
+                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, finfoXml });
                 try
                 {
-                    if (!string.IsNullOrEmpty(fieldDef.Description))
-                    {
-                        attributes.Add(new KeyValuePair<string, string>("Description", fieldDef.Description));
-                    }
-                    if (fieldDef.FieldIndexed)
-                    {
-                        attributes.Add(new KeyValuePair<string, string>("Indexed", fieldDef.FieldIndexed.ToString().ToUpper()));
-                    }
-
-                    var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.MultiChoice, FieldType.OutcomeChoice };
-                    if (choices.Any(a => a == fieldDef.fieldType))
-                    {
-                        if (!string.IsNullOrEmpty(fieldDef.LoadFromJSON))
-                        {
-                            var filePath = string.Format("{0}\\{1}", JsonFilePath, fieldDef.LoadFromJSON);
-                            //#TODO: Check file path
-                            var contents = JsonConvert.DeserializeObject<List<SPChoiceModel>>(System.IO.File.ReadAllText(filePath));
-                            fieldDef.FieldChoices.Clear();
-                            fieldDef.FieldChoices.AddRange(contents);
-                        }
-
-                        choiceXml = string.Format("<CHOICES>{0}</CHOICES>", string.Join("", fieldDef.FieldChoices.Select(s => string.Format("<CHOICE>{0}</CHOICE>", s.Choice.Trim())).ToArray()));
-                        if (!string.IsNullOrEmpty(fieldDef.ChoiceDefault))
-                        {
-                            defaultChoiceXml = string.Format("<Default>{0}</Default>", fieldDef.ChoiceDefault);
-                        }
-                        if (fieldDef.fieldType == FieldType.Choice)
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("Format", fieldDef.ChoiceFormat.ToString("f")));
-                        }
-
-                    }
-                    else if (fieldDef.fieldType == FieldType.DateTime)
-                    {
-                        if (fieldDef.DateFieldFormat.HasValue)
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("DisplayFormat", fieldDef.DateFieldFormat.Value.ToString("f")));
-                        }
-                    }
-                    else if (fieldDef.fieldType == FieldType.Note)
-                    {
-                        attributes.Add(new KeyValuePair<string, string>("RichText", fieldDef.RichTextField.ToString().ToUpper()));
-                        attributes.Add(new KeyValuePair<string, string>("RestrictedMode", fieldDef.RestrictedMode.ToString().ToUpper()));
-                        attributes.Add(new KeyValuePair<string, string>("NumLines", fieldDef.NumLines.ToString()));
-                        if (!fieldDef.RestrictedMode)
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("RichTextMode", "FullHtml"));
-                            attributes.Add(new KeyValuePair<string, string>("IsolateStyles", true.ToString().ToUpper()));
-                        }
-
-                    }
-                    else if (fieldDef.fieldType == FieldType.User)
-                    {
-                        //AllowMultipleValues
-                        if (fieldDef.MultiChoice)
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("Mult", fieldDef.MultiChoice.ToString().ToUpper()));
-                        }
-                        //SelectionMode
-                        if (fieldDef.PeopleOnly)
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("UserSelectionMode", FieldUserSelectionMode.PeopleOnly.ToString("d")));
-                        }
-
-                        if (!string.IsNullOrEmpty(fieldDef.PeopleLookupField))
-                        {
-                            attributes.Add(new KeyValuePair<string, string>("ShowField", fieldDef.PeopleLookupField));
-                            //fldUser.LookupField = fieldDef.PeopleLookupField;
-                        }
-                        if (!string.IsNullOrEmpty(fieldDef.PeopleGroupName))
-                        {
-                            var group = SiteGroups.FirstOrDefault(f => f.Title == fieldDef.PeopleGroupName);
-                            if (group != null)
-                            {
-                                attributes.Add(new KeyValuePair<string, string>("UserSelectionScope", group.Id.ToString()));
-                            }
-                        }
-                    }
-
-
-                    finfo.AdditionalAttributes = attributes;
-                    var finfoXml = FieldAndContentTypeExtensions.FormatFieldXml(finfo);
-                    if (!string.IsNullOrEmpty(choiceXml))
-                    {
-                        XDocument xd = XDocument.Parse(finfoXml);
-                        XElement root = xd.FirstNode as XElement;
-                        if (!string.IsNullOrEmpty(defaultChoiceXml))
-                        {
-                            root.Add(XElement.Parse(defaultChoiceXml));
-                        }
-                        root.Add(XElement.Parse(choiceXml));
-                        finfoXml = xd.ToString();
-                    }
-                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { finfo.InternalName, finfoXml });
-
                     // Should throw an exception if the field ID or Name exist in the list
-                    var baseField = hostList.CreateField(finfoXml, finfo.AddToDefaultView, executeQuery: false);
+                    var baseField = hostList.CreateField(finfoXml, fieldDef.AddToDefaultView, executeQuery: false);
                     hostList.Context.ExecuteQueryRetry();
                 }
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
+                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
                 }
                 finally
                 {

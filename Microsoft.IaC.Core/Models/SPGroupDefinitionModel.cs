@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Microsoft.IaC.Core.Models
+namespace IaC.Core.Models
 {
     public class SPGroupDefinitionModel
     {

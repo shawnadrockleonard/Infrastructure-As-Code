@@ -2,9 +2,9 @@
 using System;
 using System.Management.Automation;
 using System.Security;
-using Microsoft.IaC.Core.Enums;
+using IaC.Core.Enums;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
     /// <summary>
     /// Provides a connection object for operating on SharePoint instance

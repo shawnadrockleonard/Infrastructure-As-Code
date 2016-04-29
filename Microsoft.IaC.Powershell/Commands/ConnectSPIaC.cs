@@ -1,28 +1,30 @@
-﻿using Microsoft.IaC.Powershell.PipeBinds;
-using Microsoft.IaC.Core.Extensions;
+﻿using IaC.Powershell.PipeBinds;
+using IaC.Core.Extensions;
 using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Management.Automation;
 using System.Reflection;
 using System.Security;
+using Resources = IaC.Core.Properties.Resources;
+using IaC.Powershell.CmdLets;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.Commands
 {
     /*
         Examples:
 
         This will prompt for username and password and creates a context for the other PowerShell commands to use.
-        Connect-SPOnline -Url https://yourtenant.sharepoint.com -Credentials (Get-Credential)
+        Connect-SPIaC -Url https://yourtenant.sharepoint.com -Credentials (Get-Credential)
     
         This will use the current user credentials and connects to the server specified by the Url parameter.
-        Connect-SPOnline -Url http://yourlocalserver -CurrentCredentials
+        Connect-SPIaC -Url http://yourlocalserver -CurrentCredentials
         
         This will use credentials from the Windows Credential Manager, as defined by the label 'O365Creds'
-        Connect-SPOnline -Url http://yourlocalserver -Credentials 'O365Creds'
+        Connect-SPIaC -Url http://yourlocalserver -Credentials 'O365Creds'
     */
     [Cmdlet("Connect", "SPIaC", SupportsShouldProcess = false)]
     [CmdletHelp("Connects to a SharePoint site and creates an in-memory context", DetailedDescription = "If no credentials have been specified, and the CurrentCredentials parameter has not been specified, you will be prompted for credentials.", Category = "Base Cmdlets")]
-    public class ConnectSPOnline : PSCmdlet
+    public class ConnectSPIaC : PSCmdlet
     {
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterAttribute.AllParameterSets, ValueFromPipeline = true, HelpMessage = "The Url of the site collection to connect to.")]
         public string Url;
@@ -96,7 +98,7 @@ namespace Microsoft.IaC.Powershell.CmdLets
                         if (encryptedSecureString == null || encryptedSecureString.Length <= 0)
                         {
                             boolSaveToDisk = true;
-                            creds = Host.UI.PromptForCredential(Properties.Resources.EnterYourCredentials, "", UserName, "");
+                            creds = Host.UI.PromptForCredential(Resources.EnterYourCredentials, "", UserName, "");
                         }
                         else
                         {
@@ -110,7 +112,7 @@ namespace Microsoft.IaC.Powershell.CmdLets
                     if (!CurrentCredentials && creds == null)
                     {
                         boolSaveToDisk = true;
-                        creds = Host.UI.PromptForCredential(Properties.Resources.EnterYourCredentials, "", UserName, "");
+                        creds = Host.UI.PromptForCredential(Resources.EnterYourCredentials, "", UserName, "");
                     }
                 }
 
@@ -132,7 +134,7 @@ namespace Microsoft.IaC.Powershell.CmdLets
             {
                 if (!CurrentCredentials && creds == null)
                 {
-                    creds = Host.UI.PromptForCredential(Properties.Resources.EnterYourCredentials, "", "", "");
+                    creds = Host.UI.PromptForCredential(Resources.EnterYourCredentials, "", "", "");
                 }
 
                 LogVerbose("Received credentials for {0} user", creds.UserName);

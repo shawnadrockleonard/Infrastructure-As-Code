@@ -4,13 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}</ProjectGuid>
+    <ProjectGuid>{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.IaC.Powershell</RootNamespace>
-    <AssemblyName>Microsoft.IaC.Powershell</AssemblyName>
+    <RootNamespace>IaC.Core</RootNamespace>
+    <AssemblyName>Microsoft.IaC.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Azure.ActiveDirectory.GraphClient, Version=2.1.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.ActiveDirectory.GraphClient.2.1.0\lib\portable-net4+sl5+win+wpa+wp8\Microsoft.Azure.ActiveDirectory.GraphClient.dll</HintPath>
       <Private>True</Private>
@@ -129,13 +134,9 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.IdentityModel.Selectors" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
-    </Reference>
     <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
       <Private>True</Private>
@@ -152,6 +153,7 @@
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -160,71 +162,108 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CmdLets\CmdletHelpAttribute.cs" />
-    <Compile Include="CmdLets\ConnectSPIaC.cs" />
-    <Compile Include="CmdLets\DisconnectSPIaC.cs" />
-    <Compile Include="CmdLets\GetSPIaCStoredCredential.cs" />
-    <Compile Include="CmdLets\IIaCCmdlet.cs" />
-    <Compile Include="CmdLets\SPOAdminCmdlet.cs" />
-    <Compile Include="CmdLets\SPIaCCmdlet.cs" />
-    <Compile Include="CmdLets\SPIaCConnection.cs" />
-    <Compile Include="CmdLets\SPIaCConnectionHelper.cs" />
-    <Compile Include="CmdLets\SPIaCRunspaceWithDelegate.cs" />
-    <Compile Include="CmdLets\SPIaCWebCmdlet.cs" />
+    <Compile Include="Enums\AssociatedGroupType.cs" />
+    <Compile Include="Enums\ConnectionType.cs" />
+    <Compile Include="Enums\CredentialType.cs" />
+    <Compile Include="Enums\CustomActionScope.cs" />
+    <Compile Include="Enums\FeatureScope.cs" />
+    <Compile Include="Enums\NavigationNodeTypeEnum.cs" />
+    <Compile Include="Extensions\ClientExtensions.cs" />
+    <Compile Include="Extensions\FieldDefinitionExtensions.cs" />
+    <Compile Include="Extensions\HelperExtensions.cs" />
+    <Compile Include="Extensions\ListExtensions.cs" />
+    <Compile Include="Extensions\ListItemExtensions.cs" />
+    <Compile Include="Extensions\SendMailExtensions.cs" />
+    <Compile Include="Extensions\UserExtensions.cs" />
     <Compile Include="Extensions\WebExtensions.cs" />
-    <Compile Include="PipeBinds\AppPipeBind.cs" />
-    <Compile Include="PipeBinds\ContentTypePipeBind.cs" />
-    <Compile Include="PipeBinds\CredentialPipeBind.cs" />
-    <Compile Include="PipeBinds\FeaturePipeBind.cs" />
-    <Compile Include="PipeBinds\FieldPipeBind.cs" />
-    <Compile Include="PipeBinds\GroupPipeBind.cs" />
-    <Compile Include="PipeBinds\GuidPipeBind.cs" />
-    <Compile Include="PipeBinds\ListPipeBind.cs" />
-    <Compile Include="PipeBinds\TermGroupPipeBind.cs" />
-    <Compile Include="PipeBinds\ViewPipeBind.cs" />
-    <Compile Include="PipeBinds\WebPartPipeBind.cs" />
-    <Compile Include="PipeBinds\WebPipeBind.cs" />
+    <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
+    <Compile Include="Models\SPRecycleBinElement.cs" />
+    <Compile Include="Models\SPRecycleBinRestoreModel.cs" />
+    <Compile Include="Models\SiteProvisionerModel.cs" />
+    <Compile Include="Models\SPAppManifestModel.cs" />
+    <Compile Include="Models\SPAppScopePermissionModel.cs" />
+    <Compile Include="Models\SPChoiceModel.cs" />
+    <Compile Include="Models\SPContentTypeDefinition.cs" />
+    <Compile Include="Models\SPFieldDefinitionModel.cs" />
+    <Compile Include="Models\SPGroupDefinitionModel.cs" />
+    <Compile Include="Models\SPHostedParameters.cs" />
+    <Compile Include="Models\SPListDefinition.cs" />
+    <Compile Include="Models\SPListItemDefinition.cs" />
+    <Compile Include="Models\SPListItemFieldDefinition.cs" />
+    <Compile Include="Models\SPUserAlertDefinition.cs" />
+    <Compile Include="Models\SPUserDefinitionModel.cs" />
+    <Compile Include="Models\SPViewDefinitionModel.cs" />
+    <Compile Include="Models\SPWebDefinitionModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Extensions\CredentialExtensions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Commands\ETL\" />
-    <Folder Include="Commands\Reporting\" />
-    <Folder Include="Utilities\" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="SharePointContext.cs" />
+    <Compile Include="TokenHelper.cs" />
+    <Compile Include="Utilities\ConfigurationLogger.cs" />
+    <Compile Include="Utilities\ConfigurationReader.cs" />
+    <Compile Include="Web References\com.sharepoint.useralerts\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ModuleFiles\Microsoft.IaC.Powershell.Format.ps1xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ModuleFiles\Microsoft.IaC.Powershell.psd1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Microsoft.IaC.Core\Microsoft.IaC.Core.csproj">
-      <Project>{ea0d6cf4-74a7-4e3c-9bcd-f25b60c7716f}</Project>
-      <Name>Microsoft.IaC.Core</Name>
-    </ProjectReference>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="readme.md" />
+    <None Include="Web References\com.sharepoint.useralerts\AlertInfo.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\com.sharepoint.useralerts\Alerts.wsdl" />
+    <None Include="Web References\com.sharepoint.useralerts\DeleteFailure.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\com.sharepoint.useralerts\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferences Include="Web References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferenceUrl Include="https://shawniq.sharepoint.com/_vti_bin/Alerts.asmx">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\com.sharepoint.useralerts\</RelPath>
+      <UpdateFromURL>https://shawniq.sharepoint.com/_vti_bin/Alerts.asmx</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>IaC_Core_com_sharepoint_useralerts_Alerts</CachedSettingsPropName>
+    </WebReferenceUrl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Web References\com.sharepoint.useralerts\Alerts.disco" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>$(SolutionDir)
-
-C:\windows\system32\windowspowershell\v1.0\powershell.exe -ExecutionPolicy bypass -NoLogo -NonInteractive -Command .'$(SolutionDir)\scripts\PostBuild.ps1' -ProjectDir:'$(ProjectDir)' -ConfigurationName:'$(ConfigurationName)' -TargetDir:'$(TargetDir)' -TargetFileName:'$(TargetFileName)' -TargetName:'$(TargetName)' -SolutionDir:'$(SolutionDir)' -ProjectName:'$(ProjectName)'</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

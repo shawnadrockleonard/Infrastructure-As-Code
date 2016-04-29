@@ -1,12 +1,13 @@
 ﻿using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
-using Microsoft.IaC.Core.Enums;
+using IaC.Core.Enums;
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Net;
+using Resources = IaC.Core.Properties.Resources;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
     /// <summary>
     /// Helper class to instantiate the proper authentication manager for onpremise, online
@@ -26,7 +27,7 @@ namespace Microsoft.IaC.Powershell.CmdLets
             }
 
             var context = authManager.GetAppOnlyAuthenticatedContext(url.ToString(), realm, clientId, clientSecret);
-            context.ApplicationName = Properties.Resources.ApplicationName;
+            context.ApplicationName = Resources.ApplicationName;
             context.RequestTimeout = requestTimeout;
 
             var connectionType = ConnectionType.OnPrem;
@@ -47,7 +48,7 @@ namespace Microsoft.IaC.Powershell.CmdLets
         internal static SPIaCConnection InstantiateSPOnlineConnection(Uri url, PSCredential credentials, PSHost host, bool currentCredentials, int minimalHealthScore, int retryCount, int retryWait, int requestTimeout, bool skipAdminCheck = false)
         {
             ClientContext context = new ClientContext(url.AbsoluteUri);
-            context.ApplicationName = Properties.Resources.ApplicationName;
+            context.ApplicationName = Resources.ApplicationName;
             context.RequestTimeout = requestTimeout;
             if (!currentCredentials)
             {

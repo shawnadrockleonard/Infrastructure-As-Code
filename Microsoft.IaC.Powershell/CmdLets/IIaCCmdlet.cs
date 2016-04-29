@@ -1,7 +1,10 @@
 ﻿using Microsoft.SharePoint.Client;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
+    /// <summary>
+    /// Interface for every command to implement
+    /// </summary>
     public interface IIaCCmdlet
     {
         ClientContext ClientContext { get; }

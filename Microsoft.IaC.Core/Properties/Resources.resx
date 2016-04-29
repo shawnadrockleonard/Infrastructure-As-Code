@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ApplicationName" xml:space="preserve">
-    <value>Office Dev PnP PowerShell Library</value>
+    <value>Infrastructure as Code Library</value>
   </data>
   <data name="CommandNotExecutedDueToHealthscoreValueOf0" xml:space="preserve">
     <value>Command not executed due to healthscore value of {0}</value>
@@ -209,5 +209,8 @@
   </data>
   <data name="RemoveNavigationNode0" xml:space="preserve">
     <value>Remove Navigation Node '{0}'</value>
+  </data>
+  <data name="AppSideLoadingFeatureGuid" xml:space="preserve">
+    <value>AE3A1339-61F5-4f8f-81A7-ABD2DA956A7D</value>
   </data>
 </root>

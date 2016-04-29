@@ -1,36 +1,130 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using IaC.Core.Models;
+using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.WebParts;
 using OfficeDevPnP.Core.Entities;
 using OfficeDevPnP.Core.Utilities;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
-using CSOM = Microsoft.SharePoint.Client;
 
-namespace Microsoft.IaC.Core.Extensions
+namespace IaC.Core.Extensions
 {
     public static class WebExtensions
     {
-        public static CSOM.Web GetWebById(this CSOM.Web currentWeb, Guid guid)
+        public static Web GetWebById(this Web currentWeb, Guid guid)
         {
             var clientContext = currentWeb.Context as ClientContext;
             Site site = clientContext.Site;
-            CSOM.Web web = site.OpenWebById(guid);
+            Web web = site.OpenWebById(guid);
             clientContext.Load(web, w => w.Url, w => w.Title, w => w.Id);
             clientContext.ExecuteQueryRetry();
 
             return web;
         }
 
-        public static CSOM.Web GetWebByUrl(this CSOM.Web currentWeb, string url)
+        public static Web GetWebByUrl(this Web currentWeb, string url)
         {
             var clientContext = currentWeb.Context as ClientContext;
             Site site = clientContext.Site;
-            CSOM.Web web = site.OpenWeb(url);
+            Web web = site.OpenWeb(url);
             clientContext.Load(web, w => w.Url, w => w.Title, w => w.Id);
             clientContext.ExecuteQueryRetry();
 
             return web;
+        }
+
+        /// <summary>
+        /// Will scan the web site groups for groups to provision and retrieve
+        /// </summary>
+        /// <param name="hostWeb">The host web to which the groups will be created</param>
+        /// <param name="groupsToProvision">The collection of groups to retrieve and/or provision</param>
+        /// <returns></returns>
+        public static IList<SPGroupDefinitionModel> GetOrCreateSiteGroups(this Web hostWeb, List<SPGroupDefinitionModel> groupsToProvision)
+        {
+            var siteGroups = new List<SPGroupDefinitionModel>();
+            var context = hostWeb.Context;
+
+            var groups = hostWeb.SiteGroups;
+            context.Load(groups, g => g.Include(inc => inc.Id, inc => inc.Title));
+            context.ExecuteQuery();
+
+            foreach (var groupDef in groupsToProvision)
+            {
+                if (groups.Any(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    var group = groups.FirstOrDefault(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase));
+                    siteGroups.Add(new SPGroupDefinitionModel() { Id = group.Id, Title = group.Title });
+                    continue;
+                }
+
+                // Create Group
+                var groupCreationInfo = new GroupCreationInformation();
+                groupCreationInfo.Title = groupDef.Title;
+                groupCreationInfo.Description = groupDef.Description;
+
+                var oGroup = hostWeb.SiteGroups.Add(groupCreationInfo);
+                context.Load(oGroup);
+                oGroup.Owner = hostWeb.CurrentUser;
+                oGroup.OnlyAllowMembersViewMembership = groupDef.OnlyAllowMembersViewMembership;
+                oGroup.AllowMembersEditMembership = groupDef.AllowMembersEditMembership;
+                oGroup.AllowRequestToJoinLeave = groupDef.AllowRequestToJoinLeave;
+                oGroup.AutoAcceptRequestToJoinLeave = groupDef.AutoAcceptRequestToJoinLeave;
+                oGroup.Update();
+                context.Load(oGroup, g => g.Id, g => g.Title);
+                context.ExecuteQuery();
+                siteGroups.Add(new SPGroupDefinitionModel() { Id = oGroup.Id, Title = oGroup.Title });
+            }
+
+            return siteGroups;
+        }
+
+        /// <summary>
+        /// Provisions a site column based on the field definition specified
+        /// </summary>
+        /// <param name="hostWeb">The instantiated site/web to which the column will be retrieved and/or provisioned</param>
+        /// <param name="fieldDef">The definition for the field</param>
+        /// <param name="loggerVerbose">Provides a method for verbose logging</param>
+        /// <param name="loggerError">Provides a method for exception logging</param>
+        /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
+        /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
+        /// <returns></returns>
+        public static Field CreateColumn(this Web hostWeb, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        {
+            if (!hostWeb.IsPropertyAvailable("Context"))
+            {
+
+            }
+
+            var fields = hostWeb.Fields;
+            hostWeb.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+            hostWeb.Context.ExecuteQueryRetry();
+
+
+            var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
+            if (returnField == null)
+            {
+                var finfoXml = fieldDef.CreateFieldDefinition(SiteGroups, JsonFilePath);
+                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, finfoXml });
+                try
+                {
+                    var createdField = hostWeb.CreateField(finfoXml, executeQuery: false);
+                    hostWeb.Context.ExecuteQueryRetry();
+                }
+                catch (Exception ex)
+                {
+                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, ex.Message });
+                }
+                finally
+                {
+                    returnField = hostWeb.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
+                    hostWeb.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
+                    hostWeb.Context.ExecuteQuery();
+                }
+            }
+
+            return returnField;
         }
 
         /// <summary>
@@ -45,7 +139,7 @@ namespace Microsoft.IaC.Core.Extensions
         /// <param name="addSpace">Does a blank line need to be added after the web part (to space web parts)</param>
         /// <exception cref="System.ArgumentException">Thrown when folder or page is a zero-length string or contains only white space</exception>
         /// <exception cref="System.ArgumentNullException">Thrown when folder, webPart or page is null</exception>
-        public static void AddWebPartToWikiPage(this CSOM.Web web, string folder, WebPartEntity webPart, string page, int row, int col, bool addSpace, bool something)
+        public static void AddWebPartToWikiPage(this Web web, string folder, WebPartEntity webPart, string page, int row, int col, bool addSpace, bool something)
         {
             if (string.IsNullOrEmpty(folder))
             {
@@ -88,7 +182,7 @@ namespace Microsoft.IaC.Core.Extensions
         /// <param name="addSpace">Does a blank line need to be added after the web part (to space web parts)</param>
         /// <exception cref="System.ArgumentException">Thrown when serverRelativePageUrl is a zero-length string or contains only white space</exception>
         /// <exception cref="System.ArgumentNullException">Thrown when serverRelativePageUrl or webPart is null</exception>
-        public static void AddWebPartToWikiPage(this CSOM.Web web, string serverRelativePageUrl, WebPartEntity webPart, int row, int col, bool addSpace)
+        public static void AddWebPartToWikiPage(this Web web, string serverRelativePageUrl, WebPartEntity webPart, int row, int col, bool addSpace)
         {
             if (string.IsNullOrEmpty(serverRelativePageUrl))
             {

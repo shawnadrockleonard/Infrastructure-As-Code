@@ -7,7 +7,7 @@ using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 using Microsoft.SharePoint.Client;
 using System.Net;
 
-namespace Microsoft.IaC.Powershell.Extensions
+namespace IaC.Powershell.Extensions
 {
     internal static class CredentialExtensions
     {

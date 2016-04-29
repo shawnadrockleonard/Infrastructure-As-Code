@@ -1,7 +1,7 @@
 ﻿using Microsoft.SharePoint.Client;
 using System;
 
-namespace Microsoft.IaC.Powershell.PipeBinds
+namespace IaC.Powershell.PipeBinds
 {
     public sealed class WebPipeBind
     {

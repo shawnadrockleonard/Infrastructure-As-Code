@@ -1,8 +1,9 @@
-﻿using System;
+﻿using IaC.Powershell.CmdLets;
+using System;
 using System.Management.Automation;
-using Resources = Microsoft.IaC.Powershell.Properties.Resources;
+using Resources = IaC.Core.Properties.Resources;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.Commands
 {
     /*
         Examples:

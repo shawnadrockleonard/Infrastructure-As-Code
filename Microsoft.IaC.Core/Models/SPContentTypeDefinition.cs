@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.IaC.Core.Models
+namespace IaC.Core.Models
 {
     public class SPContentTypeDefinition
     {
@@ -15,7 +15,7 @@ namespace Microsoft.IaC.Core.Models
         public SPContentTypeDefinition()
         {
             this.FieldLinkRefs = new List<string>();
-            this.ContentTypeGroup = "EPA";
+            this.ContentTypeGroup = "CustomDevelopment";
         }
 
         public string ContentTypeId { get; set; }

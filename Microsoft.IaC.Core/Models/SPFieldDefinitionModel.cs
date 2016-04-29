@@ -3,7 +3,7 @@ using OfficeDevPnP.Core.Entities;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.IaC.Core.Models
+namespace IaC.Core.Models
 {
     /// <summary>
     /// Field Definition concrete class
@@ -14,7 +14,7 @@ namespace Microsoft.IaC.Core.Models
         {
             this.FieldGuid = new System.Guid();
             this.RestrictedMode = false;
-            this.GroupName = "EPA Custom Column";
+            this.GroupName = "CustomDevelopment";
             this.RichTextField = false;
             this.HiddenField = false;
             this.AddToDefaultView = false;

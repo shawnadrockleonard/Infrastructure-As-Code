@@ -1,18 +1,19 @@
 ﻿using System.Management.Automation;
 using OfficeDevPnP.Core.Utilities;
-using Microsoft.IaC.Core.Enums;
-using Microsoft.IaC.Powershell.Extensions;
+using IaC.Core.Enums;
+using IaC.Powershell.Extensions;
+using IaC.Powershell.CmdLets;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.Commands
 {
     /*
     Example:
     Returns the credential associated with the specified identifier
     Get-SPOnlineStoredCredential -Name O365
     */
-    [Cmdlet("Get", "SPIaCStoredCredential")]
+    [Cmdlet("Get", "IaCStoredCredential")]
     [CmdletHelp("Returns a stored credential from the Windows Credential Manager", Category = "Base Cmdlets")]
-    public class GetSPIaCStoredCredential : PSCmdlet
+    public class GetIaCStoredCredential : PSCmdlet
     {
         [Parameter(Mandatory = true, HelpMessage = "The credential to retrieve.")]
         public string Name;

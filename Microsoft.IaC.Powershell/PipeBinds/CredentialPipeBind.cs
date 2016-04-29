@@ -1,8 +1,8 @@
 ﻿using System.Management.Automation;
-using Microsoft.IaC.Powershell.Extensions;
+using IaC.Powershell.Extensions;
 using OfficeDevPnP.Core.Utilities;
 
-namespace Microsoft.IaC.Powershell.PipeBinds
+namespace IaC.Powershell.PipeBinds
 {
     public sealed class CredentialPipeBind
     {

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using PCommand = System.Management.Automation.Runspaces;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
     /// <summary>
     /// /Initializes a runspace to import modules and execute cmdlets
@@ -27,22 +27,32 @@ namespace Microsoft.IaC.Powershell.CmdLets
         /// </summary>
         internal PCommand.Command connectCommand { get; private set; }
 
+        /// <summary>
+        /// Empty constructor for intializing an empty runspace
+        /// </summary>
         public SPIaCRunspaceWithDelegate()
         {
 
         }
 
-        public SPIaCRunspaceWithDelegate(SPIaCConnection connection)
+        /// <summary>
+        /// Initializes the run space for the <paramref name="moduleName"/>
+        ///     This module connection property must require Credentials
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="moduleName"></param>
+        /// <param name="connectionCommand"></param>
+        public void Initialize(SPIaCConnection connection, string moduleName, string connectionCommand)
         {
             // Create Initial Session State for runspace.
             InitialSessionState initialSession = InitialSessionState.CreateDefault();
-            initialSession.ImportPSModule(new[] { "MSOnline" });
+            initialSession.ImportPSModule(new[] { moduleName });
 
             // Create credential object.
             var credential = connection.GetActiveCredentials();
 
             // Create command to connect office 365.
-            connectCommand = new PCommand.Command("Connect-MsolService");
+            connectCommand = new PCommand.Command(connectionCommand);
             connectCommand.Parameters.Add((new CommandParameter("Credential", credential)));
 
             psRunSpace = RunspaceFactory.CreateRunspace(initialSession);

@@ -1,7 +1,7 @@
 ﻿using OfficeDevPnP.Core.Utilities;
 using System.Collections.Generic;
 
-namespace Microsoft.IaC.Core.Extensions
+namespace IaC.Core.Extensions
 {
     /// <summary>
     /// Sends an email using the Office 365 SMTP Service

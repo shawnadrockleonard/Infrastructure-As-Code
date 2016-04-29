@@ -9,9 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.IaC.Core", "Microsoft.IaC.Core\Microsoft.IaC.Core.csproj", "{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IaC.Core", "Microsoft.IaC.Core\IaC.Core.csproj", "{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.IaC.Powershell", "Microsoft.IaC.Powershell\Microsoft.IaC.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IaC.Powershell", "Microsoft.IaC.Powershell\IaC.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

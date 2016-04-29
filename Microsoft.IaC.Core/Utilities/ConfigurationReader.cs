@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Microsoft.IaC.Core.Utilities
+namespace IaC.Core.Utilities
 {
     /// <summary>
     /// PRovides an easy way to read an xml config file

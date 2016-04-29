@@ -1,6 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 
-namespace Microsoft.IaC.Powershell.PipeBinds
+namespace IaC.Powershell.PipeBinds
 {
     public sealed class GroupPipeBind
     {

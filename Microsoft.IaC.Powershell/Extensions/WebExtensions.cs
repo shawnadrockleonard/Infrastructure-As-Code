@@ -1,5 +1,5 @@
-﻿using Microsoft.IaC.Core.Models;
-using Microsoft.IaC.Core.Extensions;
+﻿using IaC.Core.Models;
+using IaC.Core.Extensions;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.WebParts;
 using OfficeDevPnP.Core.Entities;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace Microsoft.IaC.Powershell.Extensions
+namespace IaC.Powershell.Extensions
 {
     public static class WebExtensions
     {
@@ -24,7 +24,7 @@ namespace Microsoft.IaC.Powershell.Extensions
         /// <param name="loggerError">TODO: convert to static logger</param>
         /// <param name="SiteGroups">Collection of provisioned SharePoint group for field definitions</param>
         /// <param name="JsonFilePath">(OPTIONAL) file path to JSON folder</param>
-        public static void CreateListFromDefinition(this Microsoft.SharePoint.Client.Web web, SPListDefinition listDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerWarning, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups = null, string JsonFilePath = null)
+        public static void CreateListFromDefinition(this Web web, SPListDefinition listDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerWarning, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups = null, string JsonFilePath = null)
         {
             var webContext = web.Context;
 
@@ -81,7 +81,7 @@ namespace Microsoft.IaC.Powershell.Extensions
             }
 
             webContext.Load(listToProvision, arl => arl.Title, arl => arl.Id, arl => arl.ContentTypes, ol => ol.RootFolder, ol => ol.EnableVersioning, ol => ol.EnableFolderCreation, ol => ol.ContentTypesEnabled);
-            webContext.ExecuteQuery();
+            webContext.ExecuteQueryRetry();
 
             if (listDef.ContentTypeEnabled && listDef.HasContentTypes)
             {
@@ -107,7 +107,7 @@ namespace Microsoft.IaC.Powershell.Extensions
             // Site Columns
             foreach (var fieldDef in listDef.FieldDefinitions)
             {
-                var column = listToProvision.CreateListColumn(fieldDef, loggerVerbose, loggerWarning, SiteGroups, JsonFilePath);
+                var column = listToProvision.CreateColumn(fieldDef, loggerVerbose, loggerError, SiteGroups, JsonFilePath);
                 if (column == null)
                 {
                     loggerWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });

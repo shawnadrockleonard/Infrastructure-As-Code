@@ -1,4 +1,4 @@
-﻿using Microsoft.IaC.Core.Utilities;
+﻿using IaC.Core.Utilities;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Utilities;
 using System;
@@ -6,11 +6,11 @@ using System.Management.Automation;
 using System.Reflection;
 using System.Threading;
 using System.Xml.Linq;
-using Resources = Microsoft.IaC.Powershell.Properties.Resources;
+using Resources = IaC.Core.Properties.Resources;
 
-namespace Microsoft.IaC.Powershell.CmdLets
+namespace IaC.Powershell.CmdLets
 {
-    public abstract class SPIaCCmdlet : PSCmdlet, IIaCCmdlet
+    public abstract class IaCCmdlet : PSCmdlet, IIaCCmdlet
     {
         /// <summary>
         /// If True then only write verbose statements to the log and do not perform any action
@@ -22,6 +22,11 @@ namespace Microsoft.IaC.Powershell.CmdLets
         {
             get { return SPIaCConnection.CurrentConnection.Context; }
         }
+
+        /// <summary>
+        /// The base URI for the SP Site or Tenant
+        /// </summary>
+        internal string BaseUri { get; private set; }
 
         /// <summary>
         /// the logger is available
@@ -69,7 +74,11 @@ namespace Microsoft.IaC.Powershell.CmdLets
                 throw new InvalidOperationException(Resources.NoConnection);
             }
 
-            LogVerbose(">>> Begin {0} at {1} on URL:[{2}]", this.CmdLetName, DateTime.Now, this.ClientContext.Url);
+            Uri uri = new Uri(this.ClientContext.Url);
+            var urlParts = uri.Authority.Split(new[] { '.' });
+            BaseUri = string.Format("https://{0}.{1}.{2}", urlParts[0], urlParts[1], urlParts[2]);
+
+            LogVerbose(">>> Begin {0} at {1} on URL:[{2}] [DoNothing:{3}]", this.CmdLetName, DateTime.Now, this.ClientContext.Url, this.DoNothing);
         }
 
         /// <summary>

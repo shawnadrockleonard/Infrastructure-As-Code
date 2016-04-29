@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.IaC.Core.Utilities
+namespace IaC.Core.Utilities
 {
     /// <summary>
     /// The Logger class provides wrapper methods to the LogManager.

@@ -1,6 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 
-namespace Microsoft.IaC.Core.Extensions
+namespace IaC.Core.Extensions
 {
     public static class ClientExtensions
     {

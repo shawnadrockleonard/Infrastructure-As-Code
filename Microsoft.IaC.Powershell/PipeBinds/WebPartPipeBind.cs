@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.IaC.Powershell.PipeBinds
+namespace IaC.Powershell.PipeBinds
 {
     public class WebPartPipeBind
     {

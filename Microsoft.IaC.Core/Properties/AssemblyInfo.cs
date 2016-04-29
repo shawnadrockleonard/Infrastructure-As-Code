@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.IaC.Powershell")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Infrastructure as Code Core")]
+[assembly: AssemblyDescription("Core functionality for Infrastructure as Code")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft Corporation")]
-[assembly: AssemblyProduct("Microsoft.IaC.Powershell")]
+[assembly: AssemblyProduct("IaC.Core")]
 [assembly: AssemblyCopyright("Copyright © Microsoft Corporation 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

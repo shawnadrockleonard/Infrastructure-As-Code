@@ -1,4 +1,4 @@
-﻿namespace Microsoft.IaC.Core.Enums
+﻿namespace IaC.Core.Enums
 {
     public enum NavigationNodeType
     {
