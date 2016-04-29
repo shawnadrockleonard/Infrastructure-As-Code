@@ -1,4 +1,4 @@
-param($ProjectDir, $ConfigurationName, $TargetDir, $TargetFileName, $SolutionDir, $ProjectName)
+param($ProjectDir, $ConfigurationName, $TargetDir, $TargetFileName, $TargetName, $SolutionDir, $ProjectName)
 begin 
 {
 	Write-Output ("Starting the post build script for {0}" -f $TargetDir)
@@ -10,7 +10,7 @@ process
 		$documentsFolder = [environment]::getfolderpath("mydocuments");
 
 		Remove-Module -Name $ProjectName -ErrorAction SilentlyContinue
-		$PSModuleHome = ("{0}\WindowsPowerShell\Modules\{1}" -f $documentsFolder,$ProjectName)
+		$PSModuleHome = ("{0}\WindowsPowerShell\Modules\{1}" -f $documentsFolder,$TargetName)
 
 		# Module folder there?
 		if(Test-Path $PSModuleHome)
