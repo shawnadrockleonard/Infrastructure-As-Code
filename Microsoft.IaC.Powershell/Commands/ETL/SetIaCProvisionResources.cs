@@ -40,6 +40,11 @@ namespace IaC.Powershell.Commands
             {
                 throw new Exception(string.Format("The directory does not exists {0}", this.SiteContent));
             }
+
+            if(!System.IO.Directory.Exists(string.Format("{0}\\Content", this.SiteContent)))
+            {
+                throw new Exception(string.Format("The content directory does not exists {0}", this.SiteContent));
+            }
         }
 
         internal List<SPGroupDefinitionModel> siteGroups { get; set; }
@@ -53,18 +58,19 @@ namespace IaC.Powershell.Commands
         {
             base.ExecuteCmdlet();
 
+            if (this.ClientContext == null)
+            {
+                LogWarning("Invalid client context, configure the service to run again");
+                return;
+            }
+
+
             siteGroups = new List<SPGroupDefinitionModel>();
             siteColumns = new List<SPFieldDefinitionModel>();
 
             //Move away from method configuration into a JSON file
             var filePath = string.Format("{0}\\Content\\{1}", this.SiteContent, "Provisioner.json");
             var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath));
-
-            if (this.ClientContext == null)
-            {
-                LogWarning("Invalid client context, configure the service to run again");
-                return;
-            }
 
             if (siteDefinition.SiteResources)
             {
