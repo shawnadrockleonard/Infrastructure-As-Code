@@ -92,9 +92,12 @@ namespace IaC.Core.Extensions
             else if (fieldDefinition.fieldType == FieldType.Note)
             {
                 attributes.Add(new KeyValuePair<string, string>("RichText", fieldDefinition.RichTextField.ToString().ToUpper()));
-                attributes.Add(new KeyValuePair<string, string>("RestrictedMode", fieldDefinition.RestrictedMode.ToString().ToUpper()));
                 attributes.Add(new KeyValuePair<string, string>("NumLines", fieldDefinition.NumLines.ToString()));
-                if (!fieldDefinition.RestrictedMode)
+                if (fieldDefinition.RestrictedMode)
+                {
+                    attributes.Add(new KeyValuePair<string, string>("RestrictedMode", fieldDefinition.RestrictedMode.ToString().ToUpper()));
+                }
+                else
                 {
                     attributes.Add(new KeyValuePair<string, string>("RichTextMode", "FullHtml"));
                     attributes.Add(new KeyValuePair<string, string>("IsolateStyles", true.ToString().ToUpper()));

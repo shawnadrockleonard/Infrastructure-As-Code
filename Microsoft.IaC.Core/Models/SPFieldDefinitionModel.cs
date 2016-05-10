@@ -13,7 +13,7 @@ namespace IaC.Core.Models
         public SPFieldDefinitionModel()
         {
             this.FieldGuid = new System.Guid();
-            this.RestrictedMode = false;
+            this.RestrictedMode = true;
             this.GroupName = "CustomDevelopment";
             this.RichTextField = false;
             this.HiddenField = false;
