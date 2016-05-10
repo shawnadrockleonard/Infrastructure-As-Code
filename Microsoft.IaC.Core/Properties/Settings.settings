@@ -1,9 +1,0 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="IaC.Core.Properties" GeneratedClassName="Settings">
-  <Profiles />
-  <Settings>
-    <Setting Name="IaC_Core_com_sharepoint_useralerts_Alerts" Type="(Web Service URL)" Scope="Application">
-      <Value Profile="(Default)">https://shawniq.sharepoint.com/_vti_bin/Alerts.asmx</Value>
-    </Setting>
-  </Settings>
-</SettingsFile>
