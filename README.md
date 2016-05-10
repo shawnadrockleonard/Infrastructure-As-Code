@@ -1,4 +1,4 @@
-﻿#Microsoft Infrastructure as Code#
+﻿#Infrastructure as Code#
 This is the main repository to the Infrastructure as Code project.  
 The intent of this project is to allow administrators and developers to perform common processes across their various environments.  
 Your Development, Training, and Production environments should look identical except for the scale. 
