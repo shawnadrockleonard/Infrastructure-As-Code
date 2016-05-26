@@ -10,7 +10,7 @@ Why did we choose a binary module and not a script module?  https://msdn.microso
 # How to run and debug
 If you are not able to debug the project take a look at the screenshot.   You should set the start external project to PowerShell.exe or Powershell_ISE.exe if you prefer the Integrated Scripting Environment.   Powershell ISE allow you to write specific scripts and include additional binary modules with ease.
 
-<img src="imgs/project-config-powershell-debug.png" />
+<img src="https://raw.githubusercontent.com/pinch-perfect/Infrastructure-As-Code/master/InfrastructureAsCode.Powershell/imgs/project-config-powershell-debug.PNG" />
 <caption>User project specific settings in the project properties</caption>
 
 # Examples

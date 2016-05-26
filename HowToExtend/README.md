@@ -16,7 +16,7 @@ Disconnect-SPIaC
 # Video demonstration
 Here is a video to watch how you can go from Build to configuration of a SharePoint site.
 
-<img src="imgs/build-and-deploy.png" />
+<img src="https://raw.githubusercontent.com/pinch-perfect/Infrastructure-As-Code/master/HowToExtend/imgs/build-and-deploy.png" />
 https://mix.office.com/embed/1hqxzxbj2h51c
 
 
@@ -24,10 +24,10 @@ https://mix.office.com/embed/1hqxzxbj2h51c
 At the root of the project are sample .ps1 files which demonstrate a scripted Cmd-Let running the binary module commands.
 
 Open script-configure-assets.ps1 and you'll see the following:
-<img src="imgs/project-sample-script.png" />
+<img src="https://raw.githubusercontent.com/pinch-perfect/Infrastructure-As-Code/master/HowToExtend/imgs/project-sample-script.PNG" />
 
 Open script-configure-provision.ps1 and you'll see the following:
-<img src="imgs/project-sample-script-provisioning-resources.png" />
+<img src="https://raw.githubusercontent.com/pinch-perfect/Infrastructure-As-Code/master/HowToExtend/imgs/project-sample-script-provisioning-resources.PNG" />
 
 
 ### Disclaimer ###
