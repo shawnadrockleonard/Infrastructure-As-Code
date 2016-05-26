@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Core",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Powershell", "InfrastructureAsCode.Powershell\InfrastructureAsCode.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Powershell.HowToExtend", "HowToExtend\InfrastructureAsCode.Powershell.HowToExtend.csproj", "{48F2A3C5-A290-4B6D-A860-8213A9B171F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48F2A3C5-A290-4B6D-A860-8213A9B171F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48F2A3C5-A290-4B6D-A860-8213A9B171F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48F2A3C5-A290-4B6D-A860-8213A9B171F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48F2A3C5-A290-4B6D-A860-8213A9B171F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,9 +1,19 @@
-﻿#Infrastructure as Code#
+﻿# Infrastructure as Code#
 This is the main repository to the Infrastructure as Code project.  
 The intent of this project is to allow administrators and developers to perform common processes across their various environments.  
-Your Development, Training, and Production environments should look identical except for the scale. 
+Your Development, Training, and Production environments should look identical except for scale. 
 This project is meant to assist in ensuring you are administrating and deploying components in a similiar fashion.
 
+# Dependencies
+Each project has dependency on:
+The [SharePointPnPCoreOnline component](https://github.com/OfficeDev/PnP-sites-Core)`.
+The [Microsoft.SharePoint.CSOM (16.1.5026.1200)]
+
+Check more details on the OfficeDevPnP structure from [development wiki](https://github.com/OfficeDev/PnP/wiki/Structure-and-high-level-working-model).
+Check more details on the PnP-Powershell structure https://github.com/OfficeDev/PnP-PowerShell
+
+# Microsoft Infrastructure as Code Solutions #
+Complex reusable project. Demonstrating and including various extensions for administring, deploying, reporting on your SharePoint environments.
 
 ### Disclaimer ###
 **THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
