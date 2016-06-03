@@ -58,6 +58,10 @@ namespace InfrastructureAsCode.Core.Extensions
             {
                 attributes.Add(new KeyValuePair<string, string>("Indexed", fieldDefinition.FieldIndexed.ToString().ToUpper()));
             }
+            if(fieldDefinition.AppendOnly)
+            {
+                attributes.Add(new KeyValuePair<string, string>("AppendOnly", fieldDefinition.AppendOnly.ToString().ToUpper()));
+            }
 
             var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.MultiChoice, FieldType.OutcomeChoice };
             if (choices.Any(a => a == fieldDefinition.fieldType))

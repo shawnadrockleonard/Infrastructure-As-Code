@@ -75,6 +75,8 @@ namespace InfrastructureAsCode.Core.Models
 
         public bool RestrictedMode { get; set; }
 
+        public bool AppendOnly { get; set; }
+
         public DateTimeFieldFormatType? DateFieldFormat { get; set; }
 
         public bool FieldIndexed { get; set; }
