@@ -8,7 +8,8 @@ The main purpose of a module is to allow the modularization (ie, reuse and abstr
 Why did we choose a binary module and not a script module?  https://msdn.microsoft.com/en-us/library/dd878342(v=vs.85).aspx With a binary module we can reuse the InfrastructureAsCode.CORE project, leverage multi-threading, perform numerous activities while leveraging open source managed code projects to effect continous and constant change to a SharePoint environment.  Many examples you'll find online use a console application.  With a binary module we can stitch together console applications as CmdLets in a single project and reusue core functionality.
 
 # How to run and debug
-If you are not able to debug the project take a look at the screenshot.   You should set the start external project to PowerShell.exe or Powershell_ISE.exe if you prefer the Integrated Scripting Environment.   Powershell ISE allow you to write specific scripts and include additional binary modules with ease.
+If you attempt to debug the project and it does not launch Powershell, navigate to the Project Debug tab and specified the external program powershell.exe with a -noexit argument.   Take a look at the screenshot below for more detail.  
+You should set the start external project to PowerShell.exe or Powershell_ISE.exe if you prefer the Integrated Scripting Environment.   Powershell ISE allow you to write specific scripts and include additional binary modules with ease.
 
 <img src="https://raw.githubusercontent.com/pinch-perfect/Infrastructure-As-Code/master/InfrastructureAsCode.Powershell/imgs/project-config-powershell-debug.PNG" />
 <caption>User project specific settings in the project properties</caption>
