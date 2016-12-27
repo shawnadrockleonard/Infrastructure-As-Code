@@ -106,10 +106,10 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 if (Tenant.Context == null)
                 {
                     this.ClientContext.Load(Tenant);
-                    this.ClientContext.ExecuteQuery();
+                    this.ClientContext.ExecuteQueryRetry();
                 }
                 Tenant.SetSiteAdmin(_siteUrl, claimProviderUserName, isSiteAdmin);
-                Tenant.Context.ExecuteQuery();
+                Tenant.Context.ExecuteQueryRetry();
             }
             catch (Exception e)
             {

@@ -33,9 +33,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         /// <summary>
         /// Initialize a default value if not specified by the user
         /// </summary>
-        protected override void PreInitialize()
+        protected override void OnBeginInitialize()
         {
-            base.PreInitialize();
+            base.OnBeginInitialize();
 
             if (!Throttle.HasValue)
             {

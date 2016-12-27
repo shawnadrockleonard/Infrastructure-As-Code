@@ -74,6 +74,9 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 throw new InvalidOperationException(Resources.NoConnection);
             }
 
+
+            OnBeginInitialize();
+
             Uri uri = new Uri(this.ClientContext.Url);
             var urlParts = uri.Authority.Split(new[] { '.' });
             BaseUri = string.Format("https://{0}.{1}.{2}", urlParts[0], urlParts[1], urlParts[2]);
@@ -84,7 +87,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <summary>
         /// Initializers the logger from the cmdlet
         /// </summary>
-        protected virtual void PreInitialize()
+        protected virtual void OnBeginInitialize()
         {
             var runningDirectory = this.SessionState.Path.CurrentFileSystemLocation;
             var runningAssembly = Assembly.GetExecutingAssembly();
@@ -147,7 +150,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                     int healthScore = Utility.GetHealthScore(SPIaCConnection.CurrentConnection.Url);
                     if (healthScore <= SPIaCConnection.CurrentConnection.MinimalHealthScore)
                     {
-                        PreInitialize();
                         ExecuteCmdlet();
                     }
                     else
@@ -162,7 +164,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                                 healthScore = Utility.GetHealthScore(SPIaCConnection.CurrentConnection.Url);
                                 if (healthScore <= SPIaCConnection.CurrentConnection.MinimalHealthScore)
                                 {
-                                    PreInitialize();
                                     ExecuteCmdlet();
                                     break;
                                 }
@@ -181,7 +182,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 }
                 else
                 {
-                    PreInitialize();
                     ExecuteCmdlet();
                 }
             }
