@@ -48,10 +48,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         /// <summary>
         /// Pre-process to evaluate the directory location
         /// </summary>
-        protected override void BeginProcessing()
+        protected override void OnBeginInitialize()
         {
-            base.BeginProcessing();
-            if(!System.IO.Directory.Exists(TargetLocation))
+            if (!System.IO.Directory.Exists(TargetLocation))
             {
                 throw new System.IO.DirectoryNotFoundException(string.Format("Directory {0} does not exists", TargetLocation));
             }
@@ -161,8 +160,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                             if (contenttypeid.StartsWith(documentsetcontenttypeid) || progid.Equals("Sharepoint.DocumentSet", StringComparison.CurrentCultureIgnoreCase))
                             {
                                 // process the docset
-                                CheckDocumentSetMapping(viewlist, viewFields, fileurl);
+                                CheckDocumentSetMapping(viewlist, fileurl);
 
+                                // process items inside the docset
+                                CheckDocumentsByCaml(viewlist, viewFields, fileurl);
                             }
                         }
 
@@ -182,7 +183,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
         }
 
-        internal void CheckDocumentSetMapping(List docsetlist, List<string> docsetfields, string relativeUrl)
+        internal void CheckDocumentSetMapping(List docsetlist, string relativeUrl)
         {
 
             Folder docsetfolder = ClientContext.Web.GetFolderByServerRelativeUrl(relativeUrl);
@@ -199,30 +200,60 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             {
                 docSetStream.Value.CopyTo(fs);
             }
+        }
+
+        internal void CheckDocumentsByCaml(List docsetlist, List<string> docsetfields, string relativeUrl)
+        {
+            var onlineurl = relativeUrl.Replace(docsetlist.RootFolder.ServerRelativeUrl, "");
 
             var query = Microsoft.SharePoint.Client.CamlQuery.CreateAllItemsQuery(100, docsetfields.ToArray());
             query.FolderServerRelativeUrl = relativeUrl;
             var allItems = docsetlist.GetItems(query);
             docsetlist.Context.Load(allItems);
             docsetlist.Context.ExecuteQueryRetry();
+
             foreach (var spItem in allItems)
             {
                 var fileurl = spItem.RetrieveListItemValue(ConstantsFields.Field_FileRef);
-                var filedownloaded = spItem.RetrieveListItemValue("Downloaded");
+                var filedownloaded = spItem.RetrieveListItemValue("Downloaded").ToBoolean();
+                var fileinfo = new System.IO.FileInfo(fileurl);
+                var filewithpath = FullDocumentPath(this.TargetLocation, onlineurl, fileinfo.Name);
                 LogVerbose("Item {0} Downloaded {1} URL {2}", spItem.Id, filedownloaded, fileurl);
 
+                using (var openFile = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ClientContext, fileurl.ToString()))
+                {
+                    using (var fileStream = new System.IO.FileStream(filewithpath.FullName, System.IO.FileMode.Create))
+                    {
+                        openFile.Stream.CopyTo(fileStream);
+                        fileStream.Close();
+                    }
+                }
             }
         }
 
         internal System.IO.FileInfo FullDocumentSetPath(string targetLocation, string partialUrl, string folderName)
         {
             var local = new System.IO.DirectoryInfo(targetLocation);
-            foreach(var partial in partialUrl.Split(new string[] {  "/"}, StringSplitOptions.RemoveEmptyEntries))
+            local = local.CreateSubdirectory("DocumentSets");
+            foreach (var partial in partialUrl.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
             {
                 local = local.CreateSubdirectory(partial, local.GetAccessControl());
             }
 
             var localfile = new System.IO.FileInfo(string.Format("{0}\\{1}.zip", local.FullName, folderName));
+            return localfile;
+        }
+
+        internal System.IO.FileInfo FullDocumentPath(string targetLocation, string partialUrl, string fileName)
+        {
+            var local = new System.IO.DirectoryInfo(targetLocation);
+            local = local.CreateSubdirectory("FileStream");
+            foreach (var partial in partialUrl.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                local = local.CreateSubdirectory(partial, local.GetAccessControl());
+            }
+
+            var localfile = new System.IO.FileInfo(string.Format("{0}\\{1}", local.FullName, fileName));
             return localfile;
         }
 
