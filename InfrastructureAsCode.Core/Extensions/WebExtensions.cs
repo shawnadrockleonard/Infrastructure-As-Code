@@ -522,5 +522,77 @@ namespace InfrastructureAsCode.Core.Extensions
             web.Context.ExecuteQueryRetry();
 
         }
+
+        /// <summary>
+        /// Adds or Updates an existing Custom Action [ScriptSrc] into the [Web] Custom Actions
+        /// </summary>
+        /// <param name="web"></param>
+        /// <param name="customactionname"></param>
+        /// <param name="customactionurl"></param>
+        /// <param name="sequence"></param>
+        public static void AddOrUpdateCustomActionLink(this Web web, string customactionname, string customactionurl, int sequence)
+        {
+            var sitecustomActions = web.GetCustomActions();
+            UserCustomAction cssAction = null;
+            if (web.CustomActionExists(customactionname))
+            {
+                cssAction = sitecustomActions.FirstOrDefault(fod => fod.Name == customactionname);
+            }
+            else
+            {
+                // Build a custom action to write a link to our new CSS file
+                cssAction = web.UserCustomActions.Add();
+                cssAction.Name = customactionname;
+                cssAction.Location = "ScriptLink";
+            }
+
+            cssAction.Sequence = sequence;
+            cssAction.ScriptSrc = customactionurl;
+            cssAction.Update();
+            web.Context.ExecuteQueryRetry();
+        }
+
+        /// <summary>
+        /// Adds or Updates an existing Custom Action [ScriptBlock] into the [Web] Custom Actions
+        /// </summary>
+        /// <param name="web"></param>
+        /// <param name="customactionname"></param>
+        /// <param name="customActionBlock"></param>
+        /// <param name="sequence"></param>
+        public static void AddOrUpdateCustomActionLinkBlock(this Web web, string customactionname, string customActionBlock, int sequence)
+        {
+            var sitecustomActions = web.GetCustomActions();
+            UserCustomAction cssAction = null;
+            if (web.CustomActionExists(customactionname))
+            {
+                cssAction = sitecustomActions.FirstOrDefault(fod => fod.Name == customactionname);
+            }
+            else
+            {
+                // Build a custom action to write a link to our new CSS file
+                cssAction = web.UserCustomActions.Add();
+                cssAction.Name = customactionname;
+                cssAction.Location = "ScriptLink";
+            }
+
+            cssAction.Sequence = sequence;
+            cssAction.ScriptBlock = customActionBlock;
+            cssAction.Update();
+            web.Context.ExecuteQueryRetry();
+        }
+
+        /// <summary>
+        /// Will remove the custom action if one exists
+        /// </summary>
+        /// <param name="web"></param>
+        /// <param name="customactionname"></param>
+        public static void RemoveCustomActionLink(this Web web, string customactionname)
+        {
+            if (web.CustomActionExists(customactionname))
+            {
+                var cssAction = web.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname);
+                web.DeleteCustomAction(cssAction.Id);
+            }
+        }
     }
 }

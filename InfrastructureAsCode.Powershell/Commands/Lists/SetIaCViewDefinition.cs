@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
     /// <summary>
     /// The function cmdlet will update view definitions
     /// </summary>
-    [Cmdlet(VerbsCommon.Set, "IaCViewDefinition")]
+    [Cmdlet(VerbsCommon.Set, "IaCViewDefinition", SupportsShouldProcess = true)]
     [CmdletHelp("Update a view definition", Category = "Lists")]
     public class SetIaCViewDefinition : IaCCmdlet
     {
@@ -56,11 +56,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         {
             base.ExecuteCmdlet();
 
-            if (this.ClientContext == null)
-            {
-                LogWarning("Invalid client context, configure the service to run again");
-                return;
-            }
 
             var context = this.ClientContext;
             var web = context.Web;
@@ -89,7 +84,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
                 thisview.ViewQuery = CamlQuery;
 
-                if (!DoNothing)
+                if (this.ShouldProcess(string.Format("---------------- Now updating {0} view", thisview.Title)))
                 {
                     thisview.Update();
                     context.ExecuteQueryRetry();

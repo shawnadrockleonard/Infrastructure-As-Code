@@ -9,10 +9,10 @@ using System.Management.Automation;
 namespace InfrastructureAsCode.Powershell.Commands
 {
     /// <summary>
-    /// The function cmdlet will upgrade the EzForms site specified in the connection to the latest configuration changes
+    /// The function cmdlet will upgrade the site specified in the connection to the latest configuration changes
     /// </summary>
-    [Cmdlet(VerbsCommon.Set, "IaCMigrateData")]
-    [CmdletHelp("Identify users via json file and send email", Category = "ETL")]
+    [Cmdlet(VerbsCommon.Set, "IaCMigrateData", SupportsShouldProcess = true)]
+    [CmdletHelp("For a list that might require external process, a DataMigrated column stores if the record has been processed", Category = "ETL")]
     public class SetIaCMigrateData : IaCCmdlet
     {
         /// <summary>
@@ -30,9 +30,8 @@ namespace InfrastructureAsCode.Powershell.Commands
         /// <summary>
         /// Validate parameters
         /// </summary>
-        protected override void BeginProcessing()
+        protected override void OnBeginInitialize()
         {
-            base.BeginProcessing();
             if (!string.IsNullOrEmpty(this.ActionFile) && !System.IO.File.Exists(this.ActionFile))
             {
                 throw new Exception(string.Format("The file does not exists {0}", this.ActionFile));
@@ -49,13 +48,6 @@ namespace InfrastructureAsCode.Powershell.Commands
             base.ExecuteCmdlet();
 
             siteColumns = new List<SPFieldDefinitionModel>();
-
-
-            if (this.ClientContext == null)
-            {
-                LogWarning("Invalid client context, configure the service to run again");
-                return;
-            }
 
             try
             {
@@ -134,17 +126,17 @@ namespace InfrastructureAsCode.Powershell.Commands
             var modifiedDate = _item["Modified"];
             var modifiedBy = _item["Editor"];
 
-            if (!DoNothing)
+            if (this.ShouldProcess(string.Format("update list basic properties {0}", _item.Id)))
             {
                 _item["DataMigrated"] = 1;
-                _item.Update();
+                _item.SystemUpdate();
                 ClientContext.ExecuteQueryRetry();
 
                 try
                 {
                     _item["Modified"] = modifiedDate;
                     _item["Editor"] = modifiedBy;
-                    _item.Update();
+                    _item.SystemUpdate();
                     ClientContext.ExecuteQueryRetry();
                 }
                 catch (Exception e)

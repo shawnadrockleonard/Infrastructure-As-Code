@@ -193,6 +193,7 @@
     <Compile Include="Extensions\WebExtensions.cs" />
     <Compile Include="Models\Enums\ViewToolBarEnum.cs" />
     <Compile Include="Models\SPChoiceModelComparer.cs" />
+    <Compile Include="Models\SPCustomAction.cs" />
     <Compile Include="Models\SPFieldLinkDefinitionModel.cs" />
     <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
     <Compile Include="Models\SPGroupPrincipalModel.cs" />

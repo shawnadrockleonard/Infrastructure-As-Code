@@ -178,6 +178,7 @@
     <Compile Include="CmdLets\CmdletHelpAttribute.cs" />
     <Compile Include="Commands\ConnectSPIaC.cs" />
     <Compile Include="Commands\DisconnectSPIaC.cs" />
+    <Compile Include="Commands\Files\WatchIaCDirectoryAndUpload.cs" />
     <Compile Include="Commands\GetIaCStoredCredential.cs" />
     <Compile Include="CmdLets\IIaCCmdlet.cs" />
     <Compile Include="CmdLets\SPOAdminCmdlet.cs" />
@@ -211,6 +212,11 @@
     <Compile Include="Commands\Principals\SetIaCSiteAdmin.cs" />
     <Compile Include="Commands\Runspace\GetIaCMSOnlineGroupMembership.cs" />
     <Compile Include="Commands\Runspace\GetIaCMSOnlineUserProfiles.cs" />
+    <Compile Include="Commands\Sites\CopyIaCCustomAction.cs" />
+    <Compile Include="Commands\Sites\RemoveIaCCustomAction.cs" />
+    <Compile Include="Commands\Sites\SetIaCAlternateCSS.cs" />
+    <Compile Include="Commands\Sites\SetIaCCustomAction.cs" />
+    <Compile Include="Commands\Sites\SetIaCModernUI.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="PipeBinds\AppPipeBind.cs" />
     <Compile Include="PipeBinds\ContentTypePipeBind.cs" />

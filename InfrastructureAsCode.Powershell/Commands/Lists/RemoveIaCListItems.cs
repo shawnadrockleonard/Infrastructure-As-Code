@@ -141,15 +141,15 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
                 }
 
-                if (!this.DoNothing)
+                // enumerate the ids to be deleted and process if -WhatIf (not passed)
+                foreach (var id in ids)
                 {
-                    foreach (var id in ids)
+                    if (this.ShouldProcess(string.Format("ListItem [{0}] now being deleted.", id)))
                     {
-                        LogWarning("ListItem [{0}] now being deleted.", id);
                         var spListItem = listInSite.GetItemById(id);
                         spListItem.DeleteObject();
                         listInSite.Update();
-                        this.ClientContext.ExecuteQuery();
+                        this.ClientContext.ExecuteQueryRetry();
                     }
                 }
             }

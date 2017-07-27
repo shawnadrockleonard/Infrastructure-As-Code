@@ -12,11 +12,10 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 {
     public abstract class IaCCmdlet : PSCmdlet, IIaCCmdlet
     {
-        /// <summary>
-        /// If True then only write verbose statements to the log and do not perform any action
-        /// </summary>
-        [Parameter(Mandatory = false)]
-        public SwitchParameter DoNothing { get; set; }
+        internal IaCCmdlet() : base()
+        {
+
+        }
 
         public ClientContext ClientContext
         {
@@ -29,6 +28,11 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         internal string BaseUri { get; private set; }
 
         /// <summary>
+        /// Represents the claim identifier prefix
+        /// </summary>
+        internal const string ClaimIdentifier = "i:0#.f|membership";
+
+        /// <summary>
         /// the logger is available
         /// </summary>
         internal bool loggerAvailable { get; private set; }
@@ -39,10 +43,8 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         internal ConfigurationLogger logger { get; private set; }
 
         /// <summary>
-        /// The application setting config manager
+        /// Storage for the cmdlet in the current thread
         /// </summary>
-        internal ConfigurationReader appSettings { get; private set; }
-
         private string m_cmdLetName { get; set; }
         internal string CmdLetName
         {
@@ -74,14 +76,24 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 throw new InvalidOperationException(Resources.NoConnection);
             }
 
-
-            OnBeginInitialize();
-
             Uri uri = new Uri(this.ClientContext.Url);
             var urlParts = uri.Authority.Split(new[] { '.' });
             BaseUri = string.Format("https://{0}.{1}.{2}", urlParts[0], urlParts[1], urlParts[2]);
 
-            LogVerbose(">>> Begin {0} at {1} on URL:[{2}] [DoNothing:{3}]", this.CmdLetName, DateTime.Now, this.ClientContext.Url, this.DoNothing);
+            var runningDirectory = this.SessionState.Path.CurrentFileSystemLocation;
+            var runningAssembly = Assembly.GetExecutingAssembly();
+            var runningAssemblyName = runningAssembly.ManifestModule.Name;
+
+            var appConfig = string.Format("{0}\\{1}.config", runningDirectory, runningAssemblyName).Replace("\\", @"\");
+            if (System.IO.File.Exists(appConfig))
+            {
+                LogVerbose("AppSettings file found at {0}", appConfig);
+                logger = new ConfigurationLogger(appConfig, true, CmdLetName);
+                loggerAvailable = true;
+            }
+
+            OnBeginInitialize();
+            LogVerbose(">>> Begin {0} at {1} on URL:[{2}]", this.CmdLetName, DateTime.Now, this.ClientContext.Url);
         }
 
         /// <summary>
@@ -89,46 +101,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// </summary>
         protected virtual void OnBeginInitialize()
         {
-            var runningDirectory = this.SessionState.Path.CurrentFileSystemLocation;
-            var runningAssembly = Assembly.GetExecutingAssembly();
-
-            var appConfig = string.Format("{0}\\{1}.config", runningDirectory, runningAssembly.ManifestModule.Name).Replace("\\", @"\");
-            if (System.IO.File.Exists(appConfig))
-            {
-                LogVerbose("AppSettings file found at {0}", appConfig);
-                appSettings = new ConfigurationReader(appConfig);
-            }
-
-            var logConfig = string.Format("{0}\\{1}.config", runningDirectory, CmdLetName).Replace("\\", @"\");
-            if (System.IO.File.Exists(logConfig))
-            {
-                LogVerbose("Configuration file found at {0}", logConfig);
-                loggerAvailable = true;
-                logger = new ConfigurationLogger(logConfig);
-            }
-            else
-            {
-                var samplelogConfig = string.Format("{0}\\samplelog.config", runningDirectory).Replace("\\", @"\");
-                if (System.IO.File.Exists(samplelogConfig))
-                {
-                    System.IO.File.Copy(samplelogConfig, logConfig, false);
-                    XDocument xmlConfig = null;
-                    using (var sr = new System.IO.StreamReader(samplelogConfig))
-                    {
-                        // Read the stream to a string, and write the string to the console.
-                        var reader = new System.Xml.XmlTextReader(sr);
-                        xmlConfig = XDocument.Load(reader);
-                        var xmlElement = xmlConfig.Root.Element("log4net").Element("appender").Element("file");
-                        var xmlElementValue = xmlElement.Attribute("value").Value.Replace("samplelogfolder", CmdLetName);
-                        xmlElement.SetAttributeValue("value", xmlElementValue);
-                    }
-                    xmlConfig.Save(logConfig, SaveOptions.DisableFormatting);
-                    LogVerbose("Configuration file written to {0}", logConfig);
-                    loggerAvailable = true;
-                    logger = new ConfigurationLogger(logConfig);
-                }
-            }
-
         }
 
         /// <summary>
@@ -188,7 +160,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             catch (Exception ex)
             {
                 SPIaCConnection.CurrentConnection.RestoreCachedContext();
-                WriteError(new ErrorRecord(ex, "EXCEPTION", ErrorCategory.WriteError, null));
+                System.Diagnostics.Trace.TraceError("Cmdlet Exception {0}", ex.Message);
             }
         }
 
@@ -229,15 +201,44 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         }
 
         /// <summary>
+        /// internal member to hold the current network credentials
+        /// </summary>
+        private System.Net.NetworkCredential _currentNetworkInProcess = null;
+
+        /// <summary>
+        /// this should the current network credentials
+        /// </summary>
+        protected virtual System.Net.NetworkCredential CurrentNetworkCredential
+        {
+            get
+            {
+                if (_currentNetworkInProcess == null)
+                {
+                    try
+                    {
+                        var tmpcurrentUserInProcess = SPIaCConnection.CurrentConnection.GetActiveCredentials();
+                        _currentNetworkInProcess = tmpcurrentUserInProcess.GetNetworkCredential();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogError(ex, "Failed to retrieve the current context credential for the Cached Entity");
+                    }
+                }
+
+                return _currentNetworkInProcess;
+            }
+        }
+
+        /// <summary>
         /// retrieve app setting from app.config
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
         protected virtual string GetAppSetting(string settingName)
         {
-            if (appSettings != null)
+            if (logger != null)
             {
-                return appSettings.GetAppSetting(settingName);
+                return logger.GetAppSetting(settingName);
             }
             return null;
         }
@@ -249,9 +250,9 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <returns></returns>
         protected virtual string GetConnectionString(string settingName)
         {
-            if (appSettings != null)
+            if (logger != null)
             {
-                return appSettings.GetConnectionSetting(settingName);
+                return logger.GetConnectionSetting(settingName);
             }
             return null;
         }

@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.RecycleBin
 {
+    /// <summary>
+    /// Query the recycle bin for the specific site collection.
+    /// </summary>
     [Cmdlet(VerbsCommon.Reset, "IaCRecycleBinItems", SupportsShouldProcess = true)]
     [CmdletHelp("Query the recycle bin for the specific path and restore.", Category = "RecycleBin")]
     public class ResetIaCRecycleBinItems : IaCCmdlet
@@ -135,7 +138,7 @@ namespace InfrastructureAsCode.Powershell.Commands.RecycleBin
                     LogVerbose("Restoring: {0} items for {1}", restorepath.Count, SitePathUrl);
                     foreach (var newitem in orderedrestore)
                     {
-                        if (!DoNothing)
+                        if (this.ShouldProcess(string.Format("Restoring {0} from recycle bin", newitem.LeafName)))
                         {
                             try
                             {
@@ -162,10 +165,11 @@ namespace InfrastructureAsCode.Powershell.Commands.RecycleBin
             }
             catch (Exception ex)
             {
-                LogError(ex,  "Failed to retrieve recycle bin collection");
+                LogError(ex, "Failed to retrieve recycle bin collection");
             }
 
             WriteObject(results);
+            LogVerbose("Completed: {0} from UserID {1}", DateTime.Now, _currentUserInProcess);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
     /// <summary>
     /// This command will find versions for list items and remove those versions
     /// </summary>
-    [Cmdlet(VerbsCommon.Remove, "IaCListItemVersions")]
+    [Cmdlet(VerbsCommon.Remove, "IaCListItemVersions", SupportsShouldProcess = true)]
     [CmdletHelp("Queries list for items with versions and removes previous versions", Category = "ListItems")]
     public class RemoveIaCListItemVersions : IaCCmdlet
     {
@@ -67,7 +67,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                                         LogVerbose("Version: {0} Is Current:{2} with size:{1}", version.VersionLabel, version.Size, version.IsCurrentVersion);
                                     }
 
-                                    if (!DoNothing)
+                                    if (this.ShouldProcess(string.Format("---------------- Now deleting {0} versions", ctxRelativeUrl.Versions.Count())))
                                     {
                                         // Delete Versions
                                         ctxRelativeUrl.Versions.DeleteAll();
@@ -76,6 +76,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                                 }
                             }
                         }
+
                         if (itemPosition == null)
                         {
                             break;

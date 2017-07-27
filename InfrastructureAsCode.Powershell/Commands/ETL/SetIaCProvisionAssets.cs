@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
     /// <summary>
     /// The function cmdlet will push local files into the Site Assets
     /// </summary>
-    [Cmdlet(VerbsCommon.Set, "IaCProvisionAssets")]
+    [Cmdlet(VerbsCommon.Set, "IaCProvisionAssets", SupportsShouldProcess = true)]
     [CmdletHelp("Push files into the site assets library.", Category = "ETL")]
     public class SetIaCProvisionAssets : IaCCmdlet
     {
@@ -39,9 +39,8 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <summary>
         /// Validate parameters
         /// </summary>
-        protected override void BeginProcessing()
+        protected override void OnBeginInitialize()
         {
-            base.BeginProcessing();
             if (!System.IO.Directory.Exists(this.SiteContent))
             {
                 throw new Exception(string.Format("The directory does not exists {0}", this.SiteContent));
@@ -115,9 +114,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 // enmuerate through each file in folder
                 foreach (string filePath in siteAssetsFiles)
                 {
-                    LogVerbose("---------------- Now uploading file {0}", filePath);
-
-                    if (!DoNothing)
+                    if (this.ShouldProcess(string.Format("---------------- Now uploading file {0}", filePath)))
                     {
                         // upload each file to library in host web
                         byte[] fileContent = System.IO.File.ReadAllBytes(filePath);
