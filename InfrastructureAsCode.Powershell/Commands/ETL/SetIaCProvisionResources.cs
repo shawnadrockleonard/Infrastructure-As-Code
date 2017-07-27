@@ -134,7 +134,7 @@ namespace InfrastructureAsCode.Powershell.Commands
 
                 foreach (var contentDef in listDef.ContentTypes)
                 {
-                    var contentTypeName = contentDef.ContentTypeName;
+                    var contentTypeName = contentDef.Name;
                     var contentTypeId = contentDef.ContentTypeId;
 
                     if (!this.ClientContext.Web.ContentTypeExistsById(contentTypeId))

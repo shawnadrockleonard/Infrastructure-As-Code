@@ -27,7 +27,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Development
 
             LogVerbose("To enable SharePoint app sideLoading, enter Site Url, username and password");
 
-            var sideLoadingGuid = OfficeDevPnP.Core.Constants.APPSIDELOADINGFEATUREID;
+            var sideLoadingGuid = OfficeDevPnP.Core.Constants.FeatureId_Site_AppSideLoading;
             var siteurl = this.ClientContext.Url;
             var outfilepath = siteurl.Replace(':', '_').Replace('/', '_');
 

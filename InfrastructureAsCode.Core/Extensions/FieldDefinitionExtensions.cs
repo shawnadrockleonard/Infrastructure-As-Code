@@ -18,11 +18,12 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// Builds a Field Creation Info object from the Definition model and returns its resulting XML
         /// </summary>
+        /// <param name="host">The instantiated web/list/library to which the field will be added</param>
         /// <param name="fieldDefinition">The definition pulled from a SP Site or user construction</param>
         /// <param name="siteGroups">The collection of site groups that a user/group field make filter</param>
         /// <param name="JsonFilePath">The file path to a JSON file containing Choice lookups</param>
         /// <returns></returns>
-        public static string CreateFieldDefinition(this SPFieldDefinitionModel fieldDefinition, List<SPGroupDefinitionModel> siteGroups, string JsonFilePath = null)
+        public static string CreateFieldDefinition(this SecurableObject host, SPFieldDefinitionModel fieldDefinition, List<SPGroupDefinitionModel> siteGroups, string JsonFilePath = null)
         {
             var idguid = fieldDefinition.FieldGuid;
             var choiceXml = string.Empty;
@@ -47,6 +48,11 @@ namespace InfrastructureAsCode.Core.Extensions
             if (!string.IsNullOrEmpty(fieldDefinition.PeopleGroupName) && (siteGroups == null || siteGroups.Count() <= 0))
             {
                 throw new ArgumentNullException("SiteGroups", string.Format("You must specify a collection of group for the field {0}", fieldDefinition.DisplayName));
+            }
+
+            if (string.IsNullOrEmpty(fieldDefinition.LookupListName) && fieldDefinition.fieldType == FieldType.Lookup)
+            {
+                throw new ArgumentNullException("LookupListName", string.Format("you must specify a lookup list title for the field {0}", fieldDefinition.DisplayName));
             }
 
 
@@ -134,6 +140,15 @@ namespace InfrastructureAsCode.Core.Extensions
                         attributes.Add(new KeyValuePair<string, string>("UserSelectionScope", group.Id.ToString()));
                     }
                 }
+            }
+            else if (fieldDefinition.fieldType == FieldType.Lookup)
+            {
+                var lParentList = host.GetAssociatedWeb().GetListByTitle(fieldDefinition.LookupListName);
+                var strParentListID = lParentList.Id;
+
+                attributes.Add(new KeyValuePair<string, string>("EnforceUniqueValues", false.ToString().ToUpper()));
+                attributes.Add(new KeyValuePair<string, string>("List", strParentListID.ToString("B")));
+                attributes.Add(new KeyValuePair<string, string>("ShowField", fieldDefinition.LookupListFieldName));
             }
 
             var finfo = fieldDefinition.ToCreationObject();

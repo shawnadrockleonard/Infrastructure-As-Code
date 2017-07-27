@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using OfficeDevPnP.Core;
 using OfficeDevPnP.Core.Diagnostics;
 using OfficeDevPnP.Core.Entities;
+using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,6 +64,116 @@ namespace InfrastructureAsCode.Core.Extensions
             return field;
         }
 
+        /// <summary>
+        /// Retrieves or creates the folder as a ListItem
+        /// </summary>
+        /// <param name="onlineLibrary"></param>
+        /// <param name="destinationFolder"></param>
+        /// <param name="folderName"></param>
+        /// <param name="defaultLastItemId"></param>
+        /// <returns>The listitem as a folder</returns>
+        public static Folder GetOrCreateFolder(this List onlineLibrary, Folder destinationFolder, string folderName, int? defaultLastItemId = default(int?))
+        {
+            destinationFolder.EnsureProperties(afold => afold.ServerRelativeUrl, afold => afold.Folders);
+            var folderRelativeUrl = destinationFolder.ServerRelativeUrl;
+            // Remove invalid characters
+            var trimmedFolder = HelperExtensions.GetCleanDirectory(folderName, string.Empty);
+            ListItem folderItem = null;
+
+            var camlFields = new string[] { "Title", "ContentType", "ID" };
+            var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
+
+
+            var camlClause = CAML.And(
+                        CAML.And(
+                            CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), folderRelativeUrl)),
+                            CAML.Or(
+                                CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), trimmedFolder)),
+                                CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder))
+                            )
+                        )
+                        ,
+                    CAML.Eq(CAML.FieldValue("FSObjType", FieldType.Integer.ToString("f"), 1.ToString()))
+                    );
+
+            var camlQueries = onlineLibrary.SafeCamlClauseFromThreshold(camlClause, defaultLastItemId);
+            foreach (var camlAndValue in camlQueries)
+            {
+                var camlWhereClause = CAML.Where(camlAndValue);
+                var camlQuery = new CamlQuery()
+                {
+                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, camlWhereClause, string.Empty, camlViewFields, 5)
+                };
+                var listItems = onlineLibrary.GetItems(camlQuery);
+                onlineLibrary.Context.Load(listItems);
+                onlineLibrary.Context.ExecuteQueryRetry();
+
+                if (listItems.Count() > 0)
+                {
+                    folderItem = listItems.FirstOrDefault();
+                    System.Diagnostics.Trace.TraceInformation("Item {0} exists in the destination folder.  Skip item creation file.....", folderName);
+                    break;
+                }
+            };
+
+            if (folderItem != null)
+            {
+                return folderItem.Folder;
+            }
+
+            try
+            {
+                var info = new ListItemCreationInformation();
+                info.UnderlyingObjectType = FileSystemObjectType.Folder;
+                info.LeafName = trimmedFolder;
+                info.FolderUrl = folderRelativeUrl;
+
+                folderItem = onlineLibrary.AddItem(info);
+                folderItem["Title"] = trimmedFolder;
+                folderItem.Update();
+                onlineLibrary.Context.ExecuteQueryRetry();
+                System.Diagnostics.Trace.TraceInformation("{0} folder Created", trimmedFolder);
+                return folderItem.Folder;
+            }
+            catch (Exception Ex)
+            {
+                System.Diagnostics.Trace.TraceError("Failed to create or get folder for name {0} MSG:{1}", folderName, Ex.Message);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Will retreive the folder or create if it does not exist
+        /// </summary>
+        /// <param name="destinationFolder"></param>
+        /// <param name="folderName"></param>
+        /// <returns></returns>
+        public static Folder GetOrCreateFolder(this Folder destinationFolder, string folderName)
+        {
+            // clean the folder name
+            var trimmedFolder = folderName.Trim().Replace("_", " ");
+
+            // setup processing of folder in the parent folder
+            var currentFolder = destinationFolder;
+            destinationFolder.Context.Load(destinationFolder, pf => pf.Name, pf => pf.Folders);
+            destinationFolder.Context.ExecuteQuery();
+
+            if (!destinationFolder.FolderExists(trimmedFolder))
+            {
+                currentFolder = destinationFolder.EnsureFolder(trimmedFolder);
+                //this.ClientContext.Load(curFolder);
+                destinationFolder.Context.ExecuteQueryRetry();
+                System.Diagnostics.Trace.TraceInformation(".......... successfully created folder {0}....", trimmedFolder);
+            }
+            else
+            {
+                currentFolder = destinationFolder.Folders.FirstOrDefault(f => f.Name == trimmedFolder);
+                System.Diagnostics.Trace.TraceInformation(".......... reading folder {0}....", trimmedFolder);
+            }
+
+            return currentFolder;
+        }
 
         /// <summary>
         /// Build folder path from root of the parent list
@@ -100,7 +211,7 @@ namespace InfrastructureAsCode.Core.Extensions
             var ctx = parentFolder.Context;
             if (!parentFolder.IsPropertyAvailable("Folders"))
             {
-                ctx.Load(parentFolder.Folders);
+                ctx.Load(parentFolder, inn => inn.ServerRelativeUrl, inn => inn.Folders);
                 ctx.ExecuteQueryRetry();
             }
 
@@ -113,6 +224,207 @@ namespace InfrastructureAsCode.Core.Extensions
             }
 
             return folder;
+        }
+
+        /// <summary>
+        /// Upload a file to the specific library/folder
+        /// </summary>
+        /// <param name="onlineLibrary"></param>
+        /// <param name="onlineLibraryFolder"></param>
+        /// <param name="onlineFileName"></param>
+        /// <returns></returns>
+        public static string UploadFile(this List onlineLibrary, string onlineLibraryFolder, string onlineFileName)
+        {
+            var relativeUrl = string.Empty;
+            var fileName = System.IO.Path.GetFileName(onlineFileName);
+            try
+            {
+                var webUri = new Uri(onlineLibrary.Context.Url);
+
+                var currentFolder = GetOrCreateFolder(onlineLibrary, onlineLibrary.RootFolder, onlineLibraryFolder);
+                var logFileItem = GetFileInFolder(onlineLibrary, currentFolder, fileName);
+                if (logFileItem == null)
+                {
+                    onlineLibrary.Context.Load(currentFolder, pf => pf.Name, pf => pf.Files, pf => pf.ServerRelativeUrl, pf => pf.TimeCreated);
+                    onlineLibrary.Context.ExecuteQuery();
+
+                    using (var stream = new System.IO.FileStream(onlineFileName, System.IO.FileMode.Open))
+                    {
+
+                        var creationInfo = new Microsoft.SharePoint.Client.FileCreationInformation();
+                        creationInfo.Overwrite = true;
+                        creationInfo.ContentStream = stream;
+                        creationInfo.Url = fileName;
+
+                        var uploadStatus = currentFolder.Files.Add(creationInfo);
+                        onlineLibrary.Context.Load(uploadStatus, ups => ups.ServerRelativeUrl);
+                        onlineLibrary.Context.ExecuteQuery();
+                        relativeUrl = uploadStatus.ServerRelativeUrl;
+                    }
+                }
+                else
+                {
+                    onlineLibrary.Context.Load(logFileItem.File, ups => ups.ServerRelativeUrl);
+                    onlineLibrary.Context.ExecuteQuery();
+                    relativeUrl = logFileItem.File.ServerRelativeUrl;
+                }
+
+                var assertedUri = new Uri(webUri, relativeUrl);
+                relativeUrl = assertedUri.AbsoluteUri;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Failed to upload file {0} MSG:{1}", onlineFileName, ex.Message);
+            }
+            return relativeUrl;
+        }
+
+        /// <summary>
+        /// Retreive file from the specified folder
+        /// </summary>
+        /// <param name="onlineLibrary"></param>
+        /// <param name="destinationFolder"></param>
+        /// <param name="onlineFileName"></param>
+        /// <returns></returns>
+        public static ListItem GetFileInFolder(this List onlineLibrary, Folder destinationFolder, string onlineFileName)
+        {
+            destinationFolder.Context.Load(destinationFolder, afold => afold.ServerRelativeUrl);
+            destinationFolder.Context.ExecuteQuery();
+            var relativeUrl = destinationFolder.ServerRelativeUrl;
+            var context = destinationFolder.Context;
+            try
+            {
+                CamlQuery camlQuery = new CamlQuery();
+                var camlAndValue = CAML.And(
+                            CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), onlineFileName)),
+                             CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), relativeUrl)));
+
+                camlQuery.ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll,
+                    CAML.Where(camlAndValue),
+                    string.Empty,
+                    CAML.ViewFields(CAML.FieldRef("Title")),
+                    5);
+                ListItemCollection listItems = onlineLibrary.GetItems(camlQuery);
+                context.Load(listItems);
+                context.ExecuteQuery();
+
+                if (listItems.Count() > 0)
+                {
+                    var newItem = listItems.FirstOrDefault();
+                    return newItem;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Failed to retrieve file {0} MSG:{1}", onlineFileName, ex.Message);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Query the list to retreive the last ID
+        /// </summary>
+        /// <param name="onlineLibrary">The List we will query</param>
+        /// <param name="lastItemModifiedDate">The date of the last modified list item</param>
+        /// <returns></returns>
+        public static int QueryLastItemId(this List onlineLibrary, Nullable<DateTime> lastItemModifiedDate = null)
+        {
+            var returnId = 0;
+            var camlFieldRefs = new string[] { "ID", "Created", "Modified", };
+            var camlViewClause = CAML.ViewFields(camlFieldRefs.Select(s => CAML.FieldRef(s)).ToArray());
+            var camlQuery = new CamlQuery()
+            {
+                ViewXml = CAML.ViewQuery(string.Empty, CAML.OrderBy(new OrderByField("Modified", false)), 10)
+            };
+
+
+            if (!lastItemModifiedDate.HasValue)
+            {
+                onlineLibrary.EnsureProperties(olp => olp.LastItemModifiedDate, olp => olp.LastItemUserModifiedDate);
+                lastItemModifiedDate = onlineLibrary.LastItemModifiedDate;
+            }
+
+
+            ListItemCollectionPosition ListItemCollectionPosition = null;
+            while (true)
+            {
+                camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
+                var spListItems = onlineLibrary.GetItems(camlQuery);
+                onlineLibrary.Context.Load(spListItems, lti => lti.ListItemCollectionPosition);
+                onlineLibrary.Context.ExecuteQueryRetry();
+                ListItemCollectionPosition = spListItems.ListItemCollectionPosition;
+
+                if (spListItems.Any())
+                {
+                    foreach (var item in spListItems)
+                    {
+                        var itemModified = item.RetrieveListItemValue("Modified").ToDateTime();
+                        System.Diagnostics.Trace.TraceInformation("Item {0} Modified {1} IS MATCH:{2}", item.Id, itemModified, (itemModified == lastItemModifiedDate));
+                    }
+                    returnId = spListItems.OrderByDescending(ob => ob.Id).FirstOrDefault().Id;
+                    break;
+                }
+
+                if (ListItemCollectionPosition == null)
+                {
+                    break;
+                }
+            }
+
+            return returnId;
+        }
+
+        /// <summary>
+        /// Will evaluate the Library/List and if the list has reached the threshold it will produce SAFE queries
+        /// </summary>
+        /// <param name="onlineLibrary">The list to query</param>
+        /// <param name="camlStatement">A base CAML query upon which the threshold query will be constructed</param>
+        /// <returns>A collection of CAML queries NOT including WHERE</returns>
+        public static List<string> SafeCamlClauseFromThreshold(this List onlineLibrary, string camlStatement = null, int? defaultLastItemId = default(int?))
+        {
+            var camlQueries = new List<string>();
+
+            onlineLibrary.EnsureProperties(olp => olp.ItemCount, olp => olp.LastItemModifiedDate, olp => olp.LastItemUserModifiedDate);
+
+            // we have reached a threshold and need to parse based on other criteria
+            var itemCount = onlineLibrary.ItemCount;
+            if (itemCount > 5000)
+            {
+                var lastItemId = (defaultLastItemId.HasValue) ? defaultLastItemId.Value : onlineLibrary.QueryLastItemId(onlineLibrary.LastItemModifiedDate);
+                var startIdx = 0;
+                var incrementor = 1000;
+
+                for (var idx = startIdx; idx < lastItemId + 1;)
+                {
+                    var startsWithId = idx + 1;
+                    var endsWithId = (idx + incrementor);
+                    if (endsWithId >= lastItemId)
+                    {
+                        endsWithId = lastItemId + 1;
+                    }
+
+                    var thresholdEq = new SPThresholdEnumerationModel()
+                    {
+                        StartsWithId = startsWithId,
+                        EndsWithId = endsWithId
+                    };
+
+                    var camlThresholdClause = thresholdEq.AndClause;
+                    if (!string.IsNullOrEmpty(camlStatement))
+                    {
+                        camlThresholdClause = CAML.And(camlThresholdClause, camlStatement);
+                    }
+                    camlQueries.Add(camlThresholdClause);
+
+                    idx += incrementor;
+                }
+            }
+            else
+            {
+                camlQueries.Add(camlStatement ?? string.Empty);
+            }
+
+            return camlQueries;
         }
 
         /// <summary>
@@ -191,8 +503,14 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
-        public static Field CreateColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
         {
+
+            if (fieldDef == null)
+            {
+                throw new ArgumentNullException("fieldDef", "Field definition is required.");
+            }
+
             if (!hostList.IsPropertyAvailable("Context"))
             {
 
@@ -205,24 +523,25 @@ namespace InfrastructureAsCode.Core.Extensions
             var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
             if (returnField == null)
             {
-                var finfoXml = fieldDef.CreateFieldDefinition(SiteGroups, JsonFilePath);
-                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, finfoXml });
-                try
+                 try
                 {
+                    var baseFieldXml = hostList.CreateFieldDefinition(fieldDef, SiteGroups, JsonFilePath);
+                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, baseFieldXml });
+                    
                     // Should throw an exception if the field ID or Name exist in the list
-                    var baseField = hostList.CreateField(finfoXml, fieldDef.AddToDefaultView, executeQuery: false);
+                    var baseField = hostList.CreateField(baseFieldXml, fieldDef.AddToDefaultView, executeQuery: false);
                     hostList.Context.ExecuteQueryRetry();
                 }
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
+                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
                 }
                 finally
                 {
                     returnField = hostList.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
                     hostList.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
-                    hostList.Context.ExecuteQuery();
+                    hostList.Context.ExecuteQueryRetry();
                 }
             }
 

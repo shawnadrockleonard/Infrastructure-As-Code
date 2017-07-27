@@ -109,7 +109,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                                 var newitem = new SPListItemDefinition()
                                 {
                                     Title = j["Title"].ToObject<string>(),
-                                    ID = j["Id"].ToObject<int>()
+                                    Id = j["Id"].ToObject<int>()
                                 };
                                 results.Add(newitem);
                             }

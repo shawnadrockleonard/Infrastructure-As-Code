@@ -35,6 +35,38 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="requestItem"></param>
         /// <param name="columnName"></param>
         /// <returns></returns>
+        public static string[] RetrieveListItemChoiceValues(this ListItem requestItem, string columnName)
+        {
+            var fieldItemValue = requestItem[columnName];
+            if (fieldItemValue != null)
+            {
+                return (string[])fieldItemValue;
+            }
+            return new string[0];
+        }
+
+        /// <summary>
+        /// Grabs the column value and if populated returns the FieldUserValue object otherwise null
+        /// </summary>
+        /// <param name="requestItem"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        public static FieldMultiChoice RetrieveListItemAsChoice(this ListItem requestItem, string columnName)
+        {
+            var fieldItemValue = requestItem[columnName];
+            if (fieldItemValue != null)
+            {
+                return (FieldMultiChoice)fieldItemValue;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Grabs the column value and if populated returns the FieldUserValue object otherwise null
+        /// </summary>
+        /// <param name="requestItem"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
         public static FieldUserValue RetrieveListItemUserValue(this ListItem requestItem, string columnName)
         {
             var fieldItemValue = requestItem[columnName];
@@ -43,6 +75,33 @@ namespace InfrastructureAsCode.Core.Extensions
                 return (FieldUserValue)fieldItemValue;
             }
             return null;
+        }
+
+        public static string ToUserValue(this FieldUserValue fieldItemValue)
+        {
+            if (fieldItemValue != null)
+            {
+                return fieldItemValue.LookupValue;
+            }
+            return string.Empty;
+        }
+
+        public static string ToUserEmailValue(this FieldUserValue fieldItemValue)
+        {
+            if (fieldItemValue != null)
+            {
+                return fieldItemValue.Email;
+            }
+            return string.Empty;
+        }
+
+        public static string ToUserEmailValue(this Microsoft.SharePoint.Client.User fieldItemValue)
+        {
+            if (fieldItemValue != null)
+            {
+                return fieldItemValue.Email;
+            }
+            return string.Empty;
         }
 
         /// <summary>
@@ -57,6 +116,78 @@ namespace InfrastructureAsCode.Core.Extensions
             if (fieldItemValue != null)
             {
                 return fieldItemValue as FieldUserValue[];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Parse the field user values into an array of strings
+        /// </summary>
+        /// <param name="fieldItemValue"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> ToUserValues(this FieldUserValue[] fieldItemValue)
+        {
+            if (fieldItemValue != null)
+            {
+                return fieldItemValue.Select(s => s.ToUserValue());
+            }
+            return new string[0];
+        }
+
+        /// <summary>
+        /// Grabs column value and if populated returns field lookup value object
+        /// </summary>
+        /// <param name="requestItem"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        public static FieldLookupValue RetrieveListItemValueAsLookup(this ListItem requestItem, string columnName)
+        {
+            var fieldItemValue = requestItem[columnName];
+            if (fieldItemValue != null)
+            {
+                return (FieldLookupValue)fieldItemValue;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Grabs column value and if populated returns field lookup value object
+        /// </summary>
+        /// <param name="requestItem"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        public static FieldLookupValue[] RetrieveListItemValueAsLookups(this ListItem requestItem, string columnName)
+        {
+            var fieldItemValue = requestItem[columnName];
+            if (fieldItemValue != null)
+            {
+                return (FieldLookupValue[])fieldItemValue;
+            }
+            return null;
+        }
+
+        public static string ToLookupValue(this FieldLookupValue fieldItemValue)
+        {
+            if (fieldItemValue != null)
+            {
+                return fieldItemValue.LookupValue;
+            }
+            return string.Empty;
+        }
+
+
+        /// <summary>
+        /// Grabs column value and if populated returns field hyperlink value object
+        /// </summary>
+        /// <param name="requestItem"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        public static FieldUrlValue RetrieveListItemValueAsHyperlink(this ListItem requestItem, string columnName)
+        {
+            var fieldItemValue = requestItem[columnName];
+            if (fieldItemValue != null)
+            {
+                return (FieldUrlValue)fieldItemValue;
             }
             return null;
         }

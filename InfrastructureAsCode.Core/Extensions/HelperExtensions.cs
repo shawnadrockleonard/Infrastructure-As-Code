@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Enums;
+using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,11 @@ namespace InfrastructureAsCode.Core.Extensions
         private static string escapedHexExpression { get; set; }
 
         /// <summary>
+        /// Compiled regular expression for performance.
+        /// </summary>
+        static Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
+
+        /// <summary>
         /// Initialize the local variables
         /// </summary>
         static HelperExtensions()
@@ -46,7 +52,7 @@ namespace InfrastructureAsCode.Core.Extensions
             // setup the characters that the file system does not like
             var invalidChars = System.IO.Path.GetInvalidFileNameChars().ToList();
             invalidChars.Add('–'); //adding hard dash as winzip doesn't like it
-            invalidChars.AddRange(new char[] { '#', '%', '&', '+' }); //adding sharepoint online sync characters
+            invalidChars.AddRange(new char[] { '#', '%', '&', '+', ':' }); //adding sharepoint online sync characters
             escapedRegExpression = string.Format("[{0}]", Regex.Escape(string.Join("", invalidChars)));
 
             var invalidPathChars = System.IO.Path.GetInvalidPathChars().ToList();
@@ -69,6 +75,20 @@ namespace InfrastructureAsCode.Core.Extensions
             string[] _tmp2 = _tmp.Last().Split(new char[] { '#' });
             _cleanedUser = _tmp2.Last();
             return _cleanedUser;
+        }
+
+        /// <summary>
+        /// Read plain text password into Secure Credentials
+        /// </summary>
+        /// <param name="_username"></param>
+        /// <param name="_password"></param>
+        /// <returns></returns>
+        public static SharePointOnlineCredentials GetCredentials(string _username, string _password)
+        {
+            SecureString passWord = new SecureString();
+            foreach (char c in _password.ToCharArray()) passWord.AppendChar(c);
+            var siteCredentials = new SharePointOnlineCredentials(_username, passWord);
+            return siteCredentials;
         }
 
         public static string ConvertFromSecureString(this System.Security.SecureString input)
@@ -155,6 +175,32 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
+        /// Retreive the folder or create the directory
+        /// </summary>
+        /// <param name="rootDir"></param>
+        /// <param name="folderName"></param>
+        /// <returns></returns>
+        public static string GetOrCreateDirectory(this string rootDir, string folderName)
+        {
+            var outputPathDir = string.Empty;
+            var pathContent = string.Format("{0}\\{1}\\", rootDir, folderName);
+            if (!System.IO.Directory.Exists(pathContent))
+            {
+                var outputInfoPathDir = System.IO.Directory.CreateDirectory(pathContent);
+                outputPathDir = outputInfoPathDir.FullName;
+                System.Console.WriteLine(string.Format("Directory {0} created", outputPathDir));
+            }
+            else
+            {
+                var outputInfoPathDir = new System.IO.DirectoryInfo(pathContent);
+                outputPathDir = outputInfoPathDir.FullName;
+                System.Console.WriteLine(string.Format("Directory {0} found", outputPathDir));
+            }
+
+            return outputPathDir;
+        }
+
+        /// <summary>
         /// Uses regular expression to remove invalid characters for directories
         /// </summary>
         /// <param name="directoryName"></param>
@@ -188,5 +234,20 @@ namespace InfrastructureAsCode.Core.Extensions
             return trimmedContent;
         }
 
+        /// <summary>
+        /// Remove HTML from string with Regex.
+        /// </summary>
+        public static string StripTagsRegex(this string source)
+        {
+            return Regex.Replace(source, "<.*?>", string.Empty);
+        }
+
+        /// <summary>
+        /// Remove HTML from string with compiled Regex.
+        /// </summary>
+        public static string StripTagsRegexCompiled(this string source)
+        {
+            return _htmlRegex.Replace(source, string.Empty);
+        }
     }
 }

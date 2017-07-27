@@ -15,14 +15,15 @@ namespace InfrastructureAsCode.Core.Models
         public SPContentTypeDefinition()
         {
             this.FieldLinkRefs = new List<string>();
+            this.FieldLinks = new List<SPFieldLinkDefinitionModel>();
             this.ContentTypeGroup = "CustomDevelopment";
         }
 
         public string ContentTypeId { get; set; }
 
-        public string ContentTypeName { get; set; }
+        public string Name { get; set; }
 
-        public string ContentTypeDescription { get; set; }
+        public string Description { get; set; }
         
         public bool Inherits { get; set; }
 
@@ -30,15 +31,27 @@ namespace InfrastructureAsCode.Core.Models
         
         public List<string> FieldLinkRefs { get; set; }
 
+        public List<SPFieldLinkDefinitionModel> FieldLinks { get; set; }
+
         public string ContentTypeGroup { get; set; }
+
+        public string DocumentTemplate { get; set; }
+
+        public bool Hidden { get; set; }
+
+        public string JSLink { get; set; }
+
+        public string SchemaXml { get; set; }
+
+        public string Scope { get; set; }
 
         public ContentTypeCreationInformation ToCreationObject()
         {
             var info = new ContentTypeCreationInformation()
             {
                 Id = this.ContentTypeId,
-                Name = this.ContentTypeName,
-                Description = this.ContentTypeDescription,
+                Name = this.Name,
+                Description = this.Description,
                 Group = this.ContentTypeGroup
             };
             return info;

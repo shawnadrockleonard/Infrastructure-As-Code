@@ -9,11 +9,14 @@ namespace InfrastructureAsCode.Core.Models
     {
         public SPChoiceModel() { }
 
-        public SPChoiceModel(string choice, bool defaultChoice = false)
+        public SPChoiceModel(string choice, Nullable<bool> defaultChoice = null)
             : this()
         {
             this.Choice = choice;
-            this.DefaultChoice = defaultChoice;
+            if (defaultChoice.HasValue)
+            {
+                this.DefaultChoice = defaultChoice;
+            }
         }
 
         /// <summary>
@@ -24,6 +27,6 @@ namespace InfrastructureAsCode.Core.Models
         /// <summary>
         /// if this is the choice
         /// </summary>
-        public bool DefaultChoice { get; set; }
+        public bool? DefaultChoice { get; set; }
     }
 }

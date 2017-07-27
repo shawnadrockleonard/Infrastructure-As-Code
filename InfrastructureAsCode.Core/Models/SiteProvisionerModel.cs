@@ -32,5 +32,10 @@ namespace InfrastructureAsCode.Core.Models
         /// Collection of groups for the Web/Site
         /// </summary>
         public List<SPGroupDefinitionModel> Groups { get; set; }
+
+        /// <summary>
+        /// Represents the [Me] component of a CAML query
+        /// </summary>
+        public string UserIdFilter { get { return "<UserID Type='Integer'/>"; } }
     }
 }

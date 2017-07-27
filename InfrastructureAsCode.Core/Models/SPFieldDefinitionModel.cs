@@ -13,7 +13,7 @@ namespace InfrastructureAsCode.Core.Models
         public SPFieldDefinitionModel()
         {
             this.FieldGuid = new System.Guid();
-            this.RestrictedMode = true;
+            this.RestrictedMode = false;
             this.GroupName = "CustomDevelopment";
             this.RichTextField = false;
             this.HiddenField = false;
@@ -71,14 +71,29 @@ namespace InfrastructureAsCode.Core.Models
 
         public int NumLines { get; set; }
 
+        /// <summary>
+        /// Optional Boolean. TRUE if the field displays rich text formatting.
+        /// </summary>
         public bool RichTextField { get; set; }
 
+        /// <summary>
+        /// Optional Boolean. TRUE to not allow the Note field to contain enhanced rich text formatting, such as pictures, tables, or hyperlinks, nor to allow pasting formatted text into the field.
+        /// </summary>
         public bool RestrictedMode { get; set; }
 
         public bool AppendOnly { get; set; }
 
+        /// <summary>
+        /// DateOnly   Display (and allow edits to) only the date portion (the time portion is set to 12:00 A.M. for all edited values).
+        /// DateTime Display and edit both date and time of day(default).
+        /// ISO8601 Display date and time in ISO8601 time format converted to Coordinated Universal Time(UTC) format: YYYY-MM-DDTHH:MM:SSZ.This is the format used for document properties in 2007 Microsoft Office system as well as for the standard interchange format used in SharePoint Foundation between New and Edit forms and the server.
+        /// ISO8601Basic Use the abbreviated form of 8601 date/time formats: YYYYMMDDTHHMMSSZ.This is the format used for vCard/iCal.
+        /// </summary>
         public DateTimeFieldFormatType? DateFieldFormat { get; set; }
 
+        /// <summary>
+        /// Optional Boolean. TRUE if the column is indexed for use in view filters.
+        /// </summary>
         public bool FieldIndexed { get; set; }
 
         public List<SPChoiceModel> FieldChoices { get; set; }
@@ -89,7 +104,7 @@ namespace InfrastructureAsCode.Core.Models
             {
                 if (FieldChoices.Count > 0)
                 {
-                    var sel = FieldChoices.FirstOrDefault(s => s.DefaultChoice);
+                    var sel = FieldChoices.FirstOrDefault(s => s.DefaultChoice.HasValue && s.DefaultChoice.Value);
                     if (sel != null)
                     {
                         return sel.Choice.Trim();
@@ -103,10 +118,21 @@ namespace InfrastructureAsCode.Core.Models
 
         public bool MultiChoice { get; set; }
 
+        /// <summary>
+        /// Optional Text. Specifies a scope for selecting user names in a user field on an item form. If the value is 0, there is no restriction to a SharePoint group. If the value is not null, user selection is restricted to members of the SharePoint group whose ID is queried based on the value that is specified.
+        /// </summary>
         public string PeopleGroupName { get; set; }
 
+        /// <summary>
+        /// Optional Bool. Specifies whether only the names of individual users can be selected in a user field on an item form, or whether the names of both individuals and groups can be selected. The following values are possible:
+        /// true - Only the names of individuals can be selected.
+        /// false - The names of both individuals and groups can be selected.
+        /// </summary>
         public bool PeopleOnly { get; set; }
 
+        /// <summary>
+        /// Optional Text. Specified the specific internal name of the field to be presented in views
+        /// </summary>
         public string PeopleLookupField { get; set; }
 
         public int? MaxLength { get; set; }
@@ -114,9 +140,19 @@ namespace InfrastructureAsCode.Core.Models
         public bool Required { get; set; }
 
         /// <summary>
+        /// The JS Link URL
+        /// </summary>
+        public string JSLink { get; set; }
+
+        /// <summary>
         /// If configure serialize the json file for choices
         /// </summary>
         public string LoadFromJSON { get; set; }
+
+
+        public string SchemaXml { get; set; }
+        public string LookupListName { get; set; }
+        public string LookupListFieldName { get; set; }
 
         /// <summary>
         /// Project the field defintion into the expected provisioning CSOM object

@@ -11,13 +11,6 @@ namespace InfrastructureAsCode.Powershell.Extensions
 {
     internal static class CredentialExtensions
     {
-
-        public static PSCredential GetPSCredentials(this SharePointOnlineCredentials credentials)
-        {
-            var psCredential = credentials.GetPSCredentials();
-            return psCredential;
-        }
-
         public static PSCredential GetPSCredentials(this NetworkCredential credentials)
         {
             var psCredential = new PSCredential(credentials.UserName, credentials.SecurePassword);

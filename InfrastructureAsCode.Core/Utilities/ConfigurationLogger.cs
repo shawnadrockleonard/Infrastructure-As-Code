@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace InfrastructureAsCode.Core.Utilities
 {
@@ -19,6 +20,11 @@ namespace InfrastructureAsCode.Core.Utilities
         /// </summary>
         internal static readonly ILog log = LogManager.GetLogger(typeof(Logger));
 
+        private readonly XElement[] appSettings;
+
+        private readonly XElement[] connectionSettings;
+
+
         /// <summary>
         /// Initializes the <see cref="Logger"/> class.
         /// </summary>
@@ -31,13 +37,42 @@ namespace InfrastructureAsCode.Core.Utilities
         /// Initializes the <see cref="Logger"/> class.
         /// </summary>
         /// <param name="options">option file for the log config override</param>
-        public ConfigurationLogger(string options)
+        public ConfigurationLogger(string options, bool fromDisk = false, string cmdLetName = null)
         {
-            if(!System.IO.File.Exists(options))
+            if (!System.IO.File.Exists(options))
             {
                 throw new System.IO.FileNotFoundException(string.Format("File {0} could not be found.", options));
             }
-            XmlConfigurator.Configure(new System.IO.FileInfo(options));
+
+            var configPath = new System.IO.FileInfo(options);
+            var document = XElement.Load(configPath.FullName);
+            appSettings = document.Descendants("appSettings").Descendants("add").ToArray();
+            connectionSettings = document.Descendants("connectionStrings").Descendants("add").ToArray();
+
+
+            if (!fromDisk)
+            {
+                // Rolling File Appender
+                if (!string.IsNullOrEmpty(cmdLetName))
+                {
+                    var xmlElement = document.Element("log4net").Element("appender").Element("file");
+                    var xmlElementValue = xmlElement.Attribute("value").Value.Replace("samplelogfolder", cmdLetName);
+                    xmlElement.SetAttributeValue("value", xmlElementValue);
+                }
+
+                var log4netelem = document.Element("log4net");
+                using (var reader = log4netelem.CreateReader())
+                {
+                    var xmlDoc = new System.Xml.XmlDocument();
+                    xmlDoc.Load(reader);
+                    XmlConfigurator.Configure(xmlDoc.DocumentElement);
+                }
+            }
+            else
+            {
+                // Azure Table Appender
+                XmlConfigurator.Configure(configPath);
+            }
         }
 
         /// <summary>
@@ -136,6 +171,30 @@ namespace InfrastructureAsCode.Core.Utilities
             sb.Append(" Exception: ");
             sb.Append(exception.ToString());
             return sb.ToString();
+        }
+
+
+        public string GetAppSetting(string index)
+        {
+            if (appSettings != null
+                && appSettings.Any(e => e.Attribute("key").Value == index))
+            {
+                var appFound = appSettings.FirstOrDefault(e => e.Attribute("key").Value == index);
+                return appFound.Attribute("value").Value;
+            }
+            return null;
+        }
+
+        public string GetConnectionSetting(string index)
+        {
+
+            if (connectionSettings != null
+                && connectionSettings.Any(e => e.Attribute("name").Value.Equals(index, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                var connFound = connectionSettings.FirstOrDefault(e => e.Attribute("name").Value.Equals(index, StringComparison.CurrentCultureIgnoreCase));
+                return connFound.Attribute("connectionString").Value;
+            }
+            return null;
         }
     }
 }

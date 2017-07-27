@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using InfrastructureAsCode.Core.Models.Enums;
+using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace InfrastructureAsCode.Core.Models
             this.PagedView = true;
             this.FieldRefName = new string[] { };
             this.JsLinkFiles = new string[] { };
+            this.ToolBarType = ViewToolBarEnum.Standard;
         }
 
         public string Title { get; set; }
@@ -31,6 +33,8 @@ namespace InfrastructureAsCode.Core.Models
         public string[] FieldRefName { get; set; }
 
         public ViewType ViewCamlType { get; set; }
+
+        public ViewToolBarEnum ToolBarType { get; set; }
 
         public bool DefaultView { get; set; }
 

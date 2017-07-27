@@ -6,25 +6,23 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Models
 {
-    public class SPListItemDefinition
+    public class SPListItemDefinition : SPId
     {
-        /// <summary>
-        /// Represents the List Item unique ID, only necessary for reporting and query match
-        /// </summary>
-        public int? ID { get; set; }
-
-        /// <summary>
-        /// Represents the List Item guid, only necessary for reporting and query match
-        /// </summary>
-        public Guid? ItemID { get; set; }
+        public SPListItemDefinition() : base()
+        {
+            this.ColumnValues = new List<SPListItemFieldDefinition>();
+            this.RoleBindings = new List<SPPrincipalModel>();
+        }
 
         public string Title { get; set; }
 
         public List<SPListItemFieldDefinition> ColumnValues { get; set; }
 
-        public SPListItemDefinition()
-        {
-            this.ColumnValues = new List<SPListItemFieldDefinition>();
-        }
+        public string ListDescription { get; set; }
+
+        /// <summary>
+        /// A collection of specialized roles
+        /// </summary>
+        public IList<SPPrincipalModel> RoleBindings { get; set; }
     }
 }

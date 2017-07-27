@@ -69,11 +69,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Infrastructure-As-Code\InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj">
+    <ProjectReference Include="..\InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj">
       <Project>{ea0d6cf4-74a7-4e3c-9bcd-f25b60c7716f}</Project>
       <Name>InfrastructureAsCode.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Infrastructure-As-Code\InfrastructureAsCode.Powershell\InfrastructureAsCode.Powershell.csproj">
+    <ProjectReference Include="..\InfrastructureAsCode.Powershell\InfrastructureAsCode.Powershell.csproj">
       <Project>{20c0ff0d-dea3-45f8-bc4c-8896c3926265}</Project>
       <Name>InfrastructureAsCode.Powershell</Name>
     </ProjectReference>

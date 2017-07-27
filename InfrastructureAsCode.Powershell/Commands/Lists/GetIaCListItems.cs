@@ -58,7 +58,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                         var newitem = new SPListItemDefinition()
                         {
                             Title = rbiItem.RetrieveListItemValue("Title"),
-                            ID = rbiItem.Id
+                            Id = rbiItem.Id
                         };
                         results.Add(newitem);
                     }

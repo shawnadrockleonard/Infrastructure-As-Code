@@ -1,12 +1,12 @@
-﻿using InfrastructureAsCode.Powershell.PipeBinds;
-using InfrastructureAsCode.Core.Extensions;
+﻿using InfrastructureAsCode.Core.Extensions;
+using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.PipeBinds;
 using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Management.Automation;
 using System.Reflection;
 using System.Security;
 using Resources = InfrastructureAsCode.Core.Properties.Resources;
-using InfrastructureAsCode.Powershell.CmdLets;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {
@@ -60,6 +60,12 @@ namespace InfrastructureAsCode.Powershell.Commands
         public string UserName;
 
         /// <summary>
+        /// Represents a parameter to pull from the stored credentials
+        /// </summary>
+        [Parameter(Mandatory = true, ParameterSetName = "CredentialCache")]
+        public string CredentialName { get; set; }
+
+        /// <summary>
         /// Remove the need to check if this is a tenant client context
         /// </summary>
         [Parameter(Mandatory = false, ParameterSetName = ParameterAttribute.AllParameterSets)]
@@ -82,6 +88,12 @@ namespace InfrastructureAsCode.Powershell.Commands
             if (ParameterSetName == "Token")
             {
                 SPIaCConnection.CurrentConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), Realm, AppId, AppSecret, Host, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
+            }
+            else if (ParameterSetName == "CredentialCache")
+            {
+                var genericcreds = CredentialManager.GetCredential(CredentialName);
+                creds = new PSCredential(genericcreds.UserName, genericcreds.SecurePassword);
+                SPIaCConnection.CurrentConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), creds, Host, CurrentCredentials, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
             }
             else if (ParameterSetName == "UserCache")
             {

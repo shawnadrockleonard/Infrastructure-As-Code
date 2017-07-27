@@ -10,18 +10,21 @@ namespace InfrastructureAsCode.Core.Models
     /// <summary>
     /// Defines a SharePoint List or Library
     /// </summary>
-    public class SPListDefinition
+    public class SPListDefinition : SPUniqueId
     {
-        public SPListDefinition()
+        public SPListDefinition() : base()
         {
             this.ListTemplate = ListTemplateType.GenericList;
             this.ContentTypeEnabledOverride = false;
             this.Views = new List<SPViewDefinitionModel>();
+            this.InternalViews = new List<SPInternalViewDefinitionModel>();
             this.ContentTypes = new List<SPContentTypeDefinition>();
-            this.ListItems = new List<SPListItemDefinition>();
             this.FieldDefinitions = new List<SPFieldDefinitionModel>();
+            this.ListItems = new List<SPListItemDefinition>();
+            this.RoleBindings = new List<SPPrincipalModel>();
         }
 
+        public string ServerRelativeUrl { get; set; }
 
         public string ListName { get; set; }
 
@@ -57,8 +60,6 @@ namespace InfrastructureAsCode.Core.Models
             }
         }
 
-        public List<SPViewDefinitionModel> Views { get; set; }
-
         public List<SPContentTypeDefinition> ContentTypes { get; set; }
 
         /// <summary>
@@ -73,15 +74,44 @@ namespace InfrastructureAsCode.Core.Models
                 return false;
             }
         }
+
+        /// <summary>
+        /// Represents views that will be created in the List Definition
+        /// </summary>
+        public List<SPViewDefinitionModel> Views { get; set; }
+
         public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
 
         public List<SPListItemDefinition> ListItems { get; set; }
 
         /// <summary>
+        /// A collection of specialized roles
+        /// </summary>
+        public IList<SPPrincipalModel> RoleBindings { get; set; }
+
+        /// <summary>
         /// Should the list/library allow versioning
         /// </summary>
         public bool Versioning { get; set; }
+
         public bool EnableFolderCreation { get; set; }
+
+        public bool IsSiteAssetsLibrary { get; set; }
+
+        public bool IsCatalog { get; set; }
+
+        public bool IsApplicationList { get; set; }
+
+        public bool IsPrivate { get; set; }
+
+        public bool IsSystemList { get; set; }
+
+        public bool Hidden { get; set; }
+
+        /// <summary>
+        /// Represents an internal view that is bound to a specific Site Page or Web Part
+        /// </summary>
+        public List<SPInternalViewDefinitionModel> InternalViews { get; set; }
 
         /// <summary>
         /// Projects the properties to Creation Info
