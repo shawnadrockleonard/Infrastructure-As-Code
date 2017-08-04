@@ -1,0 +1,11 @@
+﻿{
+  "Site": {
+    "scriptlinks": [
+      {
+        "linkurl": "~SiteCollection/SiteAssets/JS/jquery.combined.min.js?rev=1.2.1200",
+        "name": "ns.jquery1-12",
+        "sequence": 20000
+      }
+    ]
+  }
+}
