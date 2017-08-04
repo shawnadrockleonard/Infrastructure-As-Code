@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
     /// <remarks>
     /// Set-IaCCustomActionByXm -XmlFilePath c:\file\CustomElement.xml
     /// </remarks>
-    [Cmdlet(VerbsCommon.Set, "IaCCustomActionByXm", SupportsShouldProcess = true)]
+    [Cmdlet(VerbsCommon.Set, "IaCCustomActionByXml", SupportsShouldProcess = true)]
     public class SetIaCCustomActionByXml : IaCCmdlet
     {
         /// <summary>
