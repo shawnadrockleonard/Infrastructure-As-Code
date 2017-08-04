@@ -15,13 +15,21 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
     /// <summary>
     /// The function cmdlet will allow you to specify a JSON file and update the Site or Web with the appropriate User Custom Actions
     /// </summary>
+    /// <remarks>
+    /// Set-IaCCustomAction -FilePath c:\filedir\customaction.json -Verbose
+    /// </remarks>
     [Cmdlet(VerbsCommon.Set, "IaCCustomAction", SupportsShouldProcess = true)]
     public class SetIaCCustomAction : IaCCmdlet
     {
-
+        /// <summary>
+        /// Full path to the JSON file
+        /// </summary>
         [Parameter(Mandatory = true)]
         public string FilePath { get; set; }
 
+        /// <summary>
+        /// Evaluate the full path
+        /// </summary>
         protected override void OnBeginInitialize()
         {
             var fileInfo = new System.IO.FileInfo(FilePath);
@@ -87,6 +95,21 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
                     {
                         web.AddOrUpdateCustomActionLink(cab.name, cab.linkurl, cab.sequence);
                     });
+                }
+            }
+
+            if (actions.List != null && actions.List.Any())
+            {
+                foreach (var list in actions.List)
+                {
+                    var weblist = web.GetListByTitle(list.Title);
+                    foreach (var listaction in list.scriptcommands)
+                    {
+                        var htmllink = listaction.ImageUrl.Replace("~SiteCollection/", siteurl);
+                        htmllink = htmllink.Replace("~Site/", weburl);
+                        listaction.ImageUrl = htmllink;
+                        weblist.AddOrUpdateCustomActionLink(listaction);
+                    }
                 }
             }
         }

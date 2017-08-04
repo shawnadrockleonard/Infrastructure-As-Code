@@ -12,7 +12,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 {
     public abstract class IaCCmdlet : PSCmdlet, IIaCCmdlet
     {
-        internal IaCCmdlet() : base()
+        public IaCCmdlet() : base()
         {
 
         }

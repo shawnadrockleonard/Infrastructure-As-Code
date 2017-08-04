@@ -31,7 +31,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Development
     /// </remarks>
     [Cmdlet(VerbsCommon.Get, "IaCAppPermissions")]
     [CmdletHelp("Opens the app catalog and scans apps for permissions", Category = "Development")]
-    public class GetIaCAppPermissions : SPOAdminCmdlet
+    public class GetIaCAppPermissions : IaCAdminCmdlet
     {
         /// <summary>
         /// A collection of internal names to retreive and dump to a txt file

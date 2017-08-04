@@ -16,7 +16,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
     [Cmdlet(VerbsCommon.Get, "IaCUserProfiles")]
     [CmdletHelp("Opens a administrative web request and queries the user profile service", Category = "Principals")]
-    public class GetIaCUserProfiles : SPOAdminCmdlet
+    public class GetIaCUserProfiles : IaCAdminCmdlet
     {
 
         public override void ExecuteCmdlet()

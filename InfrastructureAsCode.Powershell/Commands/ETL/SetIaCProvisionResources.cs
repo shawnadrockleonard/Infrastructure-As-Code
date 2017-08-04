@@ -125,7 +125,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                         siteColumns.Add(new SPFieldDefinitionModel()
                         {
                             InternalName = column.InternalName,
-                            DisplayName = column.Title,
+                            Title = column.Title,
                             FieldGuid = column.Id
                         });
 

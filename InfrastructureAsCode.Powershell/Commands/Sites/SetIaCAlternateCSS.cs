@@ -12,6 +12,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
     /// <summary>
     /// The function cmdlet will set the laternate CSS for the site
     /// </summary>
+    /// <remarks>
+    ///     Set-IaCAlternateCSS -FileServerRelativeUrl "/SiteAssets/CSS/NewSite.css" will set the alternate CSS to run on every page
+    /// </remarks>
     [Cmdlet(VerbsCommon.Set, "IaCAlternateCSS", SupportsShouldProcess = true)]
     public class SetIaCAlternateCSS : IaCCmdlet
     {

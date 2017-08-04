@@ -35,7 +35,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 throw new ArgumentNullException("InternalName");
             }
 
-            if (string.IsNullOrEmpty(fieldDefinition.DisplayName))
+            if (string.IsNullOrEmpty(fieldDefinition.Title))
             {
                 throw new ArgumentNullException("DisplayName");
             }
@@ -47,12 +47,12 @@ namespace InfrastructureAsCode.Core.Extensions
 
             if (!string.IsNullOrEmpty(fieldDefinition.PeopleGroupName) && (siteGroups == null || siteGroups.Count() <= 0))
             {
-                throw new ArgumentNullException("SiteGroups", string.Format("You must specify a collection of group for the field {0}", fieldDefinition.DisplayName));
+                throw new ArgumentNullException("SiteGroups", string.Format("You must specify a collection of group for the field {0}", fieldDefinition.Title));
             }
 
-            if (string.IsNullOrEmpty(fieldDefinition.LookupListName) && fieldDefinition.fieldType == FieldType.Lookup)
+            if (string.IsNullOrEmpty(fieldDefinition.LookupListName) && fieldDefinition.FieldTypeKind == FieldType.Lookup)
             {
-                throw new ArgumentNullException("LookupListName", string.Format("you must specify a lookup list title for the field {0}", fieldDefinition.DisplayName));
+                throw new ArgumentNullException("LookupListName", string.Format("you must specify a lookup list title for the field {0}", fieldDefinition.Title));
             }
 
 
@@ -70,7 +70,7 @@ namespace InfrastructureAsCode.Core.Extensions
             }
 
             var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.MultiChoice, FieldType.OutcomeChoice };
-            if (choices.Any(a => a == fieldDefinition.fieldType))
+            if (choices.Any(a => a == fieldDefinition.FieldTypeKind))
             {
                 if (!string.IsNullOrEmpty(fieldDefinition.LoadFromJSON))
                 {
@@ -86,20 +86,20 @@ namespace InfrastructureAsCode.Core.Extensions
                 {
                     defaultChoiceXml = string.Format("<Default>{0}</Default>", fieldDefinition.ChoiceDefault);
                 }
-                if (fieldDefinition.fieldType == FieldType.Choice)
+                if (fieldDefinition.FieldTypeKind == FieldType.Choice)
                 {
                     attributes.Add(new KeyValuePair<string, string>("Format", fieldDefinition.ChoiceFormat.ToString("f")));
                 }
 
             }
-            else if (fieldDefinition.fieldType == FieldType.DateTime)
+            else if (fieldDefinition.FieldTypeKind == FieldType.DateTime)
             {
                 if (fieldDefinition.DateFieldFormat.HasValue)
                 {
                     attributes.Add(new KeyValuePair<string, string>("DisplayFormat", fieldDefinition.DateFieldFormat.Value.ToString("f")));
                 }
             }
-            else if (fieldDefinition.fieldType == FieldType.Note)
+            else if (fieldDefinition.FieldTypeKind == FieldType.Note)
             {
                 attributes.Add(new KeyValuePair<string, string>("RichText", fieldDefinition.RichTextField.ToString().ToUpper()));
                 attributes.Add(new KeyValuePair<string, string>("NumLines", fieldDefinition.NumLines.ToString()));
@@ -114,7 +114,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 }
 
             }
-            else if (fieldDefinition.fieldType == FieldType.User)
+            else if (fieldDefinition.FieldTypeKind == FieldType.User)
             {
                 //AllowMultipleValues
                 if (fieldDefinition.MultiChoice)
@@ -141,7 +141,7 @@ namespace InfrastructureAsCode.Core.Extensions
                     }
                 }
             }
-            else if (fieldDefinition.fieldType == FieldType.Lookup)
+            else if (fieldDefinition.FieldTypeKind == FieldType.Lookup)
             {
                 var lParentList = host.GetAssociatedWeb().GetListByTitle(fieldDefinition.LookupListName);
                 var strParentListID = lParentList.Id;

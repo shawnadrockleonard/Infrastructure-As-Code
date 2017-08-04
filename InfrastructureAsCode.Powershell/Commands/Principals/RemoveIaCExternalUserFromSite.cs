@@ -16,7 +16,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
     [Cmdlet(VerbsCommon.Remove, "IaCExternalUserFromSite")]
     [CmdletHelp("Removes external user from the sharepoint site and tenant collection", Category = "External")]
-    public class RemoveIaCExternalUserFromSite : SPOAdminCmdlet
+    public class RemoveIaCExternalUserFromSite : IaCAdminCmdlet
     {
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]

@@ -12,7 +12,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
     /// <summary>
     /// SharePoint Online base command for tenant level administration
     /// </summary>
-    public abstract class SPOAdminCmdlet :IaCCmdlet
+    public abstract class IaCAdminCmdlet :IaCCmdlet
     {
         private Tenant _tenant;
         /// <summary>

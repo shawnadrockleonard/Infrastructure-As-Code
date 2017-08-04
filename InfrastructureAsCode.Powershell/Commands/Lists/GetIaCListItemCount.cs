@@ -16,36 +16,21 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
     public class GetIaCListItemCount : IaCCmdlet
     {
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string LibraryName;
+        public ListPipeBind Identity;
 
         public override void ExecuteCmdlet()
         {
             base.ExecuteCmdlet();
             try
             {
-                var ctx = this.ClientContext;
-
-                var w = ctx.Web;
-                var l = w.Lists.GetByTitle(LibraryName);
-                ctx.Load(w);
-                ctx.Load(l);
-                ClientContext.ExecuteQueryRetry();
-
+                var l = Identity.GetList(this.ClientContext.Web);
+                l.EnsureProperties(lctx => lctx.ItemCount);
                 var itemCount = l.ItemCount;
-                LogVerbose(string.Format("The library {0} has {1} items", LibraryName, itemCount));
-
-                var listCollection = w.Lists;
-                ctx.Load(listCollection, ll => ll.Include(p => p.Title, p => p.Id, pp => pp.ItemCount));
-                ClientContext.ExecuteQueryRetry();
-
-                foreach (var lItem in listCollection)
-                {
-                    LogVerbose("This list {0} has this many items {1}", lItem.Title, lItem.ItemCount);
-                }
+                LogVerbose(string.Format("The library {0} has {1} items", l.Title, itemCount));
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed in GetListItemCount for Library {0}", LibraryName);
+                LogError(ex, "Failed in IaCListItemCount for Library {0}", ex.Message);
             }
         }
 

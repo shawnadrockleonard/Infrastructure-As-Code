@@ -13,7 +13,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
 {
     [Cmdlet(VerbsCommon.Get, "IaCAnalytics")]
     [CmdletHelp("Returns a report of the entire farm", Category = "Reporting")]
-    public class GetIaCAnalytics : SPOAdminCmdlet
+    public class GetIaCAnalytics : IaCAdminCmdlet
     {
         /// <summary>
         /// The absolute URL to the site collection or web

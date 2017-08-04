@@ -260,7 +260,7 @@ namespace InfrastructureAsCode.Core.Extensions
                     siteColumns.Add(new SPFieldDefinitionModel()
                     {
                         InternalName = column.InternalName,
-                        DisplayName = column.Title,
+                        Title = column.Title,
                         FieldGuid = column.Id
                     });
 

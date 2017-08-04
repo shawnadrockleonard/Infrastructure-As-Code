@@ -1,5 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,7 +27,7 @@ namespace InfrastructureAsCode.Core.Models
 
         public SPFieldDefinitionModel(FieldType fType) : this()
         {
-            this.fieldType = fType;
+            this.FieldTypeKind = fType;
         }
 
         /// <summary>
@@ -51,21 +52,25 @@ namespace InfrastructureAsCode.Core.Models
         {
             get
             {
-                if (!string.IsNullOrEmpty(DisplayName))
+                if (MaskName.HasValue && MaskName == true && !string.IsNullOrEmpty(Title))
                 {
-                    return this.DisplayName.Replace(" ", "_x0020_");
+                    return this.Title.Replace(" ", "_x0020_");
                 }
                 return InternalName;
             }
         }
 
-        public string DisplayName { get; set; }
+        public string Title { get; set; }
 
-        public FieldType fieldType { get; set; }
+        public Nullable<bool> MaskName { get; set; }
+
+        public FieldType FieldTypeKind { get; set; }
 
         public bool AddToDefaultView { get; set; }
 
         public bool HiddenField { get; set; }
+
+        public bool CanBeDeleted { get; set; }
 
         public string Description { get; set; }
 
@@ -95,6 +100,37 @@ namespace InfrastructureAsCode.Core.Models
         /// Optional Boolean. TRUE if the column is indexed for use in view filters.
         /// </summary>
         public bool FieldIndexed { get; set; }
+
+        /// <summary>
+        /// Optional Boolean. TRUE if the column should be indexed
+        /// </summary>
+        public bool AutoIndexed { get; set; }
+
+
+        public bool Filterable { get; set; }
+
+
+        public bool NoCrawl { get; set; }
+
+        /// <summary>
+        /// Read only
+        /// </summary>
+        public bool ReadOnlyField { get; set; }
+
+        /// <summary>
+        /// prevent non unique values
+        /// </summary>
+        public bool EnforceUniqueValues { get; set; }
+
+        /// <summary>
+        /// Formula for the field
+        /// </summary>
+        public string DefaultFormula { get; set; }
+
+        /// <summary>
+        /// Default option for the field
+        /// </summary>
+        public string DefaultValue { get; set; }
 
         public List<SPChoiceModel> FieldChoices { get; set; }
 
@@ -149,9 +185,13 @@ namespace InfrastructureAsCode.Core.Models
         /// </summary>
         public string LoadFromJSON { get; set; }
 
-
+        /// <summary>
+        /// XML field definition
+        /// </summary>
         public string SchemaXml { get; set; }
+
         public string LookupListName { get; set; }
+
         public string LookupListFieldName { get; set; }
 
         /// <summary>
@@ -160,10 +200,10 @@ namespace InfrastructureAsCode.Core.Models
         /// <returns></returns>
         public FieldCreationInformation ToCreationObject()
         {
-            var finfo = new FieldCreationInformation(this.fieldType);
+            var finfo = new FieldCreationInformation(this.FieldTypeKind);
             finfo.Id = this.FieldGuid;
             finfo.InternalName = this.InternalName;
-            finfo.DisplayName = this.DisplayName;
+            finfo.DisplayName = this.Title;
             finfo.Group = this.GroupName;
             finfo.AddToDefaultView = this.AddToDefaultView;
             finfo.Required = this.Required;

@@ -12,7 +12,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
     [Cmdlet(VerbsCommon.Set, "IaCSiteAdmin")]
     [CmdletHelp("sets the user as an admin", Category = "Principals")]
-    public class SetIaCSiteAdmin : SPOAdminCmdlet
+    public class SetIaCSiteAdmin : IaCAdminCmdlet
     {
         /// <summary>
         /// The absolute URL to the site collection or web

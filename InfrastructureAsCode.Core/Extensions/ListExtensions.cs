@@ -65,6 +65,62 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
+        /// Provisions a column based on the field defintion to the host list
+        /// </summary>
+        /// <param name="hostList">The instantiated list/library to which the field will be added</param>
+        /// <param name="fieldDef">The definition for the field</param>
+        /// <param name="loggerVerbose">Provides a method for verbose logging</param>
+        /// <param name="loggerError">Provides a method for exception logging</param>
+        /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
+        /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
+        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        {
+
+            if (fieldDef == null)
+            {
+                throw new ArgumentNullException("fieldDef", "Field definition is required.");
+            }
+
+            if (!hostList.IsPropertyAvailable("Context"))
+            {
+
+            }
+
+            var fields = hostList.Fields;
+            hostList.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+            hostList.Context.ExecuteQueryRetry();
+
+            var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
+            if (returnField == null)
+            {
+                try
+                {
+                    var baseFieldXml = hostList.CreateFieldDefinition(fieldDef, SiteGroups, JsonFilePath);
+                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, baseFieldXml });
+
+                    // Should throw an exception if the field ID or Name exist in the list
+                    var baseField = hostList.CreateField(baseFieldXml, fieldDef.AddToDefaultView, executeQuery: false);
+                    hostList.Context.ExecuteQueryRetry();
+                }
+                catch (Exception ex)
+                {
+                    var msg = ex.Message;
+                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
+                }
+                finally
+                {
+                    returnField = hostList.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
+                    hostList.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
+                    hostList.Context.ExecuteQueryRetry();
+                }
+            }
+
+            return returnField;
+        }
+
+        /// <summary>
         /// Retrieves or creates the folder as a ListItem
         /// </summary>
         /// <param name="onlineLibrary"></param>
@@ -493,59 +549,80 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
-        /// Provisions a column based on the field defintion to the host list
+        /// Adds or Updates an existing Custom Action [Url] into the [List] Custom Actions
         /// </summary>
-        /// <param name="hostList">The instantiated list/library to which the field will be added</param>
-        /// <param name="fieldDef">The definition for the field</param>
-        /// <param name="loggerVerbose">Provides a method for verbose logging</param>
-        /// <param name="loggerError">Provides a method for exception logging</param>
-        /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
-        /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
-        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        /// <param name="list"></param>
+        /// <param name="customactionname"></param>
+        /// <param name="commandUIExtension"></param>
+        public static void AddOrUpdateCustomActionLink(this List list, string customactionname, string commandUIExtension, string location, int sequence)
         {
+            var sitecustomActions = list.UserCustomActions;
+            list.Context.Load(sitecustomActions);
+            list.Context.ExecuteQueryRetry();
 
-            if (fieldDef == null)
+            UserCustomAction cssAction = null;
+            if (sitecustomActions.Any(sa => sa.Name == customactionname))
             {
-                throw new ArgumentNullException("fieldDef", "Field definition is required.");
+                cssAction = sitecustomActions.FirstOrDefault(fod => fod.Name == customactionname);
+            }
+            else
+            {
+                // Build a custom action
+                cssAction = sitecustomActions.Add();
+                cssAction.Name = customactionname;
             }
 
-            if (!hostList.IsPropertyAvailable("Context"))
-            {
+            cssAction.Sequence = sequence;
+            cssAction.Location = location;
+            cssAction.CommandUIExtension = commandUIExtension;
+            cssAction.Update();
+            list.Context.ExecuteQueryRetry();
+        }
 
+        /// <summary>
+        /// Adds or Updates an existing Custom Action [Url] into the [List] Custom Actions
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="customactionname"></param>
+        /// <param name="customactionurl"></param>
+        /// <param name="title"></param>
+        /// <param name="description"></param>
+        /// <param name="location"></param>
+        /// <param name="sequence">(default) 10000</param>
+        /// <param name="groupName">(optional) adds custom group</param>
+        public static void AddOrUpdateCustomActionLink(this List list, SPCustomActionList action)
+        {
+            var sitecustomActions = list.UserCustomActions;
+            list.Context.Load(sitecustomActions);
+            list.Context.ExecuteQueryRetry();
+
+            UserCustomAction cssAction = null;
+            if (sitecustomActions.Any(sa => sa.Name == action.name))
+            {
+                cssAction = sitecustomActions.FirstOrDefault(fod => fod.Name == action.name);
+            }
+            else
+            {
+                // Build a custom action
+                cssAction = sitecustomActions.Add();
+                cssAction.Name = action.name;
             }
 
-            var fields = hostList.Fields;
-            hostList.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
-            hostList.Context.ExecuteQueryRetry();
-
-            var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
-            if (returnField == null)
+            cssAction.Sequence = action.sequence;
+            cssAction.Url = action.Url;
+            cssAction.Description = action.Description;
+            cssAction.Location = action.Location;
+            cssAction.Title = action.Title;
+            if (!string.IsNullOrEmpty(action.ImageUrl))
             {
-                 try
-                {
-                    var baseFieldXml = hostList.CreateFieldDefinition(fieldDef, SiteGroups, JsonFilePath);
-                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, baseFieldXml });
-                    
-                    // Should throw an exception if the field ID or Name exist in the list
-                    var baseField = hostList.CreateField(baseFieldXml, fieldDef.AddToDefaultView, executeQuery: false);
-                    hostList.Context.ExecuteQueryRetry();
-                }
-                catch (Exception ex)
-                {
-                    var msg = ex.Message;
-                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
-                }
-                finally
-                {
-                    returnField = hostList.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
-                    hostList.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
-                    hostList.Context.ExecuteQueryRetry();
-                }
+                cssAction.ImageUrl = action.ImageUrl;
             }
-
-            return returnField;
+            if (!string.IsNullOrEmpty(action.Group))
+            {
+                cssAction.Group = action.Group;
+            }
+            cssAction.Update();
+            list.Context.ExecuteQueryRetry();
         }
     }
 }

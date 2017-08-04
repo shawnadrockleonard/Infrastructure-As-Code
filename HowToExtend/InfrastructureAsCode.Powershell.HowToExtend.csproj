@@ -60,13 +60,16 @@
     <None Include="samplelog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="script-configure-assets.ps1" />
-    <None Include="script-sample.ps1">
+    <None Include="Samples\script-configure-assets.ps1" />
+    <None Include="Samples\script-sample.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="script-configure-provision.ps1">
+    <None Include="Samples\script-configure-provision.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Samples\script-set-customaction.ps1" />
+    <None Include="Samples\script-set-jslink.ps1" />
+    <None Include="Samples\script-set-modernui.ps1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj">
