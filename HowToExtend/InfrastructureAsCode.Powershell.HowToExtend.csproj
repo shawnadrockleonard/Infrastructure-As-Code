@@ -70,6 +70,7 @@
     <None Include="Samples\script-configure-provision.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Samples\script-set-customaction-commandui.ps1" />
     <None Include="Samples\script-set-customaction.ps1" />
     <None Include="Samples\script-set-jslink.ps1" />
     <None Include="Samples\script-set-modernui.ps1" />
