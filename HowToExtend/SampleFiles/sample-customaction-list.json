@@ -1,0 +1,18 @@
+﻿{
+  "List": [
+    {
+      "Title": "Sample List",
+      "scriptcommands": [
+        {
+          "Title": "Custom Action Title",
+          "Description": "Builds custom action title.",
+          "Url": "javascript:GoToPage('{SiteUrl}/Pages/SamplePage.aspx?List={ListId}&ID={ItemId}')",
+          "Location": "DisplayFormToolbar",
+          "ImageUrl": "~Site/SiteAssets/imgs/noun_16392_cc_32.png",
+          "name": "ns.customaction",
+          "sequence": 10000
+        }
+      ]
+    }
+  ]
+}

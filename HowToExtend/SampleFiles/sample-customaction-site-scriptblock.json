@@ -1,0 +1,11 @@
+﻿{
+  "Site": {
+    "scriptblocks": [
+      {
+        "htmlblock": "\r\ndocument.write('<link rel=\"stylesheet\" type=\"text/css\" href=\"~SiteCollection/SiteAssets/CSS/SiteApp.css\"/>');",
+        "name": "ns.csssite",
+        "sequence": 1000
+      }
+    ]
+  }
+}

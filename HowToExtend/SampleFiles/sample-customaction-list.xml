@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+  <CustomAction
+    Id="ns.customactionribbon"
+    Location="CommandUI.Ribbon.DisplayForm"
+    RegistrationId="0x01"
+    RegistrationType="List"
+    Sequence="10000">
+    <CommandUIExtension>
+      <CommandUIDefinitions>
+        <CommandUIDefinition
+          Location="Ribbon.ListForm.Display.Groups._children">
+              <Group
+                Id="Ribbon.SampleRibbonTab.ManageCustomGroup"
+                Description="Group to Custom Functions"
+                Title="Display Group"
+                Sequence="52" 
+                Command="EnableCustomGroup" 
+                Template="Ribbon.Templates.Flexible2">
+                <Controls Id="Ribbon.SampleRibbonTab.ManageCustomGroup.Controls">
+                  <Button
+                    Id="Ribbon.SampleRibbonTab.ManageCustomGroup.Message"
+                    Command="CustomRibbonTab.CustomCommandFirst"
+                    Sequence="15"
+                    Image32by32="{SiteUrl}/SiteAssets/imgs/noun_16392_cc_32.png"
+                    Description="Navigate to first action."
+                    LabelText="First Action" TemplateAlias="o1"/>
+                  <Button
+                   Id="Ribbon.SampleRibbonTab.ManageCustomGroup.Results"
+                   Command="CustomRibbonTab.CustomCommandSecond"
+                   Sequence="19"
+                   Image32by32="{SiteUrl}/SiteAssets/imgs/noun_9276_cc_32.png"
+                   Description="Navigate to second action."
+                   LabelText="Second Action" TemplateAlias="o1"/>
+                </Controls>
+              </Group>
+        </CommandUIDefinition>
+        <CommandUIDefinition 
+          Location="Ribbon.ListForm.Display.Scaling._children">
+          <MaxSize 
+            Id="Ribbon.ListForm.Display.Scaling.CustomGroup.MaxSize" 
+            Sequence="15" 
+            GroupId="Ribbon.SampleRibbonTab.ManageCustomGroup" 
+            Size="LargeLarge" />
+        </CommandUIDefinition>
+      </CommandUIDefinitions>
+      <CommandUIHandlers>
+        <CommandUIHandler 
+          Command="EnableCustomGroup"
+          CommandAction="javascript:return true;" />
+        <CommandUIHandler
+          Command="CustomRibbonTab.CustomCommandFirst"
+          CommandAction="javascript:GoToPage('{SiteUrl}/Pages/SamplePage01.aspx?List={ListId}&amp;projID={ItemId}');"/>
+        <CommandUIHandler
+          Command ="CustomRibbonTab.CustomCommandSecond"
+          CommandAction="javascript:GoToPage('{SiteUrl}/Pages/SamplePage02.aspx?List={ListId}&amp;projID={ItemId}');"/>
+      </CommandUIHandlers>
+    </CommandUIExtension>
+  </CustomAction>
+</Elements>

@@ -57,7 +57,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="README.md" />
-    <None Include="SampleFiles\sample-customaction.json" />
+    <None Include="SampleFiles\sample-customaction-list.json" />
+    <None Include="SampleFiles\sample-customaction-site-scriptblock.json" />
+    <None Include="SampleFiles\sample-customaction-site-scriptlink.json" />
     <None Include="samplelog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -86,6 +88,7 @@
     <Content Include="imgs\build-and-deploy.png" />
     <Content Include="imgs\project-sample-script-provisioning-resources.PNG" />
     <Content Include="imgs\project-sample-script.PNG" />
+    <Content Include="SampleFiles\sample-customaction-list.xml" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
