@@ -6,7 +6,7 @@ using InfrastructureAsCode.Powershell.CmdLets;
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflows
 {
-    [Cmdlet(VerbsCommon.Get, "ARCWorkflowSubscription")]
+    [Cmdlet(VerbsCommon.Get, "IaCWorkflowSubscription")]
     public class GetIaCWorkflowSubscription : IaCCmdlet
     {
         [Parameter(Mandatory = false, HelpMessage = "The name of the workflow", Position = 0)]
