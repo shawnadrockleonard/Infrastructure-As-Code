@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Gist\sample-calloutlinks.md" />
     <None Include="Gist\set-iac-viewdefinition.md" />
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.HowToExtend.ps1xml">
       <SubType>Designer</SubType>
@@ -88,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="imgs\build-and-deploy.png" />
+    <Content Include="imgs\call-out-links.PNG" />
     <Content Include="imgs\project-sample-script-provisioning-resources.PNG" />
     <Content Include="imgs\project-sample-script.PNG" />
     <Content Include="SampleFiles\sample-customaction-list.xml" />

@@ -189,11 +189,15 @@
     <Compile Include="CmdLets\SPIaCRunspaceWithDelegate.cs" />
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
+    <Compile Include="Models\CalloutLinkModel.cs" />
     <Compile Include="Commands\Lists\GetIaCList.cs" />
     <Compile Include="Commands\Lists\GetIaCListDefinition.cs" />
     <Compile Include="Commands\Lists\GetIaCListDocumentSet.cs" />
     <Compile Include="Commands\Lists\GetIaCListsItemCount.cs" />
     <Compile Include="Commands\Lists\GetIaCListView.cs" />
+    <Compile Include="Commands\Lists\FindIaCCallOutLinks.cs" />
+    <Compile Include="Commands\Lists\SetIaCCallOutLinksByItemId.cs" />
+    <Compile Include="Commands\Lists\SetIaCCallOutLinksByObjects.cs" />
     <Compile Include="Commands\Lists\SetIaCListView.cs" />
     <Compile Include="Commands\Lists\SetIaCListViewMinimal.cs" />
     <Compile Include="Commands\ETL\SetIaCMigrateData.cs" />
@@ -248,9 +252,7 @@
     <Compile Include="SharePointContext.cs" />
     <Compile Include="TokenHelper.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utilities\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="app.config" />
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.Format.ps1xml">
