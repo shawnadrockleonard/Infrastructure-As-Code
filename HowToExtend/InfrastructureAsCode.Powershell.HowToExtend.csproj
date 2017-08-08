@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Gist\set-iac-viewdefinition.md" />
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.HowToExtend.ps1xml">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

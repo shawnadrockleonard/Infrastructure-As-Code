@@ -51,5 +51,47 @@ namespace InfrastructureAsCode.Powershell.PipeBinds
         {
             get { return _name; }
         }
+
+        internal View GetView(List list)
+        {
+            View view = null;
+            if (View != null)
+            {
+                view = View;
+            }
+            else if (Id != Guid.Empty)
+            {
+                view = list.GetViewById(Id);
+            }
+            else if (!string.IsNullOrEmpty(Title))
+            {
+                view = list.GetViewByName(Title);
+            }
+
+            if (view != null)
+            {
+                list.Context.Load(view, 
+                    tv => tv.Id,
+                    tv => tv.Title,
+                    tv => tv.ServerRelativeUrl,
+                    tv => tv.DefaultView,
+                    tv => tv.HtmlSchemaXml, 
+                    tv => tv.RowLimit,
+                    tv => tv.Toolbar,
+                    tv => tv.JSLink, 
+                    tv => tv.ViewFields,
+                    tv => tv.ViewQuery,
+                    tv => tv.Aggregations,
+                    tv => tv.AggregationsStatus,
+                    tv => tv.Hidden,
+                    tv => tv.Method,
+                    tv => tv.PersonalView,
+                    tv => tv.ReadOnlyView,
+                    tv => tv.ViewType);
+                list.Context.ExecuteQueryRetry();
+            }
+
+            return view;
+        }
     }
 }

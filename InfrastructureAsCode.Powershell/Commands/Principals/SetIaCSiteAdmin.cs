@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
+    /// <summary>
+    /// sets the user as an admin
+    /// </summary>
     [Cmdlet(VerbsCommon.Set, "IaCSiteAdmin")]
     [CmdletHelp("sets the user as an admin", Category = "Principals")]
     public class SetIaCSiteAdmin : IaCAdminCmdlet
@@ -27,17 +30,17 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         public string UserName { get; set; }
 
         /// <summary>
-        /// The absolute URL to the site collection or web
+        /// If specified it will add the user as an administrator
         /// </summary>
         [Parameter(Mandatory = false, HelpMessage = "Provides a specific site to query and manipulate")]
-        public bool IsAdmin { get; set; }
+        public SwitchParameter IsAdmin { get; set; }
 
 
         public override void ExecuteCmdlet()
         {
             base.ExecuteCmdlet();
 
-            SetSiteAdmin(this.SiteUrl, UserName, IsAdmin);
+            SetSiteAdmin(this.SiteUrl, UserName, IsAdmin.ToBool());
         }
 
     }

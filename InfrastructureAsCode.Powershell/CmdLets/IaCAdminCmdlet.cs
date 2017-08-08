@@ -1,18 +1,21 @@
-﻿using System;
-using System.Management.Automation;
+﻿using InfrastructureAsCode.Core.Enums;
+using InfrastructureAsCode.Core.Models;
 using Microsoft.Online.SharePoint.TenantAdministration;
+using Microsoft.Online.SharePoint.TenantManagement;
 using Microsoft.PowerShell.Commands;
 using Microsoft.SharePoint.Client;
-using InfrastructureAsCode.Core.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Management.Automation;
 using Resources = InfrastructureAsCode.Core.Properties.Resources;
-using Microsoft.Online.SharePoint.TenantManagement;
 
 namespace InfrastructureAsCode.Powershell.CmdLets
 {
     /// <summary>
     /// SharePoint Online base command for tenant level administration
     /// </summary>
-    public abstract class IaCAdminCmdlet :IaCCmdlet
+    public abstract class IaCAdminCmdlet : IaCCmdlet
     {
         private Tenant _tenant;
         /// <summary>
@@ -71,6 +74,12 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 SPIaCConnection.CurrentConnection.Context = this.ClientContext.Clone(adminUrl);
             }
 
+
+            if (Tenant.Context == null)
+            {
+                this.ClientContext.Load(Tenant);
+                this.ClientContext.ExecuteQueryRetry();
+            }
         }
 
         protected override void EndProcessing()
@@ -90,7 +99,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <param name="isSiteAdmin">(OPTIONAL) true to set the user as a site collection administrator</param>
         protected virtual void SetSiteAdmin(string _siteUrl, string userNameWithoutClaims, bool isSiteAdmin = false)
         {
-            var claimProviderUserName = string.Format("i:0#.f|membership|{0}", userNameWithoutClaims);
+            var claimProviderUserName = string.Format("{0}|{1}", ClaimIdentifier, userNameWithoutClaims);
             if (isSiteAdmin)
             {
                 LogVerbose("Granting access to {0} for {1}", _siteUrl, claimProviderUserName);
@@ -115,6 +124,84 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 LogError(e, "Failed to set {0} site collection administrator permissions for site:{1}", userNameWithoutClaims, _siteUrl);
             }
+        }
+
+        /// <summary>
+        /// Returns all site collections in the tenant
+        /// </summary>
+        /// <param name="includeProperties">Include all Site Collection properties</param>
+        /// <returns></returns>
+        public List<SPOSiteCollectionModel> GetSiteCollections(bool includeProperties = false)
+        {
+            int startIndex = 0; var urls = new List<SPOSiteCollectionModel>();
+            SPOSitePropertiesEnumerable spenumerable = null;
+            while (spenumerable == null || spenumerable.Count > 0)
+            {
+                spenumerable = Tenant.GetSiteProperties(startIndex, includeProperties);
+                Tenant.Context.Load(spenumerable);
+                Tenant.Context.ExecuteQueryRetry();
+                LogVerbose("Found URLs {0}", spenumerable.Count);
+
+                foreach (SiteProperties sp in spenumerable)
+                {
+                    var model = new SPOSiteCollectionModel()
+                    {
+                        Url = sp.Url,
+                        title = sp.Title
+                    };
+
+                    if (includeProperties)
+                    {
+                        model = new SPOSiteCollectionModel()
+                        {
+                            Url = sp.Url,
+                            title = sp.Title,
+                            sandbox = sp.SandboxedCodeActivationCapability,
+                            AverageResourceUsage = sp.AverageResourceUsage,
+                            CompatibilityLevel = sp.CompatibilityLevel,
+                            CurrentResourceUsage = sp.CurrentResourceUsage,
+                            DenyAddAndCustomizePages = sp.DenyAddAndCustomizePages,
+                            DisableCompanyWideSharingLinks = sp.DisableCompanyWideSharingLinks,
+                            LastContentModifiedDate = sp.LastContentModifiedDate,
+                            Owner = sp.Owner,
+                            SharingCapability = sp.SharingCapability,
+                            Status = sp.Status,
+                            StorageMaximumLevel = sp.StorageMaximumLevel,
+                            StorageQuotaType = sp.StorageQuotaType,
+                            StorageUsage = sp.StorageUsage,
+                            StorageWarningLevel = sp.StorageWarningLevel,
+                            TimeZoneId = sp.TimeZoneId,
+                            WebsCount = sp.WebsCount,
+                            Template = sp.Template,
+                            UserCodeWarningLevel = sp.UserCodeWarningLevel,
+                            UserCodeMaximumLevel = sp.UserCodeMaximumLevel
+                        };
+                    }
+
+                    urls.Add(model);
+                }
+                startIndex += spenumerable.Count;
+            }
+
+            return urls;
+        }
+
+        /// <summary>
+        /// removes claim prefix from the user logon
+        /// </summary>
+        /// <param name="_user"></param>
+        /// <returns></returns>
+        internal string RemoveClaimIdentifier(string _user)
+        {
+            var _cleanedUser = _user;
+
+            var _tmp = _user.Split(new char[] { '|' });
+            if (_tmp.Length > 0)
+            {
+                _cleanedUser = _tmp.Last(); // remove claim identity
+            }
+
+            return _cleanedUser;
         }
     }
 }

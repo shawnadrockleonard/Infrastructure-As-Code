@@ -189,10 +189,13 @@
     <Compile Include="CmdLets\SPIaCRunspaceWithDelegate.cs" />
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
+    <Compile Include="Commands\Lists\GetIaCList.cs" />
     <Compile Include="Commands\Lists\GetIaCListDefinition.cs" />
     <Compile Include="Commands\Lists\GetIaCListDocumentSet.cs" />
     <Compile Include="Commands\Lists\GetIaCListsItemCount.cs" />
-    <Compile Include="Commands\Lists\SetIaCViewDefinition.cs" />
+    <Compile Include="Commands\Lists\GetIaCListView.cs" />
+    <Compile Include="Commands\Lists\SetIaCListView.cs" />
+    <Compile Include="Commands\Lists\SetIaCListViewMinimal.cs" />
     <Compile Include="Commands\ETL\SetIaCMigrateData.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionAssets.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionResources.cs" />
@@ -221,6 +224,11 @@
     <Compile Include="Commands\Sites\SetIaCCustomActionByXml.cs" />
     <Compile Include="Commands\Sites\SetIaCCustomAction.cs" />
     <Compile Include="Commands\Sites\SetIaCModernUI.cs" />
+    <Compile Include="Commands\Workflow\GetIaCWorkflowDefinition.cs" />
+    <Compile Include="Commands\Workflow\GetIaCWorkflowInstances.cs" />
+    <Compile Include="Commands\Workflow\GetIaCWorkflowSubscription.cs" />
+    <Compile Include="Commands\Workflow\ResumeIaCWorkflowInstance.cs" />
+    <Compile Include="Commands\Workflow\StopIaCWorkflowInstance.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="PipeBinds\AppPipeBind.cs" />
     <Compile Include="PipeBinds\ContentTypePipeBind.cs" />
@@ -234,6 +242,7 @@
     <Compile Include="PipeBinds\ViewPipeBind.cs" />
     <Compile Include="PipeBinds\WebPartPipeBind.cs" />
     <Compile Include="PipeBinds\WebPipeBind.cs" />
+    <Compile Include="PipeBinds\WorkflowInstancePipeBind.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Extensions\CredentialExtensions.cs" />
     <Compile Include="SharePointContext.cs" />
