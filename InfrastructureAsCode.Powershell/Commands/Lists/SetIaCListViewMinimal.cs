@@ -1,7 +1,8 @@
-﻿using InfrastructureAsCode.Powershell;
+﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Powershell;
 using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Powershell.Extensions;
+using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Entities;
@@ -14,7 +15,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using InfrastructureAsCode.Powershell.PipeBinds;
 
 namespace InfrastructureAsCode.Powershell.Commands.Lists
 {

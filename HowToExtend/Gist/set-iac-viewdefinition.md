@@ -31,11 +31,13 @@ $viewxml = "<OrderBy><FieldRef Name='ID' /></OrderBy>
 
 # Retrieve List and Update View
 $list = Get-IaCList -Identity "Sample List" -Verbose
-Set-IaCListViewMinimal -List $list -Identity "Sample View" -QueryXml $viewxml -RowLimit 50 -Verbose
+Set-IaCListViewMinimal -List $list -Identity "Sample View" -RowLimit 50 -Verbose
 
 # Get and Update in same call
-Set-IaCListViewMinimal -List "Sample List" -Identity "Sample View" -QueryXml $viewxml -RowLimit 50 -Verbose
+Set-IaCListViewMinimal -List "Sample List" -Identity "Sample View" -QueryXml $viewxml -Verbose
 
+# Update the JS Link property
+Set-IaCListViewMinimal -List "Sample List" -Identity "ViewTitle" -JsLinkUris @("~sitecollection/siteassets/js/jquery.min.js")
 
 # Disconnect the client context
 Disconnect-SPIaC
