@@ -50,6 +50,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Gist\sample-calloutlinks.md" />
+    <None Include="Gist\sample-provisionermodel.md" />
     <None Include="Gist\set-iac-viewdefinition.md" />
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.HowToExtend.ps1xml">
       <SubType>Designer</SubType>

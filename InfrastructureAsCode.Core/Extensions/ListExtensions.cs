@@ -68,50 +68,50 @@ namespace InfrastructureAsCode.Core.Extensions
         /// Provisions a column based on the field defintion to the host list
         /// </summary>
         /// <param name="hostList">The instantiated list/library to which the field will be added</param>
-        /// <param name="fieldDef">The definition for the field</param>
+        /// <param name="fieldDefinition">The definition for the field</param>
         /// <param name="loggerVerbose">Provides a method for verbose logging</param>
         /// <param name="loggerError">Provides a method for exception logging</param>
         /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
-        /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
+        /// <param name="provisionerChoices">(OPTIONAL) deserialized choices from JSON</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
-        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDefinition, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
 
-            if (fieldDef == null)
+            if (fieldDefinition == null)
             {
                 throw new ArgumentNullException("fieldDef", "Field definition is required.");
             }
 
-            if (!hostList.IsPropertyAvailable("Context"))
+            if (fieldDefinition.LoadFromJSON && (provisionerChoices == null || !provisionerChoices.Any(pc => pc.FieldInternalName == fieldDefinition.InternalName)))
             {
-
+                throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
             var fields = hostList.Fields;
             hostList.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
             hostList.Context.ExecuteQueryRetry();
 
-            var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
+            var returnField = fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName);
             if (returnField == null)
             {
                 try
                 {
-                    var baseFieldXml = hostList.CreateFieldDefinition(fieldDef, SiteGroups, JsonFilePath);
-                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, baseFieldXml });
+                    var baseFieldXml = hostList.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
+                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, baseFieldXml });
 
                     // Should throw an exception if the field ID or Name exist in the list
-                    var baseField = hostList.CreateField(baseFieldXml, fieldDef.AddToDefaultView, executeQuery: false);
+                    var baseField = hostList.CreateField(baseFieldXml, fieldDefinition.AddToDefaultView, executeQuery: false);
                     hostList.Context.ExecuteQueryRetry();
                 }
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, msg });
+                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, msg });
                 }
                 finally
                 {
-                    returnField = hostList.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
+                    returnField = hostList.Fields.GetByInternalNameOrTitle(fieldDefinition.InternalName);
                     hostList.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
                     hostList.Context.ExecuteQueryRetry();
                 }

@@ -21,9 +21,9 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="host">The instantiated web/list/library to which the field will be added</param>
         /// <param name="fieldDefinition">The definition pulled from a SP Site or user construction</param>
         /// <param name="siteGroups">The collection of site groups that a user/group field make filter</param>
-        /// <param name="JsonFilePath">The file path to a JSON file containing Choice lookups</param>
+        /// <param name="provisionerChoices">(OPTIONAL) The collection of hoice lookups as defined in the serialized JSON file</param>
         /// <returns></returns>
-        public static string CreateFieldDefinition(this SecurableObject host, SPFieldDefinitionModel fieldDefinition, List<SPGroupDefinitionModel> siteGroups, string JsonFilePath = null)
+        public static string CreateFieldDefinition(this SecurableObject host, SPFieldDefinitionModel fieldDefinition, List<SPGroupDefinitionModel> siteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
             var idguid = fieldDefinition.FieldGuid;
             var choiceXml = string.Empty;
@@ -40,11 +40,6 @@ namespace InfrastructureAsCode.Core.Extensions
                 throw new ArgumentNullException("DisplayName");
             }
 
-            if (!string.IsNullOrEmpty(fieldDefinition.LoadFromJSON) && string.IsNullOrEmpty(JsonFilePath))
-            {
-                throw new ArgumentNullException("JsonFilePath", "You must specify a file path to the JSON file if loading from JSON");
-            }
-
             if (!string.IsNullOrEmpty(fieldDefinition.PeopleGroupName) && (siteGroups == null || siteGroups.Count() <= 0))
             {
                 throw new ArgumentNullException("SiteGroups", string.Format("You must specify a collection of group for the field {0}", fieldDefinition.Title));
@@ -53,6 +48,11 @@ namespace InfrastructureAsCode.Core.Extensions
             if (string.IsNullOrEmpty(fieldDefinition.LookupListName) && fieldDefinition.FieldTypeKind == FieldType.Lookup)
             {
                 throw new ArgumentNullException("LookupListName", string.Format("you must specify a lookup list title for the field {0}", fieldDefinition.Title));
+            }
+
+            if (fieldDefinition.LoadFromJSON && (provisionerChoices == null || !provisionerChoices.Any(pc => pc.FieldInternalName == fieldDefinition.InternalName)))
+            {
+                throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
 
@@ -64,7 +64,7 @@ namespace InfrastructureAsCode.Core.Extensions
             {
                 attributes.Add(new KeyValuePair<string, string>("Indexed", fieldDefinition.FieldIndexed.ToString().ToUpper()));
             }
-            if(fieldDefinition.AppendOnly)
+            if (fieldDefinition.AppendOnly)
             {
                 attributes.Add(new KeyValuePair<string, string>("AppendOnly", fieldDefinition.AppendOnly.ToString().ToUpper()));
             }
@@ -72,13 +72,12 @@ namespace InfrastructureAsCode.Core.Extensions
             var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.MultiChoice, FieldType.OutcomeChoice };
             if (choices.Any(a => a == fieldDefinition.FieldTypeKind))
             {
-                if (!string.IsNullOrEmpty(fieldDefinition.LoadFromJSON))
+                if (fieldDefinition.LoadFromJSON
+                    && (provisionerChoices != null && provisionerChoices.Any(fc => fc.FieldInternalName == fieldDefinition.InternalName)))
                 {
-                    var filePath = string.Format("{0}\\{1}", JsonFilePath, fieldDefinition.LoadFromJSON);
-                    //#TODO: Check file path
-                    var contents = JsonConvert.DeserializeObject<List<SPChoiceModel>>(System.IO.File.ReadAllText(filePath));
+                    var choicecontents = provisionerChoices.FirstOrDefault(fc => fc.FieldInternalName == fieldDefinition.InternalName);
                     fieldDefinition.FieldChoices.Clear();
-                    fieldDefinition.FieldChoices.AddRange(contents);
+                    fieldDefinition.FieldChoices.AddRange(choicecontents.Choices);
                 }
 
                 choiceXml = string.Format("<CHOICES>{0}</CHOICES>", string.Join("", fieldDefinition.FieldChoices.Select(s => string.Format("<CHOICE>{0}</CHOICE>", s.Choice.Trim())).ToArray()));
@@ -102,17 +101,13 @@ namespace InfrastructureAsCode.Core.Extensions
             else if (fieldDefinition.FieldTypeKind == FieldType.Note)
             {
                 attributes.Add(new KeyValuePair<string, string>("RichText", fieldDefinition.RichTextField.ToString().ToUpper()));
+                attributes.Add(new KeyValuePair<string, string>("RestrictedMode", fieldDefinition.RestrictedMode.ToString().ToUpper()));
                 attributes.Add(new KeyValuePair<string, string>("NumLines", fieldDefinition.NumLines.ToString()));
-                if (fieldDefinition.RestrictedMode)
-                {
-                    attributes.Add(new KeyValuePair<string, string>("RestrictedMode", fieldDefinition.RestrictedMode.ToString().ToUpper()));
-                }
-                else
+                if (!fieldDefinition.RestrictedMode)
                 {
                     attributes.Add(new KeyValuePair<string, string>("RichTextMode", "FullHtml"));
                     attributes.Add(new KeyValuePair<string, string>("IsolateStyles", true.ToString().ToUpper()));
                 }
-
             }
             else if (fieldDefinition.FieldTypeKind == FieldType.User)
             {
@@ -149,6 +144,10 @@ namespace InfrastructureAsCode.Core.Extensions
                 attributes.Add(new KeyValuePair<string, string>("EnforceUniqueValues", false.ToString().ToUpper()));
                 attributes.Add(new KeyValuePair<string, string>("List", strParentListID.ToString("B")));
                 attributes.Add(new KeyValuePair<string, string>("ShowField", fieldDefinition.LookupListFieldName));
+                if (fieldDefinition.MultiChoice)
+                {
+                    attributes.Add(new KeyValuePair<string, string>("Mult", fieldDefinition.MultiChoice.ToString().ToUpper()));
+                }
             }
 
             var finfo = fieldDefinition.ToCreationObject();

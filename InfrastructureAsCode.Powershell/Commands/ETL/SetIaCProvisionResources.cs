@@ -20,36 +20,48 @@ namespace InfrastructureAsCode.Powershell.Commands
     /// <summary>
     /// The function cmdlet will upgrade the EzForms site specified in the connection to the latest configuration changes
     /// </summary>
-    [Cmdlet(VerbsCommon.Set, "IaCProvisionResources")]
+    [Cmdlet(VerbsCommon.Set, "IaCProvisionResources", SupportsShouldProcess = true)]
     [CmdletHelp("Set site definition components based on JSON file.", Category = "ETL")]
     public class SetIaCProvisionResources : IaCCmdlet
     {
         /// <summary>
         /// Represents the directory path for any JSON files for serialization
         /// </summary>
-        [Parameter(Mandatory = false)]
-        public string SiteContent { get; set; }
+        [Parameter(Mandatory = true, HelpMessage = "Provide a full path to the provisioner JSON file", Position = 0, ValueFromPipeline = true)]
+        public string ProvisionerFilePath { get; set; }
 
         /// <summary>
-        /// Validate parameters
+        /// Specific list to be updated from the above action list
         /// </summary>
-        protected override void BeginProcessing()
-        {
-            base.BeginProcessing();
-            if (!System.IO.Directory.Exists(this.SiteContent))
-            {
-                throw new Exception(string.Format("The directory does not exists {0}", this.SiteContent));
-            }
+        [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
+        public string SpecificListName { get; set; }
 
-            if(!System.IO.Directory.Exists(string.Format("{0}\\Content", this.SiteContent)))
-            {
-                throw new Exception(string.Format("The content directory does not exists {0}", this.SiteContent));
-            }
-        }
+        /// <summary>
+        /// Specific view to be updated from the above action list
+        /// </summary>
+        [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
+        public string SpecificViewName { get; set; }
+
 
         internal List<SPGroupDefinitionModel> siteGroups { get; set; }
 
         internal List<SPFieldDefinitionModel> siteColumns { get; set; }
+
+
+        /// <summary>
+        /// Validate parameters
+        /// </summary>
+        protected override void OnBeginInitialize()
+        {
+            if (!System.IO.File.Exists(this.ProvisionerFilePath))
+            {
+                var fileinfo = new System.IO.FileInfo(ProvisionerFilePath);
+                throw new System.IO.FileNotFoundException("The provisioner file was not found", fileinfo.Name);
+            }
+
+            siteGroups = new List<SPGroupDefinitionModel>();
+            siteColumns = new List<SPFieldDefinitionModel>();
+        }
 
         /// <summary>
         /// Process the request
@@ -58,19 +70,9 @@ namespace InfrastructureAsCode.Powershell.Commands
         {
             base.ExecuteCmdlet();
 
-            if (this.ClientContext == null)
-            {
-                LogWarning("Invalid client context, configure the service to run again");
-                return;
-            }
-
-
-            siteGroups = new List<SPGroupDefinitionModel>();
-            siteColumns = new List<SPFieldDefinitionModel>();
-
-            //Move away from method configuration into a JSON file
-            var filePath = string.Format("{0}\\Content\\{1}", this.SiteContent, "Provisioner.json");
-            var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath));
+            // Retreive JSON Provisioner file and deserialize it
+            var filePath = new System.IO.FileInfo(this.ProvisionerFilePath);
+            var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath.FullName));
 
             if (siteDefinition.SiteResources)
             {
@@ -81,6 +83,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                 InstallComponentsToHostWebList(siteDefinition);
             }
         }
+
 
         /// <summary>
         /// Provision Site Columns
@@ -94,14 +97,14 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             // obtain CSOM object for host web
             this.ClientContext.Load(this.ClientContext.Web, hw => hw.SiteGroups, hw => hw.Title, hw => hw.ContentTypes);
-            this.ClientContext.ExecuteQuery();
+            this.ClientContext.ExecuteQueryRetry();
 
             // creates groups
             siteGroups.AddRange(this.ClientContext.Web.GetOrCreateSiteGroups(siteDefinition.Groups));
 
-            var fileJsonLocation = string.Format("{0}\\Content\\", this.SiteContent);
 
-            foreach (var listDef in siteDefinition.Lists)
+            foreach (var listDef in siteDefinition.Lists.Where(w =>
+                (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
             {
                 // Content Type
                 var listName = listDef.ListName;
@@ -110,12 +113,12 @@ namespace InfrastructureAsCode.Powershell.Commands
                 // Site Columns
                 FieldCollection fields = this.ClientContext.Web.Fields;
                 this.ClientContext.Load(fields, f => f.Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
-                this.ClientContext.ExecuteQuery();
+                this.ClientContext.ExecuteQueryRetry();
 
                 // Create List Columns
                 foreach (var fieldDef in listDef.FieldDefinitions)
                 {
-                    var column =  this.ClientContext.Web.CreateColumn(fieldDef, LogVerbose, LogError, siteGroups, fileJsonLocation);
+                    var column = this.ClientContext.Web.CreateColumn(fieldDef, LogVerbose, LogError, siteGroups, siteDefinition.FieldChoices);
                     if (column == null)
                     {
                         LogWarning("Failed to create column {0}.", fieldDef.InternalName);
@@ -128,7 +131,6 @@ namespace InfrastructureAsCode.Powershell.Commands
                             Title = column.Title,
                             FieldGuid = column.Id
                         });
-
                     }
                 }
 
@@ -139,7 +141,7 @@ namespace InfrastructureAsCode.Powershell.Commands
 
                     if (!this.ClientContext.Web.ContentTypeExistsById(contentTypeId))
                     {
-                        this.ClientContext.Web.CreateContentType(contentTypeName, contentTypeId, contentDef.ContentTypeGroup);
+                        this.ClientContext.Web.CreateContentType(contentTypeName, contentTypeId, (string.IsNullOrEmpty(contentDef.ContentTypeGroup) ? "CustomColumn" : contentDef.ContentTypeGroup));
                     }
 
                     foreach (var fieldDef in contentDef.FieldLinkRefs)
@@ -157,7 +159,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                     // check to see if Picture library named Photos already exists
                     ListCollection allLists = this.ClientContext.Web.Lists;
                     IEnumerable<List> foundLists = this.ClientContext.LoadQuery(allLists.Where(list => list.Title == listName));
-                    this.ClientContext.ExecuteQuery();
+                    this.ClientContext.ExecuteQueryRetry();
 
                     List accessRequest = foundLists.FirstOrDefault();
                     if (accessRequest == null)
@@ -170,14 +172,14 @@ namespace InfrastructureAsCode.Powershell.Commands
                         accessRequestInfo.TemplateType = (int)listDef.ListTemplate;
                         accessRequestInfo.Url = listName;
                         accessRequest = this.ClientContext.Web.Lists.Add(accessRequestInfo);
-                        this.ClientContext.ExecuteQuery();
+                        this.ClientContext.ExecuteQueryRetry();
 
                         if (listDef.ContentTypeEnabled)
                         {
                             List list = this.ClientContext.Web.GetListByTitle(listName);
                             list.ContentTypesEnabled = true;
                             list.Update();
-                            this.ClientContext.Web.Context.ExecuteQuery();
+                            this.ClientContext.Web.Context.ExecuteQueryRetry();
                         }
                     }
 
@@ -195,7 +197,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                     // Views
                     ViewCollection views = accessRequest.Views;
                     this.ClientContext.Load(views, f => f.Include(inc => inc.Id, inc => inc.Hidden, inc => inc.Title, inc => inc.DefaultView));
-                    this.ClientContext.ExecuteQuery();
+                    this.ClientContext.ExecuteQueryRetry();
 
                     foreach (var viewDef in listDef.Views)
                     {
@@ -209,11 +211,11 @@ namespace InfrastructureAsCode.Powershell.Commands
 
                             var view = accessRequest.CreateView(viewDef.InternalName, viewDef.ViewCamlType, viewDef.FieldRefName, viewDef.RowLimit, viewDef.DefaultView, viewDef.QueryXml);
                             this.ClientContext.Load(view, v => v.Title, v => v.Id, v => v.ServerRelativeUrl);
-                            this.ClientContext.ExecuteQuery();
+                            this.ClientContext.ExecuteQueryRetry();
 
                             view.Title = viewDef.Title;
                             view.Update();
-                            this.ClientContext.ExecuteQuery();
+                            this.ClientContext.ExecuteQueryRetry();
                         }
                         catch (Exception ex)
                         {
@@ -232,24 +234,17 @@ namespace InfrastructureAsCode.Powershell.Commands
         /// </summary>
         public void InstallComponentsToHostWebList(SiteProvisionerModel siteDefinition)
         {
-            if (this.ClientContext == null)
-            {
-                LogWarning("Invalid client context, configure the service to run again");
-                return;
-            }
-
             // obtain CSOM object for host web
             this.ClientContext.Load(this.ClientContext.Web, hw => hw.SiteGroups, hw => hw.Title, hw => hw.ContentTypes);
-            this.ClientContext.ExecuteQuery();
+            this.ClientContext.ExecuteQueryRetry();
 
             // create site groups
             siteGroups.AddRange(this.ClientContext.Web.GetOrCreateSiteGroups(siteDefinition.Groups));
 
-            var fileJsonLocation = string.Format("{0}\\Content\\", this.SiteContent);
-
-            foreach (var listDef in siteDefinition.Lists)
+            foreach (var listDef in siteDefinition.Lists.Where(w =>
+                (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
             {
-                this.ClientContext.Web.CreateListFromDefinition(listDef, LogVerbose, LogWarning, LogError, siteGroups, fileJsonLocation);
+                this.ClientContext.Web.CreateListFromDefinition(listDef, LogVerbose, LogWarning, LogError, siteGroups, siteDefinition.FieldChoices);
             }
         }
     }

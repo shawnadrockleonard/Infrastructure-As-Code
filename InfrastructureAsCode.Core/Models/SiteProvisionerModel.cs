@@ -16,12 +16,28 @@ namespace InfrastructureAsCode.Core.Models
         /// </summary>
         public SiteProvisionerModel()
         {
-            this.Lists = new List<SPListDefinition>();
-            this.Groups = new List<SPGroupDefinitionModel>();
             this.SiteResources = false;
         }
 
+        /// <summary>
+        /// Represents the [Me] component of a CAML query
+        /// </summary>
+        public string UserIdFilter { get { return "<UserID Type='Integer'/>"; } }
+
+        /// <summary>
+        /// Does the site definition have site specific resources
+        /// </summary>
         public bool SiteResources { get; set; }
+
+        /// <summary>
+        /// Contains the web scoped content types
+        /// </summary>
+        public List<SPContentTypeDefinition> ContentTypes { get; set; }
+
+        /// <summary>
+        /// Contains the web scoped definitions
+        /// </summary>
+        public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
 
         /// <summary>
         /// Collection of List definitions
@@ -34,8 +50,8 @@ namespace InfrastructureAsCode.Core.Models
         public List<SPGroupDefinitionModel> Groups { get; set; }
 
         /// <summary>
-        /// Represents the [Me] component of a CAML query
+        /// Contains a collection of choices for internal names
         /// </summary>
-        public string UserIdFilter { get { return "<UserID Type='Integer'/>"; } }
+        public List<SiteProvisionerFieldChoiceModel> FieldChoices { get; set; }
     }
 }

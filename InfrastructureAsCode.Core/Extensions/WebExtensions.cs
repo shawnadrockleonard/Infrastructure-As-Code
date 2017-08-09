@@ -77,8 +77,9 @@ namespace InfrastructureAsCode.Core.Extensions
             var context = hostWeb.Context;
 
             var groups = hostWeb.SiteGroups;
+            context.Load(hostWeb, hw => hw.CurrentUser);
             context.Load(groups, g => g.Include(inc => inc.Id, inc => inc.Title));
-            context.ExecuteQuery();
+            context.ExecuteQueryRetry();
 
             foreach (var groupDef in groupsToProvision)
             {
@@ -96,14 +97,16 @@ namespace InfrastructureAsCode.Core.Extensions
 
                 var oGroup = hostWeb.SiteGroups.Add(groupCreationInfo);
                 context.Load(oGroup);
+
                 oGroup.Owner = hostWeb.CurrentUser;
                 oGroup.OnlyAllowMembersViewMembership = groupDef.OnlyAllowMembersViewMembership;
                 oGroup.AllowMembersEditMembership = groupDef.AllowMembersEditMembership;
                 oGroup.AllowRequestToJoinLeave = groupDef.AllowRequestToJoinLeave;
                 oGroup.AutoAcceptRequestToJoinLeave = groupDef.AutoAcceptRequestToJoinLeave;
                 oGroup.Update();
+
                 context.Load(oGroup, g => g.Id, g => g.Title);
-                context.ExecuteQuery();
+                context.ExecuteQueryRetry();
                 siteGroups.Add(new SPGroupDefinitionModel() { Id = oGroup.Id, Title = oGroup.Title });
             }
 
@@ -114,17 +117,27 @@ namespace InfrastructureAsCode.Core.Extensions
         /// Provisions a site column based on the field definition specified
         /// </summary>
         /// <param name="hostWeb">The instantiated site/web to which the column will be retrieved and/or provisioned</param>
-        /// <param name="fieldDef">The definition for the field</param>
+        /// <param name="fieldDefinition">The definition for the field</param>
         /// <param name="loggerVerbose">Provides a method for verbose logging</param>
         /// <param name="loggerError">Provides a method for exception logging</param>
         /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
-        /// <param name="JsonFilePath">(OPTIONAL) file path except if loading choices from JSON</param>
+        /// <param name="provisionerChoices">(OPTIONAL) deserialized choices from JSON</param>
         /// <returns></returns>
-        public static Field CreateColumn(this Web hostWeb, SPFieldDefinitionModel fieldDef, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, string JsonFilePath = null)
+        public static Field CreateColumn(this Web hostWeb, SPFieldDefinitionModel fieldDefinition, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
-            if (!hostWeb.IsPropertyAvailable("Context"))
+            if (fieldDefinition == null)
             {
+                throw new ArgumentNullException("fieldDef", "Field definition is required.");
+            }
 
+            if (string.IsNullOrEmpty(fieldDefinition.InternalName))
+            {
+                throw new ArgumentNullException("InternalName");
+            }
+
+            if (fieldDefinition.LoadFromJSON && (provisionerChoices == null || !provisionerChoices.Any(pc => pc.FieldInternalName == fieldDefinition.InternalName)))
+            {
+                throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
             var fields = hostWeb.Fields;
@@ -132,11 +145,11 @@ namespace InfrastructureAsCode.Core.Extensions
             hostWeb.Context.ExecuteQueryRetry();
 
 
-            var returnField = fields.FirstOrDefault(f => f.Id == fieldDef.FieldGuid || f.InternalName == fieldDef.InternalName);
+            var returnField = fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName || f.Title == fieldDefinition.InternalName);
             if (returnField == null)
             {
-                var finfoXml = hostWeb.CreateFieldDefinition(fieldDef, SiteGroups, JsonFilePath);
-                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDef.InternalName, finfoXml });
+                var finfoXml = hostWeb.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
+                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, finfoXml });
                 try
                 {
                     var createdField = hostWeb.CreateField(finfoXml, executeQuery: false);
@@ -144,11 +157,11 @@ namespace InfrastructureAsCode.Core.Extensions
                 }
                 catch (Exception ex)
                 {
-                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDef.InternalName, ex.Message });
+                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, ex.Message });
                 }
                 finally
                 {
-                    returnField = hostWeb.Fields.GetByInternalNameOrTitle(fieldDef.InternalName);
+                    returnField = hostWeb.Fields.GetByInternalNameOrTitle(fieldDefinition.InternalName);
                     hostWeb.Context.Load(returnField, fd => fd.Id, fd => fd.Title, fd => fd.Indexed, fd => fd.InternalName, fd => fd.CanBeDeleted, fd => fd.Required);
                     hostWeb.Context.ExecuteQuery();
                 }
@@ -166,8 +179,8 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="loggerWarning">TODO: convert to static logger</param>
         /// <param name="loggerError">TODO: convert to static logger</param>
         /// <param name="SiteGroups">Collection of provisioned SharePoint group for field definitions</param>
-        /// <param name="JsonFilePath">(OPTIONAL) file path to JSON folder</param>
-        public static void CreateListFromDefinition(this Web web, SPListDefinition listDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerWarning, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups = null, string JsonFilePath = null)
+        /// <param name="provisionerChoices">(OPTIONAL) deserialized choices from JSON</param>
+        public static void CreateListFromDefinition(this Web web, SPListDefinition listDef, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerWarning, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups = null, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
             var webContext = web.Context;
 
@@ -250,7 +263,7 @@ namespace InfrastructureAsCode.Core.Extensions
             // Site Columns
             foreach (var fieldDef in listDef.FieldDefinitions)
             {
-                var column = listToProvision.CreateListColumn(fieldDef, loggerVerbose, loggerWarning, SiteGroups, JsonFilePath);
+                var column = listToProvision.CreateListColumn(fieldDef, loggerVerbose, loggerWarning, SiteGroups, provisionerChoices);
                 if (column == null)
                 {
                     loggerWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });

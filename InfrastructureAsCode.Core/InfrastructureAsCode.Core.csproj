@@ -194,6 +194,7 @@
     <Compile Include="Models\Enums\ViewToolBarEnum.cs" />
     <Compile Include="Models\Minimal\DefinitionFieldModel.cs" />
     <Compile Include="Models\Minimal\DefinitionListModel.cs" />
+    <Compile Include="Models\SiteProvisionerFieldChoiceModel.cs" />
     <Compile Include="Models\SPChoiceModelComparer.cs" />
     <Compile Include="Models\SPCustomAction.cs" />
     <Compile Include="Models\SPFieldLinkDefinitionModel.cs" />

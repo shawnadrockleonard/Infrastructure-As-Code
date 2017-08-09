@@ -96,6 +96,8 @@ namespace InfrastructureAsCode.Core.Models
         /// </summary>
         public DateTimeFieldFormatType? DateFieldFormat { get; set; }
 
+        public UrlFieldFormatType UrlFieldFormat { get; set; }
+
         /// <summary>
         /// Optional Boolean. TRUE if the column is indexed for use in view filters.
         /// </summary>
@@ -111,6 +113,10 @@ namespace InfrastructureAsCode.Core.Models
 
 
         public bool NoCrawl { get; set; }
+
+        public string Scope { get; set; }
+
+        public string SourceID { get; set; }
 
         /// <summary>
         /// Read only
@@ -183,12 +189,7 @@ namespace InfrastructureAsCode.Core.Models
         /// <summary>
         /// If configure serialize the json file for choices
         /// </summary>
-        public string LoadFromJSON { get; set; }
-
-        /// <summary>
-        /// XML field definition
-        /// </summary>
-        public string SchemaXml { get; set; }
+        public bool LoadFromJSON { get; set; }
 
         public string LookupListName { get; set; }
 
