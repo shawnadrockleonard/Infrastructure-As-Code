@@ -16,18 +16,12 @@ namespace InfrastructureAsCode.Core.Models
         /// </summary>
         public SiteProvisionerModel()
         {
-            this.SiteResources = false;
         }
 
         /// <summary>
         /// Represents the [Me] component of a CAML query
         /// </summary>
         public string UserIdFilter { get { return "<UserID Type='Integer'/>"; } }
-
-        /// <summary>
-        /// Does the site definition have site specific resources
-        /// </summary>
-        public bool SiteResources { get; set; }
 
         /// <summary>
         /// Contains the web scoped content types

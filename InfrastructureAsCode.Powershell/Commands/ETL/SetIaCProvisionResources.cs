@@ -42,11 +42,20 @@ namespace InfrastructureAsCode.Powershell.Commands
         [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
         public string SpecificViewName { get; set; }
 
+        /// <summary>
+        /// Holds the SharePoint groups in the site or created in the site
+        /// </summary>
+        private List<SPGroupDefinitionModel> siteGroups { get; set; }
 
-        internal List<SPGroupDefinitionModel> siteGroups { get; set; }
+        /// <summary>
+        /// Holds the [Site] columns
+        /// </summary>
+        private List<SPFieldDefinitionModel> siteColumns { get; set; }
 
-        internal List<SPFieldDefinitionModel> siteColumns { get; set; }
-
+        /// <summary>
+        /// Holds the [List] columns
+        /// </summary>
+        private List<SPFieldDefinitionModel> listColumns { get; set; }
 
         /// <summary>
         /// Validate parameters
@@ -61,6 +70,7 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             siteGroups = new List<SPGroupDefinitionModel>();
             siteColumns = new List<SPFieldDefinitionModel>();
+            listColumns = new List<SPFieldDefinitionModel>();
         }
 
         /// <summary>
@@ -73,59 +83,225 @@ namespace InfrastructureAsCode.Powershell.Commands
             // Retreive JSON Provisioner file and deserialize it
             var filePath = new System.IO.FileInfo(this.ProvisionerFilePath);
             var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath.FullName));
+            var provisionerChoices = siteDefinition.FieldChoices;
 
-            if (siteDefinition.SiteResources)
-            {
-                InstallComponentsToHostWeb(siteDefinition);
-            }
-            else
-            {
-                InstallComponentsToHostWebList(siteDefinition);
-            }
-        }
+            // Load the Context
+            var contextWeb = this.ClientContext.Web;
+            var fields = this.ClientContext.Web.Fields;
+            this.ClientContext.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
+            this.ClientContext.Load(fields);
+
+            var groupQuery = this.ClientContext.LoadQuery(contextWeb.SiteGroups
+                .Include(group => group.Id,
+                        group => group.Title,
+                        group => group.Description,
+                        group => group.AllowRequestToJoinLeave,
+                        group => group.AllowMembersEditMembership,
+                        group => group.AutoAcceptRequestToJoinLeave,
+                        group => group.OnlyAllowMembersViewMembership,
+                        group => group.RequestToJoinLeaveEmailSetting));
+
+            var contentTypes = this.ClientContext.LoadQuery(contextWeb.ContentTypes
+                .Include(
+                        ict => ict.Id,
+                        ict => ict.Group,
+                        ict => ict.Description,
+                        ict => ict.Name,
+                        ict => ict.Hidden,
+                        ict => ict.JSLink,
+                        ict => ict.FieldLinks,
+                        ict => ict.Fields));
 
 
-        /// <summary>
-        /// Provision Site Columns
-        /// Provision Site Content Type
-        /// Provision List
-        /// Associate Content Type to List
-        /// Provision List Views
-        /// </summary>
-        public void InstallComponentsToHostWeb(SiteProvisionerModel siteDefinition)
-        {
-
-            // obtain CSOM object for host web
-            this.ClientContext.Load(this.ClientContext.Web, hw => hw.SiteGroups, hw => hw.Title, hw => hw.ContentTypes);
+            var collists = contextWeb.Lists;
+            var lists = this.ClientContext.LoadQuery(collists
+                .Include(
+                    linc => linc.Title,
+                    linc => linc.Id,
+                    linc => linc.Description,
+                    linc => linc.Hidden,
+                    linc => linc.OnQuickLaunch,
+                    linc => linc.BaseTemplate,
+                    linc => linc.ContentTypesEnabled,
+                    linc => linc.AllowContentTypes,
+                    linc => linc.EnableFolderCreation,
+                    linc => linc.IsApplicationList,
+                    linc => linc.IsCatalog,
+                    linc => linc.IsSiteAssetsLibrary,
+                    linc => linc.IsPrivate,
+                    linc => linc.IsSystemList,
+                    linc => linc.Views,
+                    linc => linc.Fields
+                    .Include(
+                        lft => lft.Id,
+                        lft => lft.AutoIndexed,
+                        lft => lft.CanBeDeleted,
+                        lft => lft.DefaultFormula,
+                        lft => lft.DefaultValue,
+                        lft => lft.Group,
+                        lft => lft.Description,
+                        lft => lft.EnforceUniqueValues,
+                        lft => lft.FieldTypeKind,
+                        lft => lft.Filterable,
+                        lft => lft.Hidden,
+                        lft => lft.Indexed,
+                        lft => lft.InternalName,
+                        lft => lft.JSLink,
+                        lft => lft.NoCrawl,
+                        lft => lft.ReadOnlyField,
+                        lft => lft.Required,
+                        lft => lft.SchemaXml,
+                        lft => lft.Scope,
+                        lft => lft.Title
+                        ),
+                    linc => linc.ContentTypes
+                    .Include(
+                        ict => ict.Id,
+                        ict => ict.Group,
+                        ict => ict.Description,
+                        ict => ict.Name,
+                        ict => ict.Hidden,
+                        ict => ict.JSLink,
+                        ict => ict.FieldLinks,
+                        ict => ict.Fields)).Where(w => !w.IsSystemList && !w.IsSiteAssetsLibrary));
             this.ClientContext.ExecuteQueryRetry();
 
+
+
+            /// Provision Site Groups
+            /// Provision Site Columns
+            /// Provision Site Content Type
+            /// Provision List
+            /// Create List Columns
+            /// Associate Content Type to List
+            /// Provision List Views
+            /// 
+
+
+
             // creates groups
-            siteGroups.AddRange(this.ClientContext.Web.GetOrCreateSiteGroups(siteDefinition.Groups));
+            contextWeb.Context.Load(contextWeb, hw => hw.CurrentUser);
+            contextWeb.Context.ExecuteQueryRetry();
+
+            foreach (var groupDef in siteDefinition.Groups)
+            {
+
+                if (groupQuery.Any(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    var group = groupQuery.FirstOrDefault(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase));
+                    siteGroups.Add(new SPGroupDefinitionModel() { Id = group.Id, Title = group.Title });
+                }
+                else
+                {
+
+                    var newgroup = contextWeb.GetOrCreateSiteGroups(groupDef);
+                    siteGroups.Add(new SPGroupDefinitionModel() { Id = newgroup.Id, Title = newgroup.Title });
+                }
+            }
+
+            // provision columns
+            // Site Columns
+            this.ClientContext.Load(fields, f => f.Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
+            this.ClientContext.ExecuteQueryRetry();
+
+            foreach (var fieldDef in siteDefinition.FieldDefinitions)
+            {
+                var column = contextWeb.CreateColumn(fieldDef, LogVerbose, LogError, siteGroups, siteDefinition.FieldChoices);
+                if (column == null)
+                {
+                    LogWarning("Failed to create column {0}.", fieldDef.InternalName);
+                }
+                else
+                {
+                    siteColumns.Add(new SPFieldDefinitionModel()
+                    {
+                        InternalName = column.InternalName,
+                        Title = column.Title,
+                        FieldGuid = column.Id
+                    });
+                }
+            }
+
+            // provision content types
+            foreach (var contentDef in siteDefinition.ContentTypes)
+            {
+                var contentTypeName = contentDef.Name;
+                var contentTypeId = contentDef.ContentTypeId;
+
+                if (!contextWeb.ContentTypeExistsById(contentTypeId))
+                {
+                    contextWeb.CreateContentType(contentTypeName, contentTypeId, (string.IsNullOrEmpty(contentDef.ContentTypeGroup) ? "CustomColumn" : contentDef.ContentTypeGroup));
+                }
+
+                foreach (var fieldDef in contentDef.FieldLinkRefs)
+                {
+                    var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef);
+                    var convertedInternalName = siteColumn.DisplayNameMasked;
+                    if (!contextWeb.FieldExistsByNameInContentType(contentTypeName, fieldDef) &&
+                        !contextWeb.FieldExistsByNameInContentType(contentTypeName, convertedInternalName))
+                    {
+                        var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef);
+                        contextWeb.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                    }
+                }
+            }
 
 
-            foreach (var listDef in siteDefinition.Lists.Where(w =>
-                (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
+            // provision lists
+            foreach (var listDef in siteDefinition.Lists
+                .Where(w => (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
             {
                 // Content Type
                 var listName = listDef.ListName;
                 var listDescription = listDef.ListDescription;
 
-                // Site Columns
-                FieldCollection fields = this.ClientContext.Web.Fields;
-                this.ClientContext.Load(fields, f => f.Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
-                this.ClientContext.ExecuteQueryRetry();
 
-                // Create List Columns
+                // provision the list definition
+                var siteList = contextWeb.CreateListFromDefinition(listDef, provisionerChoices);
+
+
+                if (listDef.ContentTypeEnabled && listDef.HasContentTypes)
+                {
+                    foreach (var contentDef in listDef.ContentTypes)
+                    {
+                        var contentTypeName = contentDef.Name;
+                        ContentType accessContentType = null;
+
+                        if (!contextWeb.ContentTypeExistsByName(listName, contentTypeName))
+                        {
+                            if (siteDefinition.ContentTypes != null && siteDefinition.ContentTypes.Any(ct => ct.Name == contentTypeName))
+                            {
+                                contextWeb.AddContentTypeToListByName(listName, contentTypeName, true);
+
+                            }
+                            else
+                            {
+                                var ctypeInfo = contentDef.ToCreationObject();
+                                accessContentType = siteList.ContentTypes.Add(ctypeInfo);
+                                siteList.Update();
+                                siteList.Context.Load(accessContentType, tycp => tycp.Id, tycp => tycp.Name);
+                                siteList.Context.ExecuteQueryRetry();
+                            }
+
+                            if (contentDef.DefaultContentType)
+                            {
+                                siteList.SetDefaultContentTypeToList(accessContentType);
+                            }
+                        }
+                    }
+                }
+
+                // List Columns
                 foreach (var fieldDef in listDef.FieldDefinitions)
                 {
-                    var column = this.ClientContext.Web.CreateColumn(fieldDef, LogVerbose, LogError, siteGroups, siteDefinition.FieldChoices);
+                    var column = siteList.CreateListColumn(fieldDef, LogVerbose, LogWarning, siteGroups, provisionerChoices);
                     if (column == null)
                     {
-                        LogWarning("Failed to create column {0}.", fieldDef.InternalName);
+                        LogWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });
                     }
                     else
                     {
-                        siteColumns.Add(new SPFieldDefinitionModel()
+                        listColumns.Add(new SPFieldDefinitionModel()
                         {
                             InternalName = column.InternalName,
                             Title = column.Title,
@@ -134,88 +310,81 @@ namespace InfrastructureAsCode.Powershell.Commands
                     }
                 }
 
-                foreach (var contentDef in listDef.ContentTypes)
+                // Where content types are enabled
+                // Add the provisioned site columns or list columns to the content type
+                if (listDef.ContentTypeEnabled && listDef.HasContentTypes)
                 {
-                    var contentTypeName = contentDef.Name;
-                    var contentTypeId = contentDef.ContentTypeId;
-
-                    if (!this.ClientContext.Web.ContentTypeExistsById(contentTypeId))
+                    foreach (var contentDef in listDef.ContentTypes)
                     {
-                        this.ClientContext.Web.CreateContentType(contentTypeName, contentTypeId, (string.IsNullOrEmpty(contentDef.ContentTypeGroup) ? "CustomColumn" : contentDef.ContentTypeGroup));
-                    }
+                        var contentTypeName = contentDef.Name;
+                        var accessContentTypes = siteList.ContentTypes;
+                        IEnumerable<ContentType> allContentTypes = contextWeb.Context.LoadQuery(accessContentTypes.Where(f => f.Name == contentTypeName).Include(tcyp => tcyp.Id, tcyp => tcyp.Name));
+                        contextWeb.Context.ExecuteQueryRetry();
 
-                    foreach (var fieldDef in contentDef.FieldLinkRefs)
-                    {
-                        var siteColumn = listDef.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef);
-                        var convertedInternalName = siteColumn.DisplayNameMasked;
-                        if (!this.ClientContext.Web.FieldExistsByNameInContentType(contentTypeName, fieldDef) &&
-                            !this.ClientContext.Web.FieldExistsByNameInContentType(contentTypeName, convertedInternalName))
+                        if (allContentTypes != null)
                         {
-                            var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef);
-                            this.ClientContext.Web.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                            var accessContentType = allContentTypes.FirstOrDefault();
+                            foreach (var fieldInternalName in contentDef.FieldLinkRefs)
+                            {
+                                var column = listColumns.FirstOrDefault(f => f.InternalName == fieldInternalName);
+                                if (column != null)
+                                {
+                                    var fieldLinks = accessContentType.FieldLinks;
+                                    contextWeb.Context.Load(fieldLinks, cf => cf.Include(inc => inc.Id, inc => inc.Name));
+                                    contextWeb.Context.ExecuteQueryRetry();
+
+                                    var convertedInternalName = column.DisplayNameMasked;
+                                    if (!fieldLinks.Any(a => a.Name == column.InternalName || a.Name == convertedInternalName))
+                                    {
+                                        LogVerbose("Content Type {0} Adding Field {1}", new string[] { contentTypeName, column.InternalName });
+                                        var siteColumn = siteList.GetFieldById<Field>(column.FieldGuid);
+                                        contextWeb.Context.ExecuteQueryRetry();
+
+                                        var flink = new FieldLinkCreationInformation();
+                                        flink.Field = siteColumn;
+                                        var flinkstub = accessContentType.FieldLinks.Add(flink);
+                                        //if(fieldDef.Required) flinkstub.Required = fieldDef.Required;
+                                        accessContentType.Update(false);
+                                        contextWeb.Context.ExecuteQueryRetry();
+                                    }
+                                }
+                                else
+                                {
+                                    LogWarning("Failed to create column {0}.", new string[] { fieldInternalName });
+                                }
+                            }
                         }
                     }
+                }
 
-                    // check to see if Picture library named Photos already exists
-                    ListCollection allLists = this.ClientContext.Web.Lists;
-                    IEnumerable<List> foundLists = this.ClientContext.LoadQuery(allLists.Where(list => list.Title == listName));
-                    this.ClientContext.ExecuteQueryRetry();
-
-                    List accessRequest = foundLists.FirstOrDefault();
-                    if (accessRequest == null)
-                    {
-                        // create Picture library named Photos if it does not already exist
-                        ListCreationInformation accessRequestInfo = new ListCreationInformation();
-                        accessRequestInfo.Title = listName;
-                        accessRequestInfo.Description = listDescription;
-                        accessRequestInfo.QuickLaunchOption = listDef.QuickLaunch;
-                        accessRequestInfo.TemplateType = (int)listDef.ListTemplate;
-                        accessRequestInfo.Url = listName;
-                        accessRequest = this.ClientContext.Web.Lists.Add(accessRequestInfo);
-                        this.ClientContext.ExecuteQueryRetry();
-
-                        if (listDef.ContentTypeEnabled)
-                        {
-                            List list = this.ClientContext.Web.GetListByTitle(listName);
-                            list.ContentTypesEnabled = true;
-                            list.Update();
-                            this.ClientContext.Web.Context.ExecuteQueryRetry();
-                        }
-                    }
-
-                    if (listDef.ContentTypeEnabled)
-                    {
-                        if (!this.ClientContext.Web.ContentTypeExistsByName(listName, contentTypeName))
-                        {
-                            this.ClientContext.Web.AddContentTypeToListByName(listName, contentTypeName, true);
-                        }
-
-                        // Set the content type as default content type to the TestLib list
-                        //this.ClientContext.Web.SetDefaultContentTypeToList(listName, contentTypeId);
-                    }
-
-                    // Views
-                    ViewCollection views = accessRequest.Views;
-                    this.ClientContext.Load(views, f => f.Include(inc => inc.Id, inc => inc.Hidden, inc => inc.Title, inc => inc.DefaultView));
-                    this.ClientContext.ExecuteQueryRetry();
+                // Views
+                if (listDef.Views != null && listDef.Views.Any())
+                {
+                    ViewCollection views = siteList.Views;
+                    contextWeb.Context.Load(views, f => f.Include(inc => inc.Id, inc => inc.Hidden, inc => inc.Title, inc => inc.DefaultView));
+                    contextWeb.Context.ExecuteQueryRetry();
 
                     foreach (var viewDef in listDef.Views)
                     {
                         try
                         {
-                            if (views.Any(v => v.Title == viewDef.Title))
+                            if (views.Any(v => v.Title.Equals(viewDef.Title, StringComparison.CurrentCultureIgnoreCase)))
                             {
                                 LogVerbose("View {0} found in list {1}", viewDef.Title, listName);
                                 continue;
                             }
 
-                            var view = accessRequest.CreateView(viewDef.InternalName, viewDef.ViewCamlType, viewDef.FieldRefName, viewDef.RowLimit, viewDef.DefaultView, viewDef.QueryXml);
-                            this.ClientContext.Load(view, v => v.Title, v => v.Id, v => v.ServerRelativeUrl);
-                            this.ClientContext.ExecuteQueryRetry();
+                            var view = siteList.CreateView(viewDef.InternalName, viewDef.ViewCamlType, viewDef.FieldRefName, viewDef.RowLimit, viewDef.DefaultView, viewDef.QueryXml, viewDef.PersonalView, viewDef.PagedView);
+                            contextWeb.Context.Load(view, v => v.Title, v => v.Id, v => v.ServerRelativeUrl);
+                            contextWeb.Context.ExecuteQueryRetry();
 
                             view.Title = viewDef.Title;
+                            if (viewDef.HasJsLink && viewDef.JsLink.IndexOf("clienttemplates.js") < -1)
+                            {
+                                view.JSLink = viewDef.JsLink;
+                            }
                             view.Update();
-                            this.ClientContext.ExecuteQueryRetry();
+                            contextWeb.Context.ExecuteQueryRetry();
                         }
                         catch (Exception ex)
                         {
@@ -223,28 +392,27 @@ namespace InfrastructureAsCode.Powershell.Commands
                         }
                     }
                 }
-            }
-        }
 
-        /// <summary>
-        /// Provision List
-        /// Provision Content Type to List
-        /// Provision Field to Content Type
-        /// Provision List Views
-        /// </summary>
-        public void InstallComponentsToHostWebList(SiteProvisionerModel siteDefinition)
-        {
-            // obtain CSOM object for host web
-            this.ClientContext.Load(this.ClientContext.Web, hw => hw.SiteGroups, hw => hw.Title, hw => hw.ContentTypes);
-            this.ClientContext.ExecuteQueryRetry();
 
-            // create site groups
-            siteGroups.AddRange(this.ClientContext.Web.GetOrCreateSiteGroups(siteDefinition.Groups));
+                // List Data if provided in the JSON file, lets add it to the list
+                if (listDef.ListItems != null && listDef.ListItems.Any())
+                {
+                    foreach (var listItem in listDef.ListItems)
+                    {
+                        // Process the record into the notification email list
+                        var itemCreateInfo = new ListItemCreationInformation();
 
-            foreach (var listDef in siteDefinition.Lists.Where(w =>
-                (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
-            {
-                this.ClientContext.Web.CreateListFromDefinition(listDef, LogVerbose, LogWarning, LogError, siteGroups, siteDefinition.FieldChoices);
+                        var newSPListItem = siteList.AddItem(itemCreateInfo);
+                        newSPListItem["Title"] = listItem.Title;
+                        foreach (var listItemData in listItem.ColumnValues)
+                        {
+                            newSPListItem[listItemData.FieldName] = listItemData.FieldValue;
+                        }
+
+                        newSPListItem.Update();
+                        contextWeb.Context.ExecuteQueryRetry();
+                    }
+                }
             }
         }
     }

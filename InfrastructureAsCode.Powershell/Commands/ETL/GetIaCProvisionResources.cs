@@ -30,18 +30,24 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// Specific list to be updated from the above action list
         /// </summary>
         [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
-        public string SpecificListName { get; set; }
+        public string[] SpecificLists { get; set; }
+
+        private bool _filterLists { get; set; }
 
         /// <summary>
-        /// Specific view to be updated from the above action list
+        /// Holds the SharePoint groups in the site or created in the site
         /// </summary>
-        [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
-        public string SpecificViewName { get; set; }
+        private List<SPGroupDefinitionModel> siteGroups { get; set; }
 
+        /// <summary>
+        /// Holds the [Site] columns
+        /// </summary>
+        private List<SPFieldDefinitionModel> siteColumns { get; set; }
 
-        internal List<SPGroupDefinitionModel> siteGroups { get; set; }
-
-        internal List<SPFieldDefinitionModel> siteColumns { get; set; }
+        /// <summary>
+        /// Holds the [List] columns
+        /// </summary>
+        private List<SPFieldDefinitionModel> listColumns { get; set; }
 
 
         /// <summary>
@@ -56,8 +62,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 throw new System.IO.DirectoryNotFoundException(string.Format("The provisioner directory was not found {0}", fileinfo.DirectoryName));
             }
 
+            _filterLists = (SpecificLists != null && SpecificLists.Any());
             siteGroups = new List<SPGroupDefinitionModel>();
             siteColumns = new List<SPFieldDefinitionModel>();
+            listColumns = new List<SPFieldDefinitionModel>();
         }
 
         /// <summary>
@@ -70,33 +78,169 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             // File Info
             var fileInfo = new System.IO.FileInfo(this.ProvisionerFilePath);
 
+            // SharePoint URI for XML parsing
+            XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
+
             // Skip these specific fields
-            var skiptypes = new FieldType[] {
-                    FieldType.Computed,
-                    FieldType.ContentTypeId,
-                    FieldType.Invalid,
-                    FieldType.WorkflowStatus,
-                    FieldType.WorkflowEventType,
-                    FieldType.Threading,
-                    FieldType.ThreadIndex,
-                    FieldType.Recurrence,
-                    FieldType.PageSeparator,
-                    FieldType.OutcomeChoice
-                };
+            var skiptypes = new FieldType[]
+            {
+                FieldType.Computed,
+                FieldType.ContentTypeId,
+                FieldType.Invalid,
+                FieldType.WorkflowStatus,
+                FieldType.WorkflowEventType,
+                FieldType.Threading,
+                FieldType.ThreadIndex,
+                FieldType.Recurrence,
+                FieldType.PageSeparator,
+                FieldType.OutcomeChoice
+            };
+
+            var skipcolumns = new string[]
+            {
+                "_Hidden",
+                "Base Columns",
+                "Content Feedback",
+                "Core Contact and Calendar Columns",
+                "Core Document Columns",
+                "Core Task and Issue Columns",
+                "Display Template Columns",
+                "Document and Record Management Columns",
+                "Enterprise Keywords Group",
+                "Extended Columns",
+                "JavaScript Display Template Columns",
+                "Page Layout Columns",
+                "Publishing Columns",
+                "Reports",
+                "Status Indicators",
+                "Translation Columns"
+            };
+
+            var skipcontenttypes = new string[]
+            {
+                "_Hidden",
+                "Business Intelligence",
+                "Community Content Types",
+                "Digital Asset Content Types",
+                "Display Template Content Types",
+                "Document Content Types",
+                "Document Set Content Types",
+                "Folder Content Types",
+                "Content Feedback",
+                "Publishing Content Types",
+                "Page Layout Content Types",
+                "Special Content Types",
+                "Group Work Content Types",
+                "List Content Types"
+            };
 
             // Construct the model
             var SiteComponents = new SiteProvisionerModel();
 
-            // Site Columns
+            // Load the Context
             var contextWeb = this.ClientContext.Web;
             var fields = this.ClientContext.Web.Fields;
-            var groupQuery = this.ClientContext.Web.SiteGroups;
-            var contentTypes = this.ClientContext.Web.ContentTypes;
             this.ClientContext.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
             this.ClientContext.Load(fields);
-            this.ClientContext.Load(groupQuery);
-            this.ClientContext.Load(contentTypes);
+
+            var groupQuery = this.ClientContext.LoadQuery(contextWeb.SiteGroups
+                .Include(group => group.Id,
+                        group => group.Title,
+                        group => group.Description,
+                        group => group.AllowRequestToJoinLeave,
+                        group => group.AllowMembersEditMembership,
+                        group => group.AutoAcceptRequestToJoinLeave,
+                        group => group.OnlyAllowMembersViewMembership,
+                        group => group.RequestToJoinLeaveEmailSetting));
+
+            var contentTypes = this.ClientContext.LoadQuery(contextWeb.ContentTypes
+                .Include(
+                        ict => ict.Id,
+                        ict => ict.Group,
+                        ict => ict.Description,
+                        ict => ict.Name,
+                        ict => ict.Hidden,
+                        ict => ict.JSLink,
+                        ict => ict.FieldLinks,
+                        ict => ict.Fields));
+
+
+            var collists = contextWeb.Lists;
+            var lists = this.ClientContext.LoadQuery(collists
+                .Include(
+                    linc => linc.Title,
+                    linc => linc.Id,
+                    linc => linc.Description,
+                    linc => linc.Hidden,
+                    linc => linc.OnQuickLaunch,
+                    linc => linc.BaseTemplate,
+                    linc => linc.ContentTypesEnabled,
+                    linc => linc.AllowContentTypes,
+                    linc => linc.EnableFolderCreation,
+                    linc => linc.IsApplicationList,
+                    linc => linc.IsCatalog,
+                    linc => linc.IsSiteAssetsLibrary,
+                    linc => linc.IsPrivate,
+                    linc => linc.IsSystemList,
+                    linc => linc.Views,
+                    linc => linc.Fields
+                    .Include(
+                        lft => lft.Id,
+                        lft => lft.AutoIndexed,
+                        lft => lft.CanBeDeleted,
+                        lft => lft.DefaultFormula,
+                        lft => lft.DefaultValue,
+                        lft => lft.Group,
+                        lft => lft.Description,
+                        lft => lft.EnforceUniqueValues,
+                        lft => lft.FieldTypeKind,
+                        lft => lft.Filterable,
+                        lft => lft.Hidden,
+                        lft => lft.Indexed,
+                        lft => lft.InternalName,
+                        lft => lft.JSLink,
+                        lft => lft.NoCrawl,
+                        lft => lft.ReadOnlyField,
+                        lft => lft.Required,
+                        lft => lft.SchemaXml,
+                        lft => lft.Scope,
+                        lft => lft.Title
+                        ),
+                    linc => linc.ContentTypes
+                    .Include(
+                        ict => ict.Id,
+                        ict => ict.Group,
+                        ict => ict.Description,
+                        ict => ict.Name,
+                        ict => ict.Hidden,
+                        ict => ict.JSLink,
+                        ict => ict.FieldLinks,
+                        ict => ict.Fields)).Where(w => !w.IsSystemList && !w.IsSiteAssetsLibrary));
             this.ClientContext.ExecuteQueryRetry();
+
+
+            if (groupQuery.Any())
+            {
+                SiteComponents.Groups = new List<SPGroupDefinitionModel>();
+
+                foreach (var group in groupQuery)
+                {
+                    var model = new SPGroupDefinitionModel()
+                    {
+                        Id = group.Id,
+                        Title = group.Title,
+                        Description = group.Description,
+                        AllowRequestToJoinLeave = group.AllowRequestToJoinLeave,
+                        AllowMembersEditMembership = group.AllowMembersEditMembership,
+                        AutoAcceptRequestToJoinLeave = group.AutoAcceptRequestToJoinLeave,
+                        OnlyAllowMembersViewMembership = group.OnlyAllowMembersViewMembership,
+                        RequestToJoinLeaveEmailSetting = group.RequestToJoinLeaveEmailSetting
+                    };
+
+                    SiteComponents.Groups.Add(model);
+                }
+            }
+
 
 
             if (fields.Any())
@@ -104,23 +248,39 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 var webfields = new List<SPFieldDefinitionModel>();
                 foreach (Microsoft.SharePoint.Client.Field field in fields)
                 {
-                    if (skiptypes.Any(st => field.FieldTypeKind == st))
+                    if (skiptypes.Any(st => field.FieldTypeKind == st)
+                        || skipcolumns.Any(sg => field.Group.Equals(sg, StringComparison.CurrentCultureIgnoreCase)))
                     {
                         continue;
                     }
 
-                    var fieldModel = RetrieveField(field);
-                    webfields.Add(fieldModel);
+                    try
+                    {
+                        var fieldModel = RetrieveField(field, groupQuery);
+                        webfields.Add(fieldModel);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Failed to parse field {0} MSG:{1}", field.InternalName, ex.Message);
+                    }
                 }
 
                 SiteComponents.FieldDefinitions = webfields;
             }
 
+
+            var contentTypesFieldset = new List<dynamic>();
             if (contentTypes.Any())
             {
                 SiteComponents.ContentTypes = new List<SPContentTypeDefinition>();
                 foreach (ContentType contenttype in contentTypes)
                 {
+                    // skip core content types
+                    if (skipcontenttypes.Any(sg => contenttype.Group.Equals(sg, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        continue;
+                    }
+
                     contenttype.EnsureProperties(ctp => ctp.Id, ctp => ctp.Group, ctp => ctp.Hidden, ctp => ctp.Description, ctp => ctp.Name, ctp => ctp.FieldLinks);
 
                     var ctypemodel = new SPContentTypeDefinition()
@@ -144,6 +304,8 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                 Required = fieldlink.Required,
                                 Hidden = fieldlink.Hidden
                             });
+
+                            contentTypesFieldset.Add(new { ctypeid = contenttype.Id.StringValue, name = fieldlink.Name });
                         }
                     }
 
@@ -152,33 +314,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             }
 
 
-            var collists = contextWeb.Lists;
-            var lists = this.ClientContext.LoadQuery(collists.Include(linc => linc.Title,
-                        linc => linc.Id,
-                        linc => linc.Description,
-                        linc => linc.Hidden,
-                        linc => linc.OnQuickLaunch,
-                        linc => linc.BaseTemplate,
-                        linc => linc.ContentTypesEnabled,
-                        linc => linc.AllowContentTypes,
-                        linc => linc.EnableFolderCreation,
-                        linc => linc.IsApplicationList,
-                        linc => linc.IsCatalog,
-                        linc => linc.IsSiteAssetsLibrary,
-                        linc => linc.IsPrivate,
-                        linc => linc.IsSystemList,
-                        linc => linc.Views,
-                        linc => linc.Fields,
-                        linc => linc.ContentTypes).Where(w => !w.IsSystemList && !w.IsSiteAssetsLibrary));
-            this.ClientContext.ExecuteQueryRetry();
-
             if (lists.Any())
             {
                 SiteComponents.Lists = new List<SPListDefinition>();
 
                 foreach (List list in lists.Where(lwt =>
-                    (string.IsNullOrEmpty(SpecificListName)
-                        || (!String.IsNullOrEmpty(SpecificListName) && lwt.Title.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
+                    (!_filterLists
+                        || (_filterLists && SpecificLists.Any(sl => lwt.Title.Equals(sl, StringComparison.InvariantCultureIgnoreCase))))))
                 {
                     var listdefinition = new SPListDefinition()
                     {
@@ -195,12 +337,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         IsSystemList = list.IsSystemList
                     };
 
-                    if(list.ContentTypes.Any())
+
+                    if (list.ContentTypes.Any())
                     {
                         listdefinition.ContentTypes = new List<SPContentTypeDefinition>();
-                        foreach(var contenttype in list.ContentTypes)
+                        foreach (var contenttype in list.ContentTypes)
                         {
-                            listdefinition.ContentTypes.Add(new SPContentTypeDefinition()
+                            var ctypemodel = new SPContentTypeDefinition()
                             {
                                 Inherits = true,
                                 ContentTypeId = contenttype.Id.StringValue,
@@ -209,17 +352,51 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                 Name = contenttype.Name,
                                 Hidden = contenttype.Hidden,
                                 JSLink = contenttype.JSLink
-                            });
+                            };
+
+                            if (contenttype.FieldLinks.Any())
+                            {
+                                ctypemodel.FieldLinks = new List<SPFieldLinkDefinitionModel>();
+                                foreach (var cfield in contenttype.FieldLinks)
+                                {
+                                    ctypemodel.FieldLinks.Add(new SPFieldLinkDefinitionModel()
+                                    {
+                                        Id = cfield.Id,
+                                        Name = cfield.Name,
+                                        Hidden = cfield.Hidden,
+                                        Required = cfield.Required
+                                    });
+
+                                }
+                            }
+
+                            if (contenttype.Fields.Any())
+                            {
+                                ctypemodel.FieldLinkRefs = new List<string>();
+                                foreach (var cfield in contenttype.Fields)
+                                {
+                                    ctypemodel.FieldLinkRefs.Add(cfield.InternalName);
+                                }
+                            }
+
+                            listdefinition.ContentTypes.Add(ctypemodel);
                         }
                     }
 
                     if (list.Fields.Any())
                     {
                         var listfields = new List<SPFieldDefinitionModel>();
-                        XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
-                        foreach (var listField in list.Fields)
+                        foreach (Field listField in list.Fields)
                         {
-                            if (skiptypes.Any(st => listField.FieldTypeKind == st))
+                            // skip internal fields
+                            if (skiptypes.Any(st => listField.FieldTypeKind == st)
+                                || skipcolumns.Any(sg => listField.Group.Equals(sg, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                continue;
+                            }
+
+                            // skip fields that are defined
+                            if (contentTypesFieldset.Any(ft => ft.name == listField.InternalName))
                             {
                                 continue;
                             }
@@ -233,8 +410,15 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                 var xScope = xField.Element("Scope");
                                 if (xSourceID != null && xSourceID.Value.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0)
                                 {
-                                    var customField = RetrieveField(listField);
-                                    listfields.Add(customField);
+                                    try
+                                    {
+                                        var customField = RetrieveField(listField, groupQuery);
+                                        listfields.Add(customField);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Trace.TraceError("Failed to parse field {0} MSG:{1}", listField.InternalName, ex.Message);
+                                    }
                                 }
                             }
                         }
@@ -260,7 +444,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             System.IO.File.WriteAllText(fileInfo.FullName, json);
         }
 
-        private SPFieldDefinitionModel RetrieveField(Microsoft.SharePoint.Client.Field field)
+        /// <summary>
+        /// Parse the Field into the appropriate object
+        /// </summary>
+        /// <param name="field"></param>
+        /// <param name="siteGroups"></param>
+        /// <returns></returns>
+        private SPFieldDefinitionModel RetrieveField(Microsoft.SharePoint.Client.Field field, IEnumerable<Group> siteGroups = null)
         {
             field.EnsureProperties(
                 lft => lft.Id,
@@ -307,7 +497,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 Title = field.Title,
             };
 
-            var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.MultiChoice, FieldType.OutcomeChoice };
+            var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.OutcomeChoice };
             if (field.FieldTypeKind == FieldType.DateTime)
             {
                 var fieldCast = (FieldDateTime)field;
@@ -361,9 +551,12 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 fieldModel.PeopleLookupField = fieldCast.LookupField;
                 fieldModel.PeopleOnly = (fieldCast.SelectionMode == FieldUserSelectionMode.PeopleOnly);
                 fieldModel.MultiChoice = fieldCast.AllowMultipleValues;
-                if (fieldCast.SelectionMode == FieldUserSelectionMode.PeopleAndGroups && fieldCast.SelectionGroup > 0)
+
+                if (fieldCast.SelectionGroup > 0
+                    && (siteGroups != null && siteGroups.Any(sg => sg.Id == fieldCast.SelectionGroup)))
                 {
-                    var groupObject = this.ClientContext.Web.SiteGroups.GetById(fieldCast.SelectionGroup);
+                    // we loaded this into context earlier
+                    var groupObject = siteGroups.FirstOrDefault(fg => fg.Id == fieldCast.SelectionGroup);
                     fieldModel.PeopleGroupName = groupObject.Title;
                 }
             }
@@ -381,20 +574,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
                 if (!string.IsNullOrEmpty(fieldCast.LookupList))
                 {
-                    try
-                    {
-                        var lookupGuid = new Guid(fieldCast.LookupList);
-                        var fieldLookup = this.ClientContext.Web.Lists.GetById(lookupGuid);
-                        this.ClientContext.Load(fieldLookup, flp => flp.Title);
-                        this.ClientContext.ExecuteQueryRetry();
+                    var lookupGuid = new Guid(fieldCast.LookupList);
+                    var fieldLookup = this.ClientContext.Web.Lists.GetById(lookupGuid);
+                    this.ClientContext.Load(fieldLookup, flp => flp.Title);
+                    this.ClientContext.ExecuteQueryRetry();
 
-                        fieldModel.LookupListName = fieldLookup.Title;
-                        fieldModel.LookupListFieldName = fieldCast.LookupField;
-                    }
-                    catch(Exception ex)
-                    {
-                        System.Diagnostics.Trace.TraceError("Failed to pull lookup list {0} MSG:{1}", fieldCast.LookupList, ex.Message);
-                    }
+                    fieldModel.LookupListName = fieldLookup.Title;
+                    fieldModel.LookupListFieldName = fieldCast.LookupField;
                 }
                 fieldModel.MultiChoice = fieldCast.AllowMultipleValues;
             }
@@ -416,6 +602,35 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     fc => fc.DisplayFormat);
 
                 fieldModel.UrlFieldFormat = fieldCast.DisplayFormat;
+            }
+            else if (field.FieldTypeKind == FieldType.MultiChoice)
+            {
+                var fieldCast = (FieldMultiChoice)field;
+                fieldCast.EnsureProperties(
+                    fc => fc.Choices,
+                    fc => fc.DefaultValue,
+                    fc => fc.FillInChoice,
+                    fc => fc.Mappings);
+
+                var choiceOptions = fieldCast.Choices.Select(s =>
+                {
+                    var optionDefault = default(Nullable<bool>);
+                    if (!string.IsNullOrEmpty(field.DefaultValue)
+                        && (field.DefaultValue.Equals(s, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        optionDefault = true;
+                    }
+
+                    var option = new SPChoiceModel()
+                    {
+                        Choice = s,
+                        DefaultChoice = optionDefault
+                    };
+                    return option;
+                }).ToList();
+
+                fieldModel.FieldChoices = choiceOptions;
+                fieldModel.MultiChoice = field.FieldTypeKind == FieldType.MultiChoice;
             }
             else if (choices.Any(a => a == field.FieldTypeKind))
             {
