@@ -65,7 +65,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                 fieldNames.AddRange(ViewFields);
             };
 
-            var fieldsXml = string.Join(string.Empty, fieldNames.Select(s => CAML.FieldRef(s)));
+            var fieldsXml = CAML.ViewFields(fieldNames.Select(s => CAML.FieldRef(s)).ToArray());
             var camlWhereClause = string.Empty;
             var camlWhereConcat = false;
 
@@ -77,11 +77,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
             if (StartsWithId > 0)
             {
-                var camlWhereSubClause = string.Format("<Gt><FieldRef Name='ID' /><Value Type='Number'>{0}</Value></Gt>", StartsWithId);
+                var camlWhereSubClause = CAML.Geq(CAML.FieldValue("ID", FieldType.Number.ToString("f"), StartsWithId.ToString()));
                 if (camlWhereConcat)
                 {
                     // Wrap in an And Clause
-                    camlWhereClause = string.Format("<And>{0}{1}</And>", camlWhereClause, camlWhereSubClause);
+                    camlWhereClause = CAML.And(camlWhereClause, camlWhereSubClause);
                 }
                 else
                 {
@@ -92,11 +92,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
             if (EndsWithId > 0)
             {
-                var camlWhereSubClause = string.Format("<Lt><FieldRef Name='ID' /><Value Type='Number'>{0}</Value></Lt>", EndsWithId);
+                var camlWhereSubClause = CAML.Leq(CAML.FieldValue("ID", FieldType.Number.ToString("f"), EndsWithId.ToString()));
                 if (camlWhereConcat)
                 {
                     // Wrap in an And Clause
-                    camlWhereClause = string.Format("<And>{0}{1}</And>", camlWhereClause, camlWhereSubClause);
+                    camlWhereClause = CAML.And(camlWhereClause, camlWhereSubClause);
                 }
                 else
                 {
@@ -114,12 +114,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             try
             {
                 ListItemCollectionPosition ListItemCollectionPosition = null;
-                var camlQuery = CamlQuery.CreateAllItemsQuery();
-                camlQuery.ViewXml = string.Format("<View><Query><Where>{0}</Where>", camlWhereClause);
-                camlQuery.ViewXml += string.Format("<ViewFields>{0}</ViewFields>", fieldsXml);
-                camlQuery.ViewXml += "<RowLimit>50</RowLimit>";
-                camlQuery.ViewXml += "</Query></View>";
-                camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
+                var camlQuery = new CamlQuery()
+                {
+                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, CAML.Where(camlWhereClause), string.Empty, fieldsXml, 50)
+                };
 
                 var ids = new List<int>();
                 while (true)
@@ -127,7 +125,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                     camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
                     var spListItems = listInSite.GetItems(camlQuery);
                     this.ClientContext.Load(spListItems);
-                    this.ClientContext.ExecuteQuery();
+                    this.ClientContext.ExecuteQueryRetry();
                     ListItemCollectionPosition = spListItems.ListItemCollectionPosition;
 
                     foreach (var spListItem in spListItems)
