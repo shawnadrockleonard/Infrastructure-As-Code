@@ -5,6 +5,7 @@ using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Linq;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {
@@ -38,7 +39,7 @@ namespace InfrastructureAsCode.Powershell.Commands
             }
         }
 
-        internal List<SPFieldDefinitionModel> siteColumns { get; set; }
+        private List<SPFieldDefinitionModel> siteColumns { get; set; }
 
         /// <summary>
         /// Process the request
@@ -60,13 +61,15 @@ namespace InfrastructureAsCode.Powershell.Commands
                 //#TODO: Provision datamigrated column for holder
                 var camlWhereClause = CAML.Neq(CAML.FieldValue("DataMigrated", "Integer", "1"));
 
-                // get ezforms site and query the list for approved requests
+                var camlViewFields = CAML.ViewFields((new string[] { "Modified", "", "", "Id" }).Select(s => CAML.FieldRef(s)).ToArray());
+
+                // get site and query the list for approved requests
                 ListItemCollectionPosition ListItemCollectionPosition = null;
-                var camlQuery = CamlQuery.CreateAllItemsQuery();
-                camlQuery.ViewXml = string.Format("<View Scope='RecursiveAll'><Query><Where>{0}</Where>", camlWhereClause);
-                camlQuery.ViewXml += "<RowLimit>50</RowLimit>";
-                camlQuery.ViewXml += "</Query></View>";
-                camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
+                var camlQuery = new CamlQuery()
+                {
+                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, CAML.Where(camlWhereClause), string.Empty, camlViewFields, 50)
+                };
+
 
                 var output = new List<object>();
 
@@ -84,14 +87,12 @@ namespace InfrastructureAsCode.Powershell.Commands
                         var requestId = requestItem.Id;
 
                         ListItem _item = listInSite.GetItemById(requestId);
-                        //#TODO: add list item column includes for specific columns of operation
                         ClientContext.Load(_item);
-                        ClientContext.ExecuteQuery();
+                        ClientContext.ExecuteQueryRetry();
 
                         try
                         {
                             output.Add(ProcessListItem(_item));
-
                         }
                         catch (Exception e)
                         {

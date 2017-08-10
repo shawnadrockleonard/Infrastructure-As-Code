@@ -1,6 +1,7 @@
 ﻿using InfrastructureAsCode.Powershell;
 using InfrastructureAsCode.Powershell.CmdLets;
 using Microsoft.SharePoint.Client;
+using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Lists
 {
+    /// <summary>
+    /// Demonstrates how to delete specific items based on the query specified. 
+    ///     You can't modified an collection that is being enumerated so this presents a pattern to load up and process.
+    /// </summary>
     [Cmdlet(VerbsCommon.Remove, "IaCListItems", SupportsShouldProcess = true)]
     [CmdletHelp("Query the specific list and delete items, if begin/end is specified filter the query.", Category = "ListItems")]
     public class RemoveIaCListItems : IaCCmdlet
@@ -35,6 +40,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 3)]
         public string OverrideCamlQuery { get; set; }
 
+        /// <summary>
+        /// Override the ViewFields to be returned in the Query
+        /// </summary>
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 4)]
         public string[] ViewFields { get; set; }
 
@@ -45,19 +53,19 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         {
             base.ExecuteCmdlet();
 
-            //Load email notification list
+            // Load email notification list
             var listInSite = this.ClientContext.Web.Lists.GetByTitle(this.ListTitle);
             this.ClientContext.Load(listInSite);
             this.ClientContext.ExecuteQuery();
 
-            // get ezforms site and query the list for pending requests
+            // get site and query the list for pending requests
             var fieldNames = new List<string>() { "ID" };
             if (ViewFields != null && ViewFields.Length > 0)
             {
                 fieldNames.AddRange(ViewFields);
             };
 
-            var fieldsXml = string.Join(string.Empty, fieldNames.Select(s => string.Format("<FieldRef Name='{0}'/>", s)));
+            var fieldsXml = string.Join(string.Empty, fieldNames.Select(s => CAML.FieldRef(s)));
             var camlWhereClause = string.Empty;
             var camlWhereConcat = false;
 
