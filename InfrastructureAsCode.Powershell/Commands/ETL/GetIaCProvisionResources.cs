@@ -326,6 +326,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     {
                         Id = list.Id,
                         ListName = list.Title,
+                        ListDescription = list.Description,
                         QuickLaunch = list.OnQuickLaunch ? QuickLaunchOptions.On : QuickLaunchOptions.Off,
                         ContentTypeEnabledOverride = list.ContentTypesEnabled,
                         EnableFolderCreation = list.EnableFolderCreation,
@@ -372,10 +373,15 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
                             if (contenttype.Fields.Any())
                             {
-                                ctypemodel.FieldLinkRefs = new List<string>();
-                                foreach (var cfield in contenttype.Fields)
+                                foreach (var cfield in contenttype.Fields.Where(cf => !ctypemodel.FieldLinks.Any(fl => fl.Name == cf.InternalName)))
                                 {
-                                    ctypemodel.FieldLinkRefs.Add(cfield.InternalName);
+                                    ctypemodel.FieldLinks.Add(new SPFieldLinkDefinitionModel()
+                                    {
+                                        Id = cfield.Id,
+                                        Name = cfield.InternalName,
+                                        Hidden = cfield.Hidden,
+                                        Required = cfield.Required
+                                    });
                                 }
                             }
 
@@ -412,7 +418,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                 {
                                     try
                                     {
-                                        var customField = RetrieveField(listField, groupQuery);
+                                        var customField = RetrieveField(listField, groupQuery, xField);
                                         listfields.Add(customField);
                                     }
                                     catch (Exception ex)
@@ -449,8 +455,9 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// </summary>
         /// <param name="field"></param>
         /// <param name="siteGroups"></param>
+        /// <param name="schemaXml">(OPTIONAL) the schema xml parsed into an XDocument</param>
         /// <returns></returns>
-        private SPFieldDefinitionModel RetrieveField(Microsoft.SharePoint.Client.Field field, IEnumerable<Group> siteGroups = null)
+        private SPFieldDefinitionModel RetrieveField(Microsoft.SharePoint.Client.Field field, IEnumerable<Group> siteGroups = null, XElement schemaXml = null)
         {
             field.EnsureProperties(
                 lft => lft.Id,
@@ -594,6 +601,32 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     fc => fc.OutputType,
                     fc => fc.ShowAsPercentage);
 
+                if (schemaXml == null)
+                {
+                    var xdoc = XDocument.Parse(field.SchemaXml, LoadOptions.PreserveWhitespace);
+                    schemaXml = xdoc.Element("Field");
+                }
+
+                var xfieldReferences = schemaXml.Element("FieldRefs");
+                if (xfieldReferences != null)
+                {
+                    var fieldreferences = new List<string>();
+                    var xFields = xfieldReferences.Elements("FieldRef");
+                    if (xFields != null)
+                    {
+
+                        foreach (var xField in xFields)
+                        {
+                            var xFieldName = xField.Attribute("Name");
+                            fieldreferences.Add(xFieldName.Value);
+                        }
+                    }
+
+                    fieldModel.FieldReferences = fieldreferences;
+                }
+
+                fieldModel.OutputType = fieldCast.OutputType;
+                fieldModel.DefaultFormula = fieldCast.Formula;
             }
             else if (field.FieldTypeKind == FieldType.URL)
             {

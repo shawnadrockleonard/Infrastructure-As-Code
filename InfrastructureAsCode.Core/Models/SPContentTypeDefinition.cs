@@ -14,7 +14,6 @@ namespace InfrastructureAsCode.Core.Models
         /// </summary>
         public SPContentTypeDefinition()
         {
-            this.FieldLinkRefs = new List<string>();
             this.FieldLinks = new List<SPFieldLinkDefinitionModel>();
             this.ContentTypeGroup = "CustomDevelopment";
         }
@@ -28,8 +27,6 @@ namespace InfrastructureAsCode.Core.Models
         public bool Inherits { get; set; }
 
         public bool DefaultContentType { get; set; }
-        
-        public List<string> FieldLinkRefs { get; set; }
 
         public List<SPFieldLinkDefinitionModel> FieldLinks { get; set; }
 
@@ -40,8 +37,6 @@ namespace InfrastructureAsCode.Core.Models
         public bool Hidden { get; set; }
 
         public string JSLink { get; set; }
-
-        public string SchemaXml { get; set; }
 
         public string Scope { get; set; }
 

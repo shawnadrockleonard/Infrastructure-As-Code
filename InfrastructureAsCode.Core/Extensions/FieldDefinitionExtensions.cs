@@ -1,6 +1,7 @@
 ﻿using InfrastructureAsCode.Core.Models;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
+using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,8 @@ namespace InfrastructureAsCode.Core.Extensions
             var idguid = fieldDefinition.FieldGuid;
             var choiceXml = string.Empty;
             var defaultChoiceXml = string.Empty;
+            var formulaXml = string.Empty;
+            var fieldReferenceXml = string.Empty;
             var attributes = new List<KeyValuePair<string, string>>();
 
             if (string.IsNullOrEmpty(fieldDefinition.InternalName))
@@ -78,6 +81,12 @@ namespace InfrastructureAsCode.Core.Extensions
                     var choicecontents = provisionerChoices.FirstOrDefault(fc => fc.FieldInternalName == fieldDefinition.InternalName);
                     fieldDefinition.FieldChoices.Clear();
                     fieldDefinition.FieldChoices.AddRange(choicecontents.Choices);
+                }
+
+                //AllowMultipleValues
+                if (fieldDefinition.MultiChoice)
+                {
+                    attributes.Add(new KeyValuePair<string, string>("Mult", fieldDefinition.MultiChoice.ToString().ToUpper()));
                 }
 
                 choiceXml = string.Format("<CHOICES>{0}</CHOICES>", string.Join("", fieldDefinition.FieldChoices.Select(s => string.Format("<CHOICE>{0}</CHOICE>", s.Choice.Trim())).ToArray()));
@@ -149,6 +158,12 @@ namespace InfrastructureAsCode.Core.Extensions
                     attributes.Add(new KeyValuePair<string, string>("Mult", fieldDefinition.MultiChoice.ToString().ToUpper()));
                 }
             }
+            else if (fieldDefinition.FieldTypeKind == FieldType.Calculated)
+            {
+                attributes.Add(new KeyValuePair<string, string>("ResultType", fieldDefinition.OutputType.Value.ToString("f")));
+                formulaXml = string.Format("<Formula>{0}</Formula>", fieldDefinition.DefaultFormula.UnescapeXml().EscapeXml());
+                fieldReferenceXml = string.Format("<FieldRefs>{0}</FieldRefs>", string.Join("", fieldDefinition.FieldReferences.Select(s => CAML.FieldRef(s.Trim())).ToArray()));
+            }
 
             var finfo = fieldDefinition.ToCreationObject();
             finfo.AdditionalAttributes = attributes;
@@ -162,6 +177,17 @@ namespace InfrastructureAsCode.Core.Extensions
                     root.Add(XElement.Parse(defaultChoiceXml));
                 }
                 root.Add(XElement.Parse(choiceXml));
+                finfoXml = xd.ToString();
+            }
+            if (!string.IsNullOrEmpty(formulaXml))
+            {
+                XDocument xd = XDocument.Parse(finfoXml);
+                XElement root = xd.FirstNode as XElement;
+                root.Add(XElement.Parse(formulaXml));
+                if (!string.IsNullOrEmpty(fieldReferenceXml))
+                {
+                    root.Add(XElement.Parse(fieldReferenceXml));
+                }
                 finfoXml = xd.ToString();
             }
 

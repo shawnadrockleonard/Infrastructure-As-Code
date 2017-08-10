@@ -196,6 +196,16 @@ namespace InfrastructureAsCode.Core.Models
         public string LookupListFieldName { get; set; }
 
         /// <summary>
+        /// The calculated column
+        /// </summary>
+        public Nullable<FieldType> OutputType { get; set; }
+
+        /// <summary>
+        /// Calculated or Lookup columns reference other fields
+        /// </summary>
+        public List<string> FieldReferences { get; set; }
+
+        /// <summary>
         /// Project the field defintion into the expected provisioning CSOM object
         /// </summary>
         /// <returns></returns>

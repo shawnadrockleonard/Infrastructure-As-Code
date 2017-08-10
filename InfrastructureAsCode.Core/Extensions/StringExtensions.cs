@@ -145,5 +145,41 @@ namespace InfrastructureAsCode.Core.Extensions
             return defaultValue;
         }
 
+        /// <summary>
+        /// Removes the XML encoded characters
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string UnescapeXml(this string s)
+        {
+            string unxml = s;
+            if (!string.IsNullOrEmpty(unxml))
+            {
+                // replace entities with literal values
+                unxml = unxml.Replace("&apos;", "'");
+                unxml = unxml.Replace("&quot;", "\"");
+                unxml = unxml.Replace("&gt;", "&gt;");
+                unxml = unxml.Replace("&lt;", "&lt;");
+                unxml = unxml.Replace("&amp;", "&");
+            }
+            return unxml;
+        }
+
+        /// <summary>
+        /// Replaces HTML characters to ensure XML format
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string EscapeXml(this string s)
+        {
+            string unxml = s;
+            if (!string.IsNullOrEmpty(unxml))
+            {
+                // replace entities with literal values
+                unxml = unxml.Replace("'", "&apos;" );
+                unxml = unxml.Replace("&", "&amp;");
+            }
+            return unxml;
+        }
     }
 }

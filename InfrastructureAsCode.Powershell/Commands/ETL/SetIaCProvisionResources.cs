@@ -43,6 +43,13 @@ namespace InfrastructureAsCode.Powershell.Commands
         public string SpecificViewName { get; set; }
 
         /// <summary>
+        /// Specific view to be updated from the above action list
+        /// </summary>
+        [Parameter(Mandatory = false)]
+        public SwitchParameter ValidateJson { get; set; }
+
+
+        /// <summary>
         /// Holds the SharePoint groups in the site or created in the site
         /// </summary>
         private List<SPGroupDefinitionModel> siteGroups { get; set; }
@@ -82,7 +89,25 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             // Retreive JSON Provisioner file and deserialize it
             var filePath = new System.IO.FileInfo(this.ProvisionerFilePath);
-            var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath.FullName));
+            SiteProvisionerModel siteDefinition = null;
+
+            try
+            {
+                siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath.FullName));
+            }
+            catch (Exception ex)
+            {
+                LogError(ex, "Failed to parse {0} Exception {1}", filePath.Name, ex.Message);
+                return;
+            }
+
+
+            if (ValidateJson)
+            {
+                LogVerbose("The file {0} is valid.", filePath.Name);
+                return;
+            }
+
             var provisionerChoices = siteDefinition.FieldChoices;
 
             // Load the Context
@@ -233,15 +258,25 @@ namespace InfrastructureAsCode.Powershell.Commands
                     contextWeb.CreateContentType(contentTypeName, contentTypeId, (string.IsNullOrEmpty(contentDef.ContentTypeGroup) ? "CustomColumn" : contentDef.ContentTypeGroup));
                 }
 
-                foreach (var fieldDef in contentDef.FieldLinkRefs)
+                foreach (var fieldDef in contentDef.FieldLinks)
                 {
-                    var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef);
-                    var convertedInternalName = siteColumn.DisplayNameMasked;
-                    if (!contextWeb.FieldExistsByNameInContentType(contentTypeName, fieldDef) &&
-                        !contextWeb.FieldExistsByNameInContentType(contentTypeName, convertedInternalName))
+                    // Check if FieldLink exists in the Content Type
+                    if (!contextWeb.FieldExistsByNameInContentType(contentTypeName, fieldDef.Name))
                     {
-                        var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef);
-                        contextWeb.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                        // Check if FieldLInk column is in the collection of FieldDefinition
+                        var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef.Name);
+                        if (siteColumn != null && !contextWeb.FieldExistsByNameInContentType(contentTypeName, siteColumn.DisplayNameMasked))
+                        {
+                            var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef.Name);
+                            if (column == null)
+                            {
+                                LogWarning("Column {0} was not added to the collection", fieldDef.Name);
+                            }
+                            else
+                            {
+                                contextWeb.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                            }
+                        }
                     }
                 }
             }
@@ -324,33 +359,32 @@ namespace InfrastructureAsCode.Powershell.Commands
                         if (allContentTypes != null)
                         {
                             var accessContentType = allContentTypes.FirstOrDefault();
-                            foreach (var fieldInternalName in contentDef.FieldLinkRefs)
+                            foreach (var fieldInternalName in contentDef.FieldLinks)
                             {
-                                var column = listColumns.FirstOrDefault(f => f.InternalName == fieldInternalName);
-                                if (column != null)
+                                var column = listColumns.FirstOrDefault(f => f.InternalName == fieldInternalName.Name);
+                                if (column == null)
                                 {
-                                    var fieldLinks = accessContentType.FieldLinks;
-                                    contextWeb.Context.Load(fieldLinks, cf => cf.Include(inc => inc.Id, inc => inc.Name));
+                                    LogWarning("Failed to associate field link {0}.", new string[] { fieldInternalName.Name });
+                                    continue;
+                                }
+
+                                var fieldLinks = accessContentType.FieldLinks;
+                                contextWeb.Context.Load(fieldLinks, cf => cf.Include(inc => inc.Id, inc => inc.Name));
+                                contextWeb.Context.ExecuteQueryRetry();
+
+                                var convertedInternalName = column.DisplayNameMasked;
+                                if (!fieldLinks.Any(a => a.Name == column.InternalName || a.Name == convertedInternalName))
+                                {
+                                    LogVerbose("Content Type {0} Adding Field {1}", new string[] { contentTypeName, column.InternalName });
+                                    var siteColumn = siteList.GetFieldById<Field>(column.FieldGuid);
                                     contextWeb.Context.ExecuteQueryRetry();
 
-                                    var convertedInternalName = column.DisplayNameMasked;
-                                    if (!fieldLinks.Any(a => a.Name == column.InternalName || a.Name == convertedInternalName))
-                                    {
-                                        LogVerbose("Content Type {0} Adding Field {1}", new string[] { contentTypeName, column.InternalName });
-                                        var siteColumn = siteList.GetFieldById<Field>(column.FieldGuid);
-                                        contextWeb.Context.ExecuteQueryRetry();
-
-                                        var flink = new FieldLinkCreationInformation();
-                                        flink.Field = siteColumn;
-                                        var flinkstub = accessContentType.FieldLinks.Add(flink);
-                                        //if(fieldDef.Required) flinkstub.Required = fieldDef.Required;
-                                        accessContentType.Update(false);
-                                        contextWeb.Context.ExecuteQueryRetry();
-                                    }
-                                }
-                                else
-                                {
-                                    LogWarning("Failed to create column {0}.", new string[] { fieldInternalName });
+                                    var flink = new FieldLinkCreationInformation();
+                                    flink.Field = siteColumn;
+                                    var flinkstub = accessContentType.FieldLinks.Add(flink);
+                                    //if(fieldDef.Required) flinkstub.Required = fieldDef.Required;
+                                    accessContentType.Update(false);
+                                    contextWeb.Context.ExecuteQueryRetry();
                                 }
                             }
                         }
