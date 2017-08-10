@@ -14,7 +14,7 @@ using System.Xml.Linq;
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
     /// <summary>
-    /// The function cmdlet will upgrade the EzForms site specified in the connection to the latest configuration changes
+    /// The function cmdlet will query the site specified in the connection and build a configuration file
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "IaCProvisionResources")]
     [CmdletHelp("Get site definition components and write to JSON file.", Category = "ETL")]

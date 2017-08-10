@@ -178,6 +178,7 @@
     <Compile Include="CmdLets\CmdletHelpAttribute.cs" />
     <Compile Include="Commands\ConnectSPIaC.cs" />
     <Compile Include="Commands\DisconnectSPIaC.cs" />
+    <Compile Include="Commands\ETL\SetIaCProvisionViews.cs" />
     <Compile Include="Commands\Fields\SetIaCFieldJsLink.cs" />
     <Compile Include="Commands\Files\WatchIaCDirectoryAndUpload.cs" />
     <Compile Include="Commands\GetIaCStoredCredential.cs" />

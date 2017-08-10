@@ -17,10 +17,12 @@ using System.Xml.Linq;
 namespace InfrastructureAsCode.Powershell.Commands.Lists
 {
     /// <summary>
-    /// The function cmdlet will create a site page and add a webpart with a specific hidden list definition
+    /// The function cmdlet will create a web part page.  
+    /// If the page already exists it will find the Internal View and updated it based on an existing List View.  
+    /// This will help keep the webpart in sync with user changes
     /// </summary>
     [Cmdlet(VerbsCommon.Set, "IaCWebPartDefinition")]
-    [CmdletHelp("Identify users via json file and send email", Category = "Lists")]
+    [CmdletHelp("Update a webpart page XsltListViewWebPart with a specific List View", Category = "Lists")]
     public class SetIaCWebPartDefinition : IaCCmdlet
     {
         /// <summary>
@@ -71,17 +73,17 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             var context = this.ClientContext;
             var web = context.Web;
             context.Load(web);
-            context.ExecuteQuery();
+            context.ExecuteQueryRetry();
             string webRelativeUrl = web.ServerRelativeUrl;
 
             ListCollection allLists = web.Lists;
-            IEnumerable<List> foundLists = context.LoadQuery(allLists.Where(list => list.Title == ListTitle)
-                .Include(wl => wl.Id, wl => wl.Title, wl => wl.RootFolder.ServerRelativeUrl));
-            context.ExecuteQuery();
+            var foundLists = context.LoadQuery(allLists.Where(list => list.Title == ListTitle)
+                .Include(wl => wl.Id, wl => wl.Title, wl => wl.RootFolder.ServerRelativeUrl, wl => wl.Views));
+            context.ExecuteQueryRetry();
             List webPartList = foundLists.FirstOrDefault();
 
             var wikiPageUrl = web.AddWikiPage(SitePagesLibraryTitle, pageFileName);
-            context.ExecuteQuery();
+            context.ExecuteQueryRetry();
             if (string.IsNullOrEmpty(wikiPageUrl))
             {
                 wikiPageUrl = string.Format("{0}/{1}", SitePagesRelativeUrl, pageFileName);

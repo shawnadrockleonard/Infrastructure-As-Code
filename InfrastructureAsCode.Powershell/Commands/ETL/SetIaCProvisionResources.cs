@@ -18,7 +18,7 @@ using System.Xml.Linq;
 namespace InfrastructureAsCode.Powershell.Commands
 {
     /// <summary>
-    /// The function cmdlet will upgrade the EzForms site specified in the connection to the latest configuration changes
+    /// The function cmdlet will upgrade the site specified in the connection to the latest configuration changes
     /// </summary>
     [Cmdlet(VerbsCommon.Set, "IaCProvisionResources", SupportsShouldProcess = true)]
     [CmdletHelp("Set site definition components based on JSON file.", Category = "ETL")]

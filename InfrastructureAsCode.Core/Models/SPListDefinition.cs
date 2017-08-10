@@ -76,20 +76,6 @@ namespace InfrastructureAsCode.Core.Models
         }
 
         /// <summary>
-        /// Represents views that will be created in the List Definition
-        /// </summary>
-        public List<SPViewDefinitionModel> Views { get; set; }
-
-        public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
-
-        public List<SPListItemDefinition> ListItems { get; set; }
-
-        /// <summary>
-        /// A collection of specialized roles
-        /// </summary>
-        public IList<SPPrincipalModel> RoleBindings { get; set; }
-
-        /// <summary>
         /// Should the list/library allow versioning
         /// </summary>
         public bool Versioning { get; set; }
@@ -107,6 +93,20 @@ namespace InfrastructureAsCode.Core.Models
         public bool IsSystemList { get; set; }
 
         public bool Hidden { get; set; }
+
+        /// <summary>
+        /// Represents views that will be created in the List Definition
+        /// </summary>
+        public List<SPViewDefinitionModel> Views { get; set; }
+
+        public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
+
+        public List<SPListItemDefinition> ListItems { get; set; }
+
+        /// <summary>
+        /// A collection of specialized roles
+        /// </summary>
+        public IList<SPPrincipalModel> RoleBindings { get; set; }
 
         /// <summary>
         /// Represents an internal view that is bound to a specific Site Page or Web Part
