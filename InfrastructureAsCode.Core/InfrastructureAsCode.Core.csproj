@@ -201,7 +201,6 @@
     <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
     <Compile Include="Models\SPGroupPrincipalModel.cs" />
     <Compile Include="Models\SPId.cs" />
-    <Compile Include="Models\SPInternalViewDefinitionModel.cs" />
     <Compile Include="Models\SPOSiteCollectionModel.cs" />
     <Compile Include="Models\SPPrincipalModel.cs" />
     <Compile Include="Models\SPRecycleBinElement.cs" />

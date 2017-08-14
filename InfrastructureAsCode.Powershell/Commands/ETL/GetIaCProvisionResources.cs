@@ -171,6 +171,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     linc => linc.Title,
                     linc => linc.Id,
                     linc => linc.Description,
+                    linc => linc.RootFolder.ServerRelativeUrl,
                     linc => linc.Hidden,
                     linc => linc.OnQuickLaunch,
                     linc => linc.BaseTemplate,
@@ -182,7 +183,41 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     linc => linc.IsSiteAssetsLibrary,
                     linc => linc.IsPrivate,
                     linc => linc.IsSystemList,
-                    linc => linc.Views,
+                    linc => linc.Views
+                    .Include(
+                        lvt => lvt.Title,
+                        lvt => lvt.DefaultView,
+                        lvt => lvt.ServerRelativeUrl,
+                        lvt => lvt.Id,
+                        lvt => lvt.Aggregations,
+                        lvt => lvt.AggregationsStatus,
+                        lvt => lvt.BaseViewId,
+                        lvt => lvt.Hidden,
+                        lvt => lvt.ImageUrl,
+                        lvt => lvt.JSLink,
+                        lvt => lvt.HtmlSchemaXml,
+                        lvt => lvt.ListViewXml,
+                        lvt => lvt.MobileDefaultView,
+                        lvt => lvt.ModerationType,
+                        lvt => lvt.OrderedView,
+                        lvt => lvt.Paged,
+                        lvt => lvt.PageRenderType,
+                        lvt => lvt.PersonalView,
+                        lvt => lvt.ReadOnlyView,
+                        lvt => lvt.Scope,
+                        lvt => lvt.RowLimit,
+                        lvt => lvt.StyleId,
+                        lvt => lvt.TabularView,
+                        lvt => lvt.Threaded,
+                        lvt => lvt.Toolbar,
+                        lvt => lvt.ToolbarTemplateName,
+                        lvt => lvt.ViewFields,
+                        lvt => lvt.ViewJoins,
+                        lvt => lvt.ViewQuery,
+                        lvt => lvt.ViewType,
+                        lvt => lvt.ViewProjectedFields,
+                        lvt => lvt.Method
+                        ),
                     linc => linc.Fields
                     .Include(
                         lft => lft.Id,
@@ -217,6 +252,8 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         ict => ict.FieldLinks,
                         ict => ict.Fields)).Where(w => !w.IsSystemList && !w.IsSiteAssetsLibrary));
             this.ClientContext.ExecuteQueryRetry();
+
+            var weburl = TokenHelper.EnsureTrailingSlash(contextWeb.ServerRelativeUrl);
 
 
             if (groupQuery.Any())
@@ -430,6 +467,92 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         }
 
                         listdefinition.FieldDefinitions = listfields;
+                    }
+
+                    if (list.Views != null && list.Views.Any())
+                    {
+                        listdefinition.InternalViews = new List<SPViewDefinitionModel>();
+                        listdefinition.Views = new List<SPViewDefinitionModel>();
+                        var listurl = TokenHelper.EnsureTrailingSlash(list.RootFolder.ServerRelativeUrl);
+
+                        foreach (var view in list.Views)
+                        {
+                            var vinternal = (view.ServerRelativeUrl.IndexOf(listurl, StringComparison.CurrentCultureIgnoreCase) == -1);
+
+                            ViewType viewCamlType = ViewType.None;
+                            foreach (var vtype in Enum.GetNames(typeof(ViewType)))
+                            {
+                                if (vtype.Equals(view.ViewType, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    viewCamlType = (ViewType)Enum.Parse(typeof(ViewType), vtype);
+                                    break;
+                                }
+                            }
+
+                            var viewmodel = new SPViewDefinitionModel()
+                            {
+                                Id = view.Id,
+                                Title = view.Title,
+                                DefaultView = view.DefaultView,
+                                FieldRefName = new List<string>(),
+                                Aggregations = view.Aggregations,
+                                AggregationsStatus = view.AggregationsStatus,
+                                BaseViewId = view.BaseViewId,
+                                Hidden = view.Hidden,
+                                ImageUrl = view.ImageUrl,
+                                Toolbar = view.Toolbar,
+                                ListViewXml = view.ListViewXml,
+                                MobileDefaultView = view.MobileDefaultView,
+                                ModerationType = view.ModerationType,
+                                OrderedView = view.OrderedView,
+                                Paged = view.Paged,
+                                PageRenderType = view.PageRenderType,
+                                PersonalView = view.PersonalView,
+                                ReadOnlyView = view.ReadOnlyView,
+                                Scope = view.Scope,
+                                RowLimit = view.RowLimit,
+                                StyleId = view.StyleId,
+                                TabularView = view.TabularView,
+                                Threaded = view.Threaded,
+                                ViewJoins = view.ViewJoins,
+                                ViewQuery = view.ViewQuery,
+                                ViewCamlType = viewCamlType
+                            };
+
+                            if (vinternal)
+                            {
+                                viewmodel.SitePage = view.ServerRelativeUrl.Replace(weburl, "");
+                                viewmodel.InternalView = true;
+                            }
+                            else
+                            {
+                                viewmodel.InternalName = view.ServerRelativeUrl.Replace(listurl, "").Replace(".aspx", "");
+                            }
+
+                            foreach (var vfields in view.ViewFields)
+                            {
+                                viewmodel.FieldRefName.Add(vfields);
+                            }
+
+                            var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                            if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
+                            {
+                                viewmodel.JsLinkFiles = new List<string>();
+                                foreach (var vjslink in vjslinks)
+                                {
+                                    viewmodel.JsLinkFiles.Add(vjslink);
+                                }
+                            }
+
+                            if (view.Hidden)
+                            {
+                                listdefinition.InternalViews.Add(viewmodel);
+                            }
+                            else
+                            {
+                                listdefinition.Views.Add(viewmodel);
+                            }
+                        }
                     }
 
 

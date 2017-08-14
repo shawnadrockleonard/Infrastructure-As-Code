@@ -17,7 +17,7 @@ namespace InfrastructureAsCode.Core.Models
             this.ListTemplate = ListTemplateType.GenericList;
             this.ContentTypeEnabledOverride = false;
             this.Views = new List<SPViewDefinitionModel>();
-            this.InternalViews = new List<SPInternalViewDefinitionModel>();
+            this.InternalViews = new List<SPViewDefinitionModel>();
             this.ContentTypes = new List<SPContentTypeDefinition>();
             this.FieldDefinitions = new List<SPFieldDefinitionModel>();
             this.ListItems = new List<SPListItemDefinition>();
@@ -94,11 +94,6 @@ namespace InfrastructureAsCode.Core.Models
 
         public bool Hidden { get; set; }
 
-        /// <summary>
-        /// Represents views that will be created in the List Definition
-        /// </summary>
-        public List<SPViewDefinitionModel> Views { get; set; }
-
         public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
 
         public List<SPListItemDefinition> ListItems { get; set; }
@@ -109,9 +104,14 @@ namespace InfrastructureAsCode.Core.Models
         public IList<SPPrincipalModel> RoleBindings { get; set; }
 
         /// <summary>
+        /// Represents views that will be created in the List Definition
+        /// </summary>
+        public List<SPViewDefinitionModel> Views { get; set; }
+
+        /// <summary>
         /// Represents an internal view that is bound to a specific Site Page or Web Part
         /// </summary>
-        public List<SPInternalViewDefinitionModel> InternalViews { get; set; }
+        public List<SPViewDefinitionModel> InternalViews { get; set; }
 
         /// <summary>
         /// Projects the properties to Creation Info

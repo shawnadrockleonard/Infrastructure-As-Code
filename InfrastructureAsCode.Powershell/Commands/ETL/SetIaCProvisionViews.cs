@@ -134,7 +134,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         thisview.JSLink = modelView.JsLink;
                     }
                     thisview.RowLimit = modelView.RowLimit;
-                    thisview.ViewQuery = modelView.QueryXml;
+                    thisview.ViewQuery = modelView.ViewQuery;
                     thisview.Toolbar = string.Format("<Toolbar Type=\"{0}\"/>", modelView.ToolBarType.ToString());
 
                     if (this.ShouldProcess(string.Format("Should update view {0}", this.SpecificViewName)))
@@ -145,7 +145,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 }
                 else
                 {
-                    var view = listToUpdate.CreateView(modelView.InternalName, modelView.ViewCamlType, modelView.FieldRefName, modelView.RowLimit, modelView.DefaultView, modelView.QueryXml, modelView.PersonalView, modelView.PagedView);
+                    var view = listToUpdate.CreateView(modelView.InternalName, modelView.ViewCamlType, modelView.FieldRefName.ToArray(), modelView.RowLimit, modelView.DefaultView, modelView.ViewQuery, modelView.PersonalView, modelView.Paged);
                     context.Load(view, v => v.Title, v => v.Id, v => v.ServerRelativeUrl);
                     context.ExecuteQueryRetry();
 
@@ -181,7 +181,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         thisview.JSLink = modelInternalView.JsLink;
                     }
                     thisview.RowLimit = modelInternalView.RowLimit;
-                    thisview.ViewQuery = modelInternalView.QueryXml;
+                    thisview.ViewQuery = modelInternalView.ViewQuery;
                     thisview.Toolbar = string.Format("<Toolbar Type=\"{0}\"/>", modelInternalView.ToolBarType.ToString());
 
                     if (this.ShouldProcess(string.Format("Should update view {0}", this.SpecificViewName)))
