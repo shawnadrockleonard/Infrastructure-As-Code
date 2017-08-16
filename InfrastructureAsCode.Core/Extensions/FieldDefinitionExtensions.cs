@@ -104,7 +104,7 @@ namespace InfrastructureAsCode.Core.Extensions
             {
                 if (fieldDefinition.DateFieldFormat.HasValue)
                 {
-                    attributes.Add(new KeyValuePair<string, string>("DisplayFormat", fieldDefinition.DateFieldFormat.Value.ToString("f")));
+                    attributes.Add(new KeyValuePair<string, string>("Format", fieldDefinition.DateFieldFormat.Value.ToString("f")));
                 }
             }
             else if (fieldDefinition.FieldTypeKind == FieldType.Note)

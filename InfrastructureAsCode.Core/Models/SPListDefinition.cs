@@ -94,6 +94,12 @@ namespace InfrastructureAsCode.Core.Models
 
         public bool Hidden { get; set; }
 
+        public Nullable<DateTime> Created { get; set; }
+
+        public Nullable<DateTime> LastItemModifiedDate { get; set; }
+
+        public Nullable<DateTime> LastItemUserModifiedDate { get; set; }
+
         public List<SPFieldDefinitionModel> FieldDefinitions { get; set; }
 
         public List<SPListItemDefinition> ListItems { get; set; }

@@ -203,6 +203,7 @@
     <Compile Include="Models\SPId.cs" />
     <Compile Include="Models\SPOSiteCollectionModel.cs" />
     <Compile Include="Models\SPPrincipalModel.cs" />
+    <Compile Include="Models\SPPrincipalUserDefinition.cs" />
     <Compile Include="Models\SPRecycleBinElement.cs" />
     <Compile Include="Models\SPRecycleBinRestoreModel.cs" />
     <Compile Include="Models\SiteProvisionerModel.cs" />

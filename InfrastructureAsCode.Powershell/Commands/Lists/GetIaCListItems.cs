@@ -103,7 +103,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed to retrieve recycle bin collection");
+                LogError(ex, "Failed to retrieve list item collection");
             }
 
             WriteObject(results, true);

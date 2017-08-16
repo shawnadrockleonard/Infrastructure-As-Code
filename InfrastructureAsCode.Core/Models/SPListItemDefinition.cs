@@ -16,9 +16,15 @@ namespace InfrastructureAsCode.Core.Models
 
         public string Title { get; set; }
 
-        public List<SPListItemFieldDefinition> ColumnValues { get; set; }
+        public Nullable<DateTime> Created { get; set; }
 
-        public string ListDescription { get; set; }
+        public SPPrincipalUserDefinition CreatedBy { get; set; }
+
+        public Nullable<DateTime> Modified { get; set; }
+
+        public SPPrincipalUserDefinition ModifiedBy { get; set; }
+
+        public List<SPListItemFieldDefinition> ColumnValues { get; set; }
 
         /// <summary>
         /// A collection of specialized roles
