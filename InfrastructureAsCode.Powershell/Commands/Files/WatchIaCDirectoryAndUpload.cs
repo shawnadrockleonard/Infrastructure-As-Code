@@ -162,6 +162,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
         }
 
 
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            System.Diagnostics.Trace.TraceWarning("Stopping the pipeline");
+        }
 
         private void OnChanged(List siteAssetsLibrary, Folder parentFolder, System.IO.FileInfo source)
         {

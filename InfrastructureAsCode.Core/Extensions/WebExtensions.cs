@@ -439,13 +439,15 @@ namespace InfrastructureAsCode.Core.Extensions
         /// </summary>
         /// <param name="web"></param>
         /// <param name="customactionname"></param>
-        public static void RemoveCustomActionLink(this Web web, string customactionname)
+        public static bool RemoveCustomActionLink(this Web web, string customactionname)
         {
             if (web.CustomActionExists(customactionname))
             {
                 var cssAction = web.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname);
                 web.DeleteCustomAction(cssAction.Id);
+                return true;
             }
+            return false;
         }
     }
 }

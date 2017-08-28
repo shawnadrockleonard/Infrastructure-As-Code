@@ -75,13 +75,15 @@ namespace InfrastructureAsCode.Core.Extensions
         /// </summary>
         /// <param name="site"></param>
         /// <param name="customactionname"></param>
-        public static void RemoveCustomActionLink(this Site site, string customactionname)
+        public static bool RemoveCustomActionLink(this Site site, string customactionname)
         {
             if (site.CustomActionExists(customactionname))
             {
                 var cssAction = site.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname);
                 site.DeleteCustomAction(cssAction.Id);
+                return true;
             }
+            return false;
         }
     }
 }

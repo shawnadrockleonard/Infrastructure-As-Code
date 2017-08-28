@@ -161,6 +161,10 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 SPIaCConnection.CurrentConnection.RestoreCachedContext();
                 System.Diagnostics.Trace.TraceError("Cmdlet Exception {0}", ex.Message);
+                if(!this.Stopping)
+                {
+                    LogError(ex, "Stack Trace {0}", ex.StackTrace);
+                }
             }
         }
 
@@ -317,6 +321,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                 logger.Information(message, args);
             }
             System.Diagnostics.Trace.TraceInformation(message, args);
+            if(!this.Stopping)
             WriteVerbose(string.Format(message, args));
         }
     }

@@ -14,6 +14,7 @@ using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using InfrastructureAsCode.Powershell.PipeBinds;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
@@ -33,14 +34,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <summary>
         /// Specific list to be updated from the above action list
         /// </summary>
-        [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
-        public string SpecificListName { get; set; }
+        [Parameter(Mandatory = true, ParameterSetName = "ActionDependency")]
+        public ListPipeBind SpecificListName { get; set; }
 
         /// <summary>
         /// Specific view to be updated from the above action list
         /// </summary>
-        [Parameter(Mandatory = false, ParameterSetName = "ActionDependency")]
-        public string SpecificViewName { get; set; }
+        [Parameter(Mandatory = true, ParameterSetName = "ActionDependency")]
+        public ViewPipeBind SpecificViewName { get; set; }
 
 
         /// <summary>
@@ -69,12 +70,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             var siteDefinition = JsonConvert.DeserializeObject<SiteProvisionerModel>(System.IO.File.ReadAllText(filePath.FullName));
 
 
+            var listToUpdate = SpecificListName.GetList(this.ClientContext.Web);
+            var viewToUpdate = SpecificViewName.GetView(listToUpdate);
 
 
             // Assumption here we are passing in existing list/view model
-            var modelList = siteDefinition.Lists.FirstOrDefault(a => a.ListName.Equals(this.SpecificListName, StringComparison.CurrentCultureIgnoreCase));
-            var modelView = modelList.Views.FirstOrDefault(a => a.Title.Equals(this.SpecificViewName, StringComparison.CurrentCultureIgnoreCase));
-            var modelInternalView = modelList.InternalViews.FirstOrDefault(a => a.Title.Equals(this.SpecificViewName, StringComparison.CurrentCultureIgnoreCase));
+            var modelList = siteDefinition.Lists.FirstOrDefault(a => a.ListName.Equals(listToUpdate.Title, StringComparison.CurrentCultureIgnoreCase));
+            var modelView = modelList.Views.FirstOrDefault(a => a.Title.Equals(viewToUpdate.Title, StringComparison.CurrentCultureIgnoreCase));
+            var modelInternalView = modelList.InternalViews.FirstOrDefault(a => a.Title.Equals(viewToUpdate.Title, StringComparison.CurrentCultureIgnoreCase));
 
 
             if (modelView == null && modelInternalView == null)
@@ -86,16 +89,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             var listName = this.SpecificListName;
             var context = this.ClientContext;
             var web = context.Web;
-            context.Load(web);
-            context.ExecuteQueryRetry();
-            string webRelativeUrl = web.ServerRelativeUrl;
-            ListCollection allLists = web.Lists;
-            IEnumerable<List> foundLists = context.LoadQuery(allLists.Where(list => list.Title == listName).Include(wl => wl.Id, wl => wl.Title, wl => wl.RootFolder.ServerRelativeUrl));
-            context.ExecuteQueryRetry();
-
-            List listToUpdate = foundLists.FirstOrDefault();
-            var views = listToUpdate.Views;
-            ClientContext.Load(views, v => v.Include(tv => tv.Id,
+            var views = context.LoadQuery(listToUpdate.Views.Where(w => w.Title == viewToUpdate.Title).Include(tv => tv.Id,
                 tv => tv.Title,
                 tv => tv.ServerRelativeUrl,
                 tv => tv.DefaultView,
@@ -112,11 +106,17 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 tv => tv.PersonalView,
                 tv => tv.ReadOnlyView,
                 tv => tv.ViewType));
-            ClientContext.ExecuteQueryRetry();
+
+            context.Load(web);
+            context.Load(listToUpdate, ltu => ltu.Id, ltu => ltu.Title, ltut => ltut.RootFolder.ServerRelativeUrl);
+            context.ExecuteQueryRetry();
+
+            string webRelativeUrl = web.ServerRelativeUrl;
+
 
             if (modelView != null)
             {
-                var thisview = views.FirstOrDefault(f => f.Title.Equals(this.SpecificViewName, StringComparison.CurrentCultureIgnoreCase));
+                var thisview = views.FirstOrDefault(f => f.Title == viewToUpdate.Title);
                 if (thisview != null)
                 {
                     Guid viewID = thisview.Id;
