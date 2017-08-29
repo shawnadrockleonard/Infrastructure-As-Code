@@ -78,5 +78,22 @@ namespace InfrastructureAsCode.Powershell.PipeBinds
             }
             return list;
         }
+
+        public override string ToString()
+        {
+            if (List != null)
+            {
+                return List.Title;
+            }
+            else if (Id != Guid.Empty)
+            {
+                return Id.ToString("B");
+            }
+            else if (!string.IsNullOrEmpty(Title))
+            {
+                return Title;
+            }
+            return base.ToString();
+        }
     }
 }

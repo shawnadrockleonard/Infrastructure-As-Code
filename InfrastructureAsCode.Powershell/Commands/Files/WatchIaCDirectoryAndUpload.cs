@@ -1,5 +1,6 @@
 ﻿using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
+using InfrastructureAsCode.Core.Extensions;
 using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
@@ -43,6 +44,12 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
         [Parameter(Mandatory = false, ParameterSetName = "FileWatcher")]
         public int WaitSeconds = 5;
 
+        /// <summary>
+        /// Represents the initial seeded datetime to compare files
+        /// </summary>
+        [Parameter(Mandatory = false, ParameterSetName = "FileWatcher")]
+        public Nullable<DateTime> CompareDatetime { get; set; }
+
 
         /// <summary>
         /// Validate parameters
@@ -53,8 +60,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             {
                 throw new Exception(string.Format("The directory does not exists {0}", this.SiteContent));
             }
+
+            SiteContentDirectory = new System.IO.DirectoryInfo(this.SiteContent);
         }
 
+        private System.IO.DirectoryInfo SiteContentDirectory { get; set; }
+
+        private DateTime _LastWriteTime { get; set; }
 
         /// <summary>
         /// Process the request
@@ -66,16 +78,21 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             // obtain CSOM object for host web
             Web hostWeb = this.ClientContext.Web;
 
+            if (!CompareDatetime.HasValue)
+            {
+                _LastWriteTime = DateTime.Now;
+            }
+            else
+            {
+                _LastWriteTime = CompareDatetime.Value;
+            }
+
 
             // check to see if library exists
-            var listTitle = TargetList.Title;
-            ListCollection allLists = hostWeb.Lists;
-            IEnumerable<List> foundLists = this.ClientContext.LoadQuery(allLists.Where(list => list.Title == listTitle));
-            this.ClientContext.ExecuteQueryRetry();
-            var siteLibrary = foundLists.FirstOrDefault();
+            var siteLibrary = TargetList.GetList(this.ClientContext.Web);
             if (siteLibrary == null)
             {
-                LogWarning("Failed to find site library {0}", TargetList.Title);
+                LogWarning("Failed to find site list/library {0}", TargetList.ToString());
                 return;
             }
 
@@ -84,11 +101,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             {
                 try
                 {
+                    siteLibrary.EnsureProperties(sl => sl.RootFolder, sl => sl.RootFolder.ServerRelativeUrl);
+
                     var watcherFilters = (FileNameFilters == null || !FileNameFilters.Any()) ? new string[] { "*.*" } : FileNameFilters;
-                    var watcherFiles = watcherFilters.SelectMany(sm => System.IO.Directory.GetFiles(this.SiteContent, sm, System.IO.SearchOption.AllDirectories));
+                    var watcherFiles = watcherFilters.SelectMany(sm => System.IO.Directory.GetFiles(this.SiteContentDirectory.FullName, sm, System.IO.SearchOption.AllDirectories));
 
-
-                    DateTime lastTime = DateTime.Now;
                     while (true)
                     {
                         System.Threading.Thread.Sleep(new TimeSpan(0, 0, TestSeconds));
@@ -101,7 +118,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                             .Select(sf => new System.IO.FileInfo(sf))
                             .Where(wf =>
                             {
-                                return ((wf.LastWriteTime - lastTime).TotalSeconds >= WaitSeconds);
+                                return ((wf.LastWriteTime.Subtract(_LastWriteTime)).TotalSeconds >= WaitSeconds);
                             })
                             .OrderBy(ob => ob.DirectoryName)
                             .ThenBy(tb => tb.LastWriteTime)
@@ -109,21 +126,23 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
 
                         if (changedItems != null && changedItems.Any())
                         {
-                            lastTime = DateTime.Now;
+                            _LastWriteTime = DateTime.Now;
                             var parentName = string.Empty;
                             var tmpParentname = string.Empty;
-                            var fileFolder = siteLibrary.RootFolder;
+                            var sitecontentfullname = SiteContentDirectory.FullName;
+                            Folder directoryPath = null;
 
                             foreach (var change in changedItems)
                             {
                                 parentName = change.Directory.Name;
                                 if (parentName != tmpParentname)
                                 {
-                                    fileFolder = siteLibrary.RootFolder.EnsureFolder(parentName);
+                                    var filedirectorypath = change.Directory.FullName.Replace(sitecontentfullname, "").Replace("\\", "/");
+                                    directoryPath = siteLibrary.RootFolder.ListEnsureFolder(filedirectorypath);
                                     tmpParentname = parentName;
                                 }
 
-                                OnChanged(siteLibrary, fileFolder, change);
+                                OnChanged(siteLibrary, directoryPath, change);
                             }
                         }
                     }
@@ -135,13 +154,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             }
             else
             {
-                var appFileFolder = string.Format("{0}\\SiteAssets", this.SiteContent);
-                if (!System.IO.Directory.Exists(appFileFolder))
-                {
-                    LogWarning("Site Assets Folder {0} does not exist.", appFileFolder);
-                    return;
-                }
-
                 var searchPattern = "*";
                 if (!string.IsNullOrEmpty(this.SiteActionFile))
                 {
@@ -152,7 +164,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                     }
                 }
 
-                var appDirectories = System.IO.Directory.GetDirectories(appFileFolder, searchPattern, System.IO.SearchOption.TopDirectoryOnly);
+                var appDirectories = System.IO.Directory.GetDirectories(this.SiteContent, searchPattern, System.IO.SearchOption.TopDirectoryOnly);
                 foreach (var appDirectory in appDirectories)
                 {
                     var appDirectoryInfo = new System.IO.DirectoryInfo(appDirectory);
@@ -171,9 +183,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
         private void OnChanged(List siteAssetsLibrary, Folder parentFolder, System.IO.FileInfo source)
         {
             //Copies file to another directory.
+            ShouldProcessReason _process;
             var filePath = source.FullName;
             var fileName = System.IO.Path.GetFileName(filePath);
-            if (this.ShouldProcess(string.Format("Should upload {0} timestamp {1}", fileName, source.LastWriteTime)))
+            if (this.ShouldProcess(
+                string.Format("Uploading {0} timestamp {1}", fileName, source.LastWriteTime), 
+                string.Format("Uploading {0} timestamp {1}", fileName, source.LastWriteTime), 
+                string.Format("Caption {0}", fileName), out _process))
             {
                 LogVerbose("---------------- Now uploading file {0}", filePath);
                 // upload each file to library in host web

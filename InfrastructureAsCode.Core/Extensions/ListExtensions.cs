@@ -239,15 +239,14 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns></returns>
         public static Folder ListEnsureFolder(this List parentList, string folderUrl)
         {
-            var folderNames = folderUrl.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            var folderName = folderNames[0];
-
-            var ctx = parentList.Context;
             if (!parentList.IsPropertyAvailable("RootFolder"))
             {
-                ctx.Load(parentList.RootFolder);
-                ctx.ExecuteQueryRetry();
+                parentList.EnsureProperties(pl => pl.RootFolder, pl => pl.RootFolder.ServerRelativeUrl);
             }
+
+            var listUri = new Uri(parentList.RootFolder.ServerRelativeUrl);
+            var relativeUri = listUri.MakeRelativeUri(new Uri(folderUrl));
+            var relativeUrl = folderUrl.Replace(parentList.RootFolder.ServerRelativeUrl, "");
 
             var folder = parentList.RootFolder.ListEnsureFolder(folderUrl);
             return folder;
@@ -261,7 +260,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns></returns>
         public static Folder ListEnsureFolder(this Folder parentFolder, string folderUrl)
         {
-            var folderNames = folderUrl.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var folderNames = folderUrl.Split(new string[] { "/", "\\" }, StringSplitOptions.RemoveEmptyEntries);
             var folderName = folderNames[0];
 
             var ctx = parentFolder.Context;
