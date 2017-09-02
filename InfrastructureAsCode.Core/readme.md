@@ -1,7 +1,7 @@
-﻿# Infrastructure as Code CORE #
+﻿# Infrastructure as Code CORE
 InfrastructureAsCode.Core is intended to extend CSOM and the OfficeDevPnP.Core with common patterns for provisioning, reporting, and crawling SharePoint.  The focus of the CORE application is to assist powershell, consoles, or web applications with managed code wrappers for automatting deployment and configuration.
 
-# Dependency on:
+## Dependency on:
 The [SharePointPnPCoreOnline component](https://github.com/OfficeDev/PnP-sites-Core)`.
 The [Microsoft.SharePoint.CSOM (16.1.5026.1200)]
 

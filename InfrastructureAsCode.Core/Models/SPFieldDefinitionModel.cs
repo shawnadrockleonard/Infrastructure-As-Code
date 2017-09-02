@@ -64,6 +64,11 @@ namespace InfrastructureAsCode.Core.Models
 
         public Nullable<bool> MaskName { get; set; }
 
+        /// <summary>
+        /// Leave as NULL unless required for serialization/reporting
+        /// </summary>
+        public string SchemaXml { get; set; }
+
         public FieldType FieldTypeKind { get; set; }
 
         public bool AddToDefaultView { get; set; }

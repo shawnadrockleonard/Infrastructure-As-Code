@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core
+namespace InfrastructureAsCode.Core.Constants
 {
     public class ConstantsListFields : ConstantsFields
     {

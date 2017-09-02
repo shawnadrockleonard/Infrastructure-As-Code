@@ -124,9 +124,11 @@
       <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.6621.1200\lib\net45\Microsoft.SharePoint.Client.WorkflowServices.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\WindowsAzure.Storage.7.0.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.2.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=7.2.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.Storage.7.2.1\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -176,6 +178,7 @@
     <Compile Include="Constants\ConstantsLibraryFields.cs" />
     <Compile Include="Constants\ConstantsListFields.cs" />
     <Compile Include="Enums\AssociatedGroupType.cs" />
+    <Compile Include="Enums\AuthenticationType.cs" />
     <Compile Include="Enums\ConnectionType.cs" />
     <Compile Include="Enums\CredentialType.cs" />
     <Compile Include="Enums\CustomActionScope.cs" />
@@ -224,6 +227,70 @@
     <Compile Include="Models\SPUserDefinitionModel.cs" />
     <Compile Include="Models\SPViewDefinitionModel.cs" />
     <Compile Include="Models\SPWebDefinitionModel.cs" />
+    <Compile Include="o365rwsclient\Common\Constants.cs" />
+    <Compile Include="o365rwsclient\DefaultLogger.cs" />
+    <Compile Include="o365rwsclient\DefaultReportVisitor.cs" />
+    <Compile Include="o365rwsclient\IReportVisitor.cs" />
+    <Compile Include="o365rwsclient\ITraceLogger.cs" />
+    <Compile Include="o365rwsclient\QueryFilter.cs" />
+    <Compile Include="o365rwsclient\QueryRange.cs" />
+    <Compile Include="o365rwsclient\ReportingContext.cs" />
+    <Compile Include="o365rwsclient\ReportingStream.cs" />
+    <Compile Include="o365rwsclient\ReportObject.cs" />
+    <Compile Include="o365rwsclient\ReportProvider.cs" />
+    <Compile Include="o365rwsclient\StreamProgress.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ClientSoftwareBrowserDetail.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ClientSoftwareBrowserSummary.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ClientSoftwareOSDetail.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ClientSoftwareOSSummary.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientType.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDetail.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDetailDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDetailMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDetailWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeDetailYearly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\ConnectionByClientTypeYearly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\CsConferenceWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\GroupActivity.cs" />
+    <Compile Include="o365rwsclient\TenantReport\GroupActivityDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\GroupActivityMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\GroupActivityWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\GroupActivityYearly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxActivity.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxActivityDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxActivityMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxActivityWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxActivityYearly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxUsage.cs" />
+    <Compile Include="o365rwsclient\TenantReport\MailboxUsageDetail.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOActiveUser.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOActiveUserDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOActiveUserMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOActiveUserWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOOneDriveForBusinessFileActivity.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProDeployed.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProDeployedMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProDeployedWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProStorage.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProStorageMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOSkyDriveProStorageWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteDeployed.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteDeployedMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteDeployedWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteStorage.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteStorageMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTeamSiteStorageWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTenantStorageMetric.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTenantStorageMetricDaily.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTenantStorageMetricMonthly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\SPOTenantStorageMetricWeekly.cs" />
+    <Compile Include="o365rwsclient\TenantReport\StaleMailbox.cs" />
+    <Compile Include="o365rwsclient\TenantReport\StaleMailboxDetail.cs" />
+    <Compile Include="o365rwsclient\TenantReport\TenantReportObject.cs" />
+    <Compile Include="o365rwsclient\Utils\StringUtil.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -237,8 +304,15 @@
     </Compile>
     <Compile Include="SharePointContext.cs" />
     <Compile Include="TokenHelper.cs" />
+    <Compile Include="Utilities\AzureDynamicLoggingEventEntity.cs" />
+    <Compile Include="Utilities\AzureLayoutLoggingEventEntity.cs" />
+    <Compile Include="Utilities\AzureLoggingEventEntity.cs" />
+    <Compile Include="Utilities\AzureTableAppender.cs" />
     <Compile Include="Utilities\ConfigurationLogger.cs" />
     <Compile Include="Utilities\ConfigurationReader.cs" />
+    <Compile Include="Utilities\ElasticTableEntity.cs" />
+    <Compile Include="Utilities\LoggingEventExtensions.cs" />
+    <Compile Include="Utilities\PartitionKeyTypeEnum.cs" />
     <Compile Include="Web References\com.sharepoint.useralerts\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -292,6 +366,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Web References\com.sharepoint.useralerts\Alerts.disco" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="o365rwsclient\readme.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

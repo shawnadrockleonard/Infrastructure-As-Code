@@ -180,10 +180,36 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="rootDir"></param>
         /// <param name="folderName"></param>
         /// <returns></returns>
+        public static string GetOrCreateDirectory(this System.IO.DirectoryInfo rootDir, string folderName)
+        {
+            var outputPathDir = string.Empty;
+            var pathContent = System.IO.Path.Combine(rootDir.FullName, folderName);
+            if (!System.IO.Directory.Exists(pathContent))
+            {
+                var outputInfoPathDir = System.IO.Directory.CreateDirectory(pathContent, rootDir.GetAccessControl());
+                outputPathDir = outputInfoPathDir.FullName;
+                System.Diagnostics.Trace.TraceInformation("Directory {0} created", outputPathDir);
+            }
+            else
+            {
+                var outputInfoPathDir = new System.IO.DirectoryInfo(pathContent);
+                outputPathDir = outputInfoPathDir.FullName;
+                System.Diagnostics.Trace.TraceInformation("Directory {0} found", outputPathDir);
+            }
+
+            return outputPathDir;
+        }
+
+        /// <summary>
+        /// Retreive the folder or create the directory
+        /// </summary>
+        /// <param name="rootDir"></param>
+        /// <param name="folderName"></param>
+        /// <returns></returns>
         public static string GetOrCreateDirectory(this string rootDir, string folderName)
         {
             var outputPathDir = string.Empty;
-            var pathContent = string.Format("{0}\\{1}\\", rootDir, folderName);
+            var pathContent = System.IO.Path.Combine(rootDir, folderName);
             if (!System.IO.Directory.Exists(pathContent))
             {
                 var outputInfoPathDir = System.IO.Directory.CreateDirectory(pathContent);
