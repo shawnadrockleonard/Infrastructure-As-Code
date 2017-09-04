@@ -18,6 +18,7 @@ namespace InfrastructureAsCode.Core.Models
         public SandboxedCodeActivationCapabilities sandbox { get; set; }
 
         public string title { get; set; }
+
         public double AverageResourceUsage { get; set; }
         public int CompatibilityLevel { get; set; }
         public double CurrentResourceUsage { get; set; }
@@ -36,5 +37,10 @@ namespace InfrastructureAsCode.Core.Models
         public double UserCodeMaximumLevel { get; set; }
         public double UserCodeWarningLevel { get; set; }
         public string Template { get; set; }
+
+        public override string ToString()
+        {
+            return Url;
+        }
     }
 }
