@@ -19,7 +19,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// </summary>
         /// <param name="includeProperties">Include all Site Collection properties</param>
         /// <returns></returns>
-        public static List<SPOSiteCollectionModel> GetSiteCollections(this Tenant tenantContext, bool includeProperties = false)
+        public static List<SPOSiteCollectionModel> GetSPOSiteCollections(this Tenant tenantContext, bool includeProperties = false)
         {
             int startIndex = 0; var urls = new List<SPOSiteCollectionModel>();
             SPOSitePropertiesEnumerable spenumerable = null;
