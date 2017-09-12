@@ -413,7 +413,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 {
                     foreach (var item in spListItems)
                     {
-                        var itemModified = item.RetrieveListItemValue("Modified").ToDateTime();
+                        var itemModified = item.RetrieveListItemValue("Modified").ToNullableDatetime();
                         System.Diagnostics.Trace.TraceInformation("Item {0} Modified {1} IS MATCH:{2}", item.Id, itemModified, (itemModified == lastItemModifiedDate));
                     }
                     returnId = spListItems.OrderByDescending(ob => ob.Id).FirstOrDefault().Id;

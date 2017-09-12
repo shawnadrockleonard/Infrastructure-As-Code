@@ -172,6 +172,7 @@
     <Compile Include="CmdLets\SPIaCRunspaceWithDelegate.cs" />
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
+    <Compile Include="Commands\GetSPIaCContext.cs" />
     <Compile Include="Models\CalloutLinkModel.cs" />
     <Compile Include="Commands\Lists\GetIaCList.cs" />
     <Compile Include="Commands\Lists\GetIaCListDefinition.cs" />

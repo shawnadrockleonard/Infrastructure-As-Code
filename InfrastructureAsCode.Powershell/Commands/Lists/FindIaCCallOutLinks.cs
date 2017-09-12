@@ -104,7 +104,7 @@ namespace InfrastructureAsCode.Powershell.Lists
 
                             var docId = item.RetrieveListItemValue("_dlc_DocId");
                             var docIdUrl = item.RetrieveListItemValueAsHyperlink("_dlc_DocIdUrl");
-                            var modified = item.RetrieveListItemValue("Modified").ToDate();
+                            var modified = item.RetrieveListItemValue("Modified").ToDateTime();
                             var editor = item.RetrieveListItemUserValue("Editor");
                             var redirectEmbeddedUrl = item.RetrieveListItemValue("ServerRedirectedEmbedUri");
                             var fileRef = item.RetrieveListItemValue("FileRef");

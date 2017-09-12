@@ -443,7 +443,7 @@ namespace InfrastructureAsCode.Core.Extensions
         {
             if (web.CustomActionExists(customactionname))
             {
-                var cssAction = web.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname);
+                var cssAction = web.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname || fod.Title == customactionname);
                 web.DeleteCustomAction(cssAction.Id);
                 return true;
             }

@@ -14,7 +14,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// </summary>
         /// <param name="columnValue"></param>
         /// <returns></returns>
-        public static DateTime ToDate(this string columnValue)
+        public static DateTime ToDateTime(this string columnValue)
         {
             DateTime fieldValue = DateTime.Now.AddYears(-2);
             if (!string.IsNullOrEmpty(columnValue)
@@ -27,34 +27,38 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// returns string value as DateTime
         /// </summary>
-        /// <param name="columnValue"></param>
+        /// <param name="dateTimeValue"></param>
         /// <returns></returns>
-        public static Nullable<DateTime> ToDateTime(this string columnValue)
-        {
-            DateTime fieldValue = DateTime.Now.AddYears(-2);
-            if (!string.IsNullOrEmpty(columnValue)
-                && DateTime.TryParse(columnValue, out fieldValue))
-            {
-                return fieldValue;
-            }
-            return null;
-        }
-
         public static Nullable<DateTime> ToNullableDatetime(this string dateTimeValue, Nullable<DateTime> defaultValue = null)
         {
-            var model = (defaultValue.HasValue ? defaultValue : default(Nullable<DateTime>));
-            try
+            var returnDate = (defaultValue.HasValue ? defaultValue : default(Nullable<DateTime>));
+
+            if (!string.IsNullOrEmpty(dateTimeValue))
             {
-                if (!string.IsNullOrEmpty(dateTimeValue))
+                if (DateTime.TryParse(dateTimeValue, out DateTime returnDateTimeValue))
                 {
-                    model = DateTime.Parse(dateTimeValue);
+                    returnDate = returnDateTimeValue;
                 }
             }
-            catch (Exception ex)
+            return returnDate;
+        }
+
+        /// <summary>
+        /// Parses the date from the string value or uses the default value if parsing fails
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static DateTime TryParseDateTime(this string value, DateTime defaultValue)
+        {
+            if (DateTime.TryParse(value, out DateTime result))
             {
-                Trace.TraceWarning("Failed to grab {0} conversion {1}", dateTimeValue, ex.Message);
+                return result;
             }
-            return model;
+            else
+            {
+                return defaultValue;
+            }
         }
 
         public static Int32 ToInt32(this string numberValue, Nullable<Int32> defaultValue = null)
@@ -86,6 +90,63 @@ namespace InfrastructureAsCode.Core.Extensions
                 Trace.TraceWarning("Failed to grab {0} conversion {1}", value, ex.Message);
             }
             return model;
+        }
+
+
+        /// <summary>
+        /// Will parse the string value into a small integer
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns>small integer</returns>
+        /// <remarks>A default value will be returned if the parse fails</remarks>
+        public static int TryParseInt(string value, int defaultValue)
+        {
+            if (int.TryParse(value, out int result))
+            {
+                return result;
+            }
+            else
+            {
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
+        /// Will parse the string value into a large integer
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns>large integer</returns>
+        /// <remarks>A default value will be returned if the parse fails</remarks>
+        public static Int64 TryParseInt64(string value, Int64 defaultValue)
+        {
+            if (Int64.TryParse(value, out long result))
+            {
+                return result;
+            }
+            else
+            {
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
+        /// Will parse the string value into a floating point number
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static double TryParseDouble(string value, double defaultValue)
+        {
+            if (double.TryParse(value, out double result))
+            {
+                return result;
+            }
+            else
+            {
+                return defaultValue;
+            }
         }
 
         /// <summary>
@@ -146,6 +207,41 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
+        /// Parses the string guid into a valid Guid or uses the Default Value
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static Guid TryParseGuid(string value, Guid defaultValue)
+        {
+            Guid result;
+            if (Guid.TryParse(value, out result))
+            {
+                return result;
+            }
+
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Will parse the string value into a boolean
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static bool TryParseBoolean(string value, bool defaultValue)
+        {
+            if (bool.TryParse(value, out bool result))
+            {
+                return result;
+            }
+            else
+            {
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
         /// Removes the XML encoded characters
         /// </summary>
         /// <param name="s"></param>
@@ -176,7 +272,7 @@ namespace InfrastructureAsCode.Core.Extensions
             if (!string.IsNullOrEmpty(unxml))
             {
                 // replace entities with literal values
-                unxml = unxml.Replace("'", "&apos;" );
+                unxml = unxml.Replace("'", "&apos;");
                 unxml = unxml.Replace("&", "&amp;");
             }
             return unxml;

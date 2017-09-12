@@ -79,7 +79,7 @@ namespace InfrastructureAsCode.Core.Extensions
         {
             if (site.CustomActionExists(customactionname))
             {
-                var cssAction = site.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname);
+                var cssAction = site.GetCustomActions().FirstOrDefault(fod => fod.Name == customactionname || fod.Title == customactionname);
                 site.DeleteCustomAction(cssAction.Id);
                 return true;
             }
