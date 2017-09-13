@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B7B1C486-1E21-4F6C-8710-4A8E09965A9B}"
 	ProjectSection(SolutionItems) = preProject
@@ -9,11 +9,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Core", "InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj", "{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinchPerfect.InfrastructureAsCode.Core", "InfrastructureAsCode.Core\PinchPerfect.InfrastructureAsCode.Core.csproj", "{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Powershell", "InfrastructureAsCode.Powershell\InfrastructureAsCode.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinchPerfect.InfrastructureAsCode.Powershell", "InfrastructureAsCode.Powershell\PinchPerfect.InfrastructureAsCode.Powershell.csproj", "{20C0FF0D-DEA3-45F8-BC4C-8896C3926265}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureAsCode.Powershell.HowToExtend", "HowToExtend\InfrastructureAsCode.Powershell.HowToExtend.csproj", "{48F2A3C5-A290-4B6D-A860-8213A9B171F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinchPerfect.InfrastructureAsCode.Powershell.HowToExtend", "HowToExtend\PinchPerfect.InfrastructureAsCode.Powershell.HowToExtend.csproj", "{48F2A3C5-A290-4B6D-A860-8213A9B171F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +36,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {73CDC563-B87F-42D0-A2D5-59B91BE8EC33}
 	EndGlobalSection
 EndGlobal

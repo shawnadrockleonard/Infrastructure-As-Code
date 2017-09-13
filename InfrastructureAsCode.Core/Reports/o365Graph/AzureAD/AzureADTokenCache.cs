@@ -72,10 +72,10 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.AzureAD
             return AuthenticationToken;
         }
 
-        async public Task RedeemAuthCodeForAadGraph(string code, string redirect_uri)
+        async public Task RedeemAuthCodeForAadGraph(string code, string resource_uri)
         {
             // Redeem the auth code and cache the result in the db for later use.
-            var result = await _authContext.AcquireTokenAsync(redirect_uri, _appCredentials);
+            var result = await _authContext.AcquireTokenAsync(resource_uri, _appCredentials);
             AuthenticationToken = result;
         }
     }

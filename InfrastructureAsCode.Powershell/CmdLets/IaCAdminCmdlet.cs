@@ -1,5 +1,6 @@
 ﻿using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Extensions;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.Online.SharePoint.TenantManagement;
 using Microsoft.PowerShell.Commands;
@@ -50,18 +51,12 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             }
         }
 
-        protected override void BeginProcessing()
+        /// <summary>
+        /// Initializers the logger from the cmdlet
+        /// </summary>
+        protected override void OnBeginInitialize()
         {
-            base.BeginProcessing();
-
-            if (SPIaCConnection.CurrentConnection == null)
-            {
-                throw new InvalidOperationException(Resources.NoConnection);
-            }
-            if (ClientContext == null)
-            {
-                throw new InvalidOperationException(Resources.NoConnection);
-            }
+            base.OnBeginInitialize();
 
             SPIaCConnection.CurrentConnection.CacheContext();
 
@@ -89,6 +84,8 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 Tenant.Context.Dispose();
             }
+
+            base.EndProcessing();
         }
 
         /// <summary>
@@ -133,56 +130,8 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <returns></returns>
         public List<SPOSiteCollectionModel> GetSiteCollections(bool includeProperties = false)
         {
-            int startIndex = 0; var urls = new List<SPOSiteCollectionModel>();
-            SPOSitePropertiesEnumerable spenumerable = null;
-            while (spenumerable == null || spenumerable.Count > 0)
-            {
-                spenumerable = Tenant.GetSiteProperties(startIndex, includeProperties);
-                Tenant.Context.Load(spenumerable);
-                Tenant.Context.ExecuteQueryRetry();
-                LogVerbose("Found URLs {0}", spenumerable.Count);
-
-                foreach (SiteProperties sp in spenumerable)
-                {
-                    var model = new SPOSiteCollectionModel()
-                    {
-                        Url = sp.Url,
-                        title = sp.Title
-                    };
-
-                    if (includeProperties)
-                    {
-                        model = new SPOSiteCollectionModel()
-                        {
-                            Url = sp.Url,
-                            title = sp.Title,
-                            sandbox = sp.SandboxedCodeActivationCapability,
-                            AverageResourceUsage = sp.AverageResourceUsage,
-                            CompatibilityLevel = sp.CompatibilityLevel,
-                            CurrentResourceUsage = sp.CurrentResourceUsage,
-                            DenyAddAndCustomizePages = sp.DenyAddAndCustomizePages,
-                            DisableCompanyWideSharingLinks = sp.DisableCompanyWideSharingLinks,
-                            LastContentModifiedDate = sp.LastContentModifiedDate,
-                            Owner = sp.Owner,
-                            SharingCapability = sp.SharingCapability,
-                            Status = sp.Status,
-                            StorageMaximumLevel = sp.StorageMaximumLevel,
-                            StorageQuotaType = sp.StorageQuotaType,
-                            StorageUsage = sp.StorageUsage,
-                            StorageWarningLevel = sp.StorageWarningLevel,
-                            TimeZoneId = sp.TimeZoneId,
-                            WebsCount = sp.WebsCount,
-                            Template = sp.Template,
-                            UserCodeWarningLevel = sp.UserCodeWarningLevel,
-                            UserCodeMaximumLevel = sp.UserCodeMaximumLevel
-                        };
-                    }
-
-                    urls.Add(model);
-                }
-                startIndex += spenumerable.Count;
-            }
-
+            var urls = Tenant.GetSPOSiteCollections(includeProperties);
+            LogVerbose("Found URLs {0}", urls.Count);
             return urls;
         }
 

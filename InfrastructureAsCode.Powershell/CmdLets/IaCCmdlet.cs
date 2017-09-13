@@ -10,7 +10,7 @@ using Resources = InfrastructureAsCode.Core.Properties.Resources;
 
 namespace InfrastructureAsCode.Powershell.CmdLets
 {
-    public abstract class IaCCmdlet : PSCmdlet, IIaCCmdlet
+    public abstract class IaCCmdlet : ExtendedPSCmdlet, IIaCCmdlet
     {
         public IaCCmdlet() : base()
         {
@@ -32,39 +32,14 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// </summary>
         internal const string ClaimIdentifier = "i:0#.f|membership";
 
-        /// <summary>
-        /// the logger is available
-        /// </summary>
-        internal bool loggerAvailable { get; private set; }
+
 
         /// <summary>
-        /// initializer a logger
+        /// Initializers the logger from the cmdlet
         /// </summary>
-        internal ConfigurationLogger logger { get; private set; }
-
-        /// <summary>
-        /// Storage for the cmdlet in the current thread
-        /// </summary>
-        private string m_cmdLetName { get; set; }
-        internal string CmdLetName
+        protected override void OnBeginInitialize()
         {
-            get
-            {
-                if (string.IsNullOrEmpty(m_cmdLetName))
-                {
-                    var runningAssembly = Assembly.GetExecutingAssembly();
-                    m_cmdLetName = this.GetType().Name;
-                }
-                return m_cmdLetName;
-            }
-        }
-
-        /// <summary>
-        /// Processed before the Execute
-        /// </summary>
-        protected override void BeginProcessing()
-        {
-            base.BeginProcessing();
+            base.OnBeginInitialize();
 
             if (SPIaCConnection.CurrentConnection == null)
             {
@@ -80,34 +55,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             var urlParts = uri.Authority.Split(new[] { '.' });
             BaseUri = string.Format("https://{0}.{1}.{2}", urlParts[0], urlParts[1], urlParts[2]);
 
-            var runningDirectory = this.SessionState.Path.CurrentFileSystemLocation;
-            var runningAssembly = Assembly.GetExecutingAssembly();
-            var runningAssemblyName = runningAssembly.ManifestModule.Name;
-
-            var appConfig = string.Format("{0}\\{1}.config", runningDirectory, runningAssemblyName).Replace("\\", @"\");
-            if (System.IO.File.Exists(appConfig))
-            {
-                LogVerbose("AppSettings file found at {0}", appConfig);
-                logger = new ConfigurationLogger(appConfig, true, CmdLetName);
-                loggerAvailable = true;
-            }
-
-            OnBeginInitialize();
-            LogVerbose(">>> Begin {0} at {1} on URL:[{2}]", this.CmdLetName, DateTime.Now, this.ClientContext.Url);
-        }
-
-        /// <summary>
-        /// Initializers the logger from the cmdlet
-        /// </summary>
-        protected virtual void OnBeginInitialize()
-        {
-        }
-
-        /// <summary>
-        /// Execute custom cmdlet code
-        /// </summary>
-        public virtual void ExecuteCmdlet()
-        {
         }
 
         /// <summary>
@@ -161,20 +108,11 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 SPIaCConnection.CurrentConnection.RestoreCachedContext();
                 System.Diagnostics.Trace.TraceError("Cmdlet Exception {0}", ex.Message);
-                if(!this.Stopping)
+                if (!this.Stopping)
                 {
                     LogError(ex, "Stack Trace {0}", ex.StackTrace);
                 }
             }
-        }
-
-        /// <summary>
-        /// End Processing cleanup or write logs
-        /// </summary>
-        protected override void EndProcessing()
-        {
-            base.EndProcessing();
-            LogVerbose("<<< End {0} at {1}", CmdLetName, DateTime.Now);
         }
 
         /// <summary>
@@ -231,98 +169,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 
                 return _currentNetworkInProcess;
             }
-        }
-
-        /// <summary>
-        /// retrieve app setting from app.config
-        /// </summary>
-        /// <param name="settingName"></param>
-        /// <returns></returns>
-        protected virtual string GetAppSetting(string settingName)
-        {
-            if (logger != null)
-            {
-                return logger.GetAppSetting(settingName);
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// retrieve connection string from app.config
-        /// </summary>
-        /// <param name="settingName"></param>
-        /// <returns></returns>
-        protected virtual string GetConnectionString(string settingName)
-        {
-            if (logger != null)
-            {
-                return logger.GetConnectionSetting(settingName);
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Log: ERROR
-        /// </summary>
-        /// <param name="ex"></param>
-        /// <param name="category"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        protected virtual void LogError(Exception ex, string message, params object[] args)
-        {
-            if (loggerAvailable)
-            {
-                logger.Error(ex, message, args);
-            }
-            System.Diagnostics.Trace.TraceError(message, args);
-            System.Diagnostics.Trace.TraceError("Exception: {0}", ex.Message);
-            WriteError(new ErrorRecord(ex, "HALT", ErrorCategory.FromStdErr, null));
-        }
-
-        /// <summary>
-        /// Log: DEBUG
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        protected virtual void LogDebugging(string message, params object[] args)
-        {
-            if (loggerAvailable)
-            {
-                logger.Debugging(message, args);
-            }
-            System.Diagnostics.Trace.TraceInformation(message, args);
-            WriteDebug(string.Format(message, args));
-        }
-
-        /// <summary>
-        /// Writes a warning message to the cmdlet and logs to directory
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        protected virtual void LogWarning(string message, params object[] args)
-        {
-            if (loggerAvailable)
-            {
-                logger.Warning(string.Format(message, args));
-            }
-            System.Diagnostics.Trace.TraceWarning(message, args);
-            WriteWarning(string.Format(message, args));
-        }
-
-        /// <summary>
-        /// Log: VERBOSE
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        protected virtual void LogVerbose(string message, params object[] args)
-        {
-            if (loggerAvailable)
-            {
-                logger.Information(message, args);
-            }
-            System.Diagnostics.Trace.TraceInformation(message, args);
-            if(!this.Stopping)
-            WriteVerbose(string.Format(message, args));
         }
     }
 }

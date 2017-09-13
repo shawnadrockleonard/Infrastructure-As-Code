@@ -122,11 +122,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
 
             var Token = GetAsyncResult(GetAccessTokenResult());
 
-            // #Call web service here
             var serviceFullUrl = BuildServiceQuery();
             var webRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(serviceFullUrl);
             webRequest.Method = "GET";
-            //webRequest.Accept = "application/json;odata=verbose";
             webRequest.ContentType = "application/json";
             webRequest.Headers.Add(System.Net.HttpRequestHeader.Authorization, Token.CreateAuthorizationHeader());
 

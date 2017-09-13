@@ -9,3 +9,4 @@ Per public documentation the following is stated:
 All reporting is now available through the Graph API in preview functionality
 - https://blogs.office.com/en-us/2017/03/31/whats-new-in-office-365-administration-public-preview-of-microsoft-graph-reporting-apis/
 - https://developer.microsoft.com/en-us/graph/docs/api-reference/beta/resources/report
+- 

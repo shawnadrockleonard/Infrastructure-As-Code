@@ -79,13 +79,13 @@
     <None Include="Samples\script-set-modernui.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj">
+    <ProjectReference Include="..\InfrastructureAsCode.Core\PinchPerfect.InfrastructureAsCode.Core.csproj">
       <Project>{ea0d6cf4-74a7-4e3c-9bcd-f25b60c7716f}</Project>
-      <Name>InfrastructureAsCode.Core</Name>
+      <Name>PinchPerfect.InfrastructureAsCode.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\InfrastructureAsCode.Powershell\InfrastructureAsCode.Powershell.csproj">
+    <ProjectReference Include="..\InfrastructureAsCode.Powershell\PinchPerfect.InfrastructureAsCode.Powershell.csproj">
       <Project>{20c0ff0d-dea3-45f8-bc4c-8896c3926265}</Project>
-      <Name>InfrastructureAsCode.Powershell</Name>
+      <Name>PinchPerfect.InfrastructureAsCode.Powershell</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

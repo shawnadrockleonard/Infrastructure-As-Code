@@ -9,6 +9,11 @@ namespace InfrastructureAsCode.Core.Reports
             System.Diagnostics.Trace.TraceInformation(message, args);
         }
 
+        public void LogWarning(String message, params object[] args)
+        {
+            System.Diagnostics.Trace.TraceWarning(message, args);
+        }
+
         public void LogInformation(String message, params object[] args)
         {
             System.Diagnostics.Trace.TraceInformation(message, args);

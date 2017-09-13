@@ -61,6 +61,12 @@
       <HintPath>..\packages\Microsoft.IdentityModel.6.1.7600.16394\lib\net35\Microsoft.IdentityModel.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.16.1.24801, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.16.1\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.16.1.24801, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.16.1\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.IdentityModel.Extensions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=69c3241e6f0468ca, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Office.Client.Policy, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.6802.1200\lib\net45\Microsoft.Office.Client.Policy.dll</HintPath>
@@ -158,6 +164,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdLets\CmdletHelpAttribute.cs" />
+    <Compile Include="CmdLets\ExtendedPSCmdlet.cs" />
+    <Compile Include="CmdLets\VerbsExtended.cs" />
     <Compile Include="Commands\ConnectSPIaC.cs" />
     <Compile Include="Commands\DisconnectSPIaC.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionViews.cs" />
@@ -173,6 +181,7 @@
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
     <Compile Include="Commands\GetSPIaCContext.cs" />
+    <Compile Include="Commands\Reporting\ReportIaCUsageAnalytics.cs" />
     <Compile Include="Models\CalloutLinkModel.cs" />
     <Compile Include="Commands\Lists\GetIaCList.cs" />
     <Compile Include="Commands\Lists\GetIaCListDefinition.cs" />
@@ -236,7 +245,12 @@
     <Compile Include="SharePointContext.cs" />
     <Compile Include="TokenHelper.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\InfrastructureAsCode.Core\PinchPerfect.InfrastructureAsCode.Core.csproj">
+      <Project>{ea0d6cf4-74a7-4e3c-9bcd-f25b60c7716f}</Project>
+      <Name>PinchPerfect.InfrastructureAsCode.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.Format.ps1xml">
@@ -250,12 +264,6 @@
     <None Include="samplelog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\InfrastructureAsCode.Core\InfrastructureAsCode.Core.csproj">
-      <Project>{ea0d6cf4-74a7-4e3c-9bcd-f25b60c7716f}</Project>
-      <Name>InfrastructureAsCode.Core</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="imgs\project-config-powershell-debug.PNG" />

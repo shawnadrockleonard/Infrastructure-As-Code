@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>InfrastructureAsCode.Core</RootNamespace>
-    <AssemblyName>InfrastructureAsCode.Core</AssemblyName>
+    <AssemblyName>PinchPerfect.InfrastructureAsCode.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -227,11 +227,13 @@
     <Compile Include="Models\SPUserDefinitionModel.cs" />
     <Compile Include="Models\SPViewDefinitionModel.cs" />
     <Compile Include="Models\SPWebDefinitionModel.cs" />
+    <Compile Include="Reports\o365Graph\AzureAD\AzureADConfig.cs" />
     <Compile Include="Reports\o365Graph\AzureAD\AzureADConstants.cs" />
     <Compile Include="Reports\o365Graph\AzureAD\IAzureADConfig.cs" />
     <Compile Include="Reports\o365Graph\AzureAD\IOAuthTokenCache.cs" />
     <Compile Include="Reports\o365Graph\AzureAD\AzureADTokenCache.cs" />
     <Compile Include="Reports\o365Graph\DefaultReportVisitor.cs" />
+    <Compile Include="Reports\o365Graph\DefaultUsageLogger.cs" />
     <Compile Include="Reports\o365Graph\QueryFilter.cs" />
     <Compile Include="Reports\o365Graph\ReportingContext.cs" />
     <Compile Include="Reports\o365Graph\ReportingStream.cs" />

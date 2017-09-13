@@ -22,9 +22,9 @@ namespace InfrastructureAsCode.Powershell.Commands
         This will use credentials from the Windows Credential Manager, as defined by the label 'O365Creds'
         Connect-SPIaC -Url http://yourlocalserver -Credentials 'O365Creds'
     */
-    [Cmdlet("Connect", "SPIaC", SupportsShouldProcess = false)]
+    [Cmdlet(VerbsExtended.Connect, "SPIaC", SupportsShouldProcess = false)]
     [CmdletHelp("Connects to a SharePoint site and creates an in-memory context", DetailedDescription = "If no credentials have been specified, and the CurrentCredentials parameter has not been specified, you will be prompted for credentials.", Category = "Base Cmdlets")]
-    public class ConnectSPIaC : PSCmdlet
+    public class ConnectSPIaC : ExtendedPSCmdlet
     {
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterAttribute.AllParameterSets, ValueFromPipeline = true, HelpMessage = "The Url of the site collection to connect to.")]
         public string Url;
@@ -71,12 +71,9 @@ namespace InfrastructureAsCode.Powershell.Commands
         [Parameter(Mandatory = false, ParameterSetName = ParameterAttribute.AllParameterSets)]
         public SwitchParameter SkipTenantAdminCheck;
 
-        internal protected void LogVerbose(string message, params object[] args)
-        {
-            WriteVerbose(string.Format(message, args));
-        }
 
-        protected override void ProcessRecord()
+
+        public override void ExecuteCmdlet()
         {
             PSCredential creds = null;
             if (Credentials != null)

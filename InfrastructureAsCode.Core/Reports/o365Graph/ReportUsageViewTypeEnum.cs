@@ -14,6 +14,15 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         Storage, 
         Users, 
         Pages, 
-        Sites
+        Sites,
+        Activity,
+        Minutes,
+        Distribution,
+        Groups,
+        Services,
+        Quota,
+        Mailbox,
+        Apps,
+        Versions
     }
 }
