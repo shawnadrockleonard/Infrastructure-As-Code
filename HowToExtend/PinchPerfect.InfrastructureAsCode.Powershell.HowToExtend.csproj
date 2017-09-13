@@ -63,6 +63,7 @@
     <None Include="SampleFiles\sample-customaction-list.json" />
     <None Include="SampleFiles\sample-customaction-site-scriptblock.json" />
     <None Include="SampleFiles\sample-customaction-site-scriptlink.json" />
+    <None Include="SampleFiles\sample-preview-usage-and-adoption.ps1" />
     <None Include="samplelog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
