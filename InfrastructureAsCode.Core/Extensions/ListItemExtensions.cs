@@ -191,5 +191,68 @@ namespace InfrastructureAsCode.Core.Extensions
             }
             return null;
         }
+
+        /// <summary>
+        /// Will parse the ListItem to pull properties required to download the file to a local directory
+        /// </summary>
+        /// <param name="item">The ListItem which should be a File</param>
+        /// <param name="itemContext">The context for the Web</param>
+        /// <param name="targetDirectory">The local file directory full path</param>
+        /// <returns>The absolute path to the downloaded local file</returns>
+        public static string DownloadFile(this ListItem item, ClientContext itemContext, string targetDirectory)
+        {
+            var contextWeb = itemContext.Web;
+            if (!contextWeb.IsPropertyAvailable("Url"))
+            {
+                itemContext.Load(contextWeb, wctx => wctx.Url);
+                itemContext.ExecuteQueryRetry();
+            }
+
+            if (!item.IsPropertyAvailable("FileRef") || !item.IsPropertyAvailable("FileLeafRef"))
+            {
+                if (!item.IsPropertyAvailable("FileRef"))
+                {
+                    itemContext.Load(item, ictx => ictx["FileRef"]);
+                }
+
+                if (!item.IsPropertyAvailable("FileLeafRef"))
+                {
+                    itemContext.Load(item, ictx => ictx["FileLeafRef"]);
+                }
+                itemContext.ExecuteQueryRetry();
+            }
+
+            var fileRelativeUrl = item.RetrieveListItemValue("FileRef");
+            var fileNameText = item.RetrieveListItemValue("FileLeafRef");
+
+            var webUrl = new Uri(itemContext.Web.Url);
+            var fileUrl = new Uri(webUrl, fileRelativeUrl);
+
+            var baseUrl = fileUrl.GetLeftPart(UriPartial.Authority);
+            var fileServerRelativeUrl = fileUrl.ToString().Replace(baseUrl, string.Empty);
+
+
+            var downloadedFile = System.IO.Path.Combine(targetDirectory, fileNameText);
+
+            // if the file already exists we should delete it
+            if (System.IO.File.Exists(downloadedFile))
+            {
+                System.IO.File.Delete(downloadedFile);
+            }
+
+            // download file
+            if (!System.IO.File.Exists(downloadedFile))
+            {
+                var fileAbsoluteUrl = fileUrl.AbsolutePath;
+                using (var openFile = Microsoft.SharePoint.Client.File.OpenBinaryDirect(itemContext, fileAbsoluteUrl))
+                {
+                    using (var fileStream = new System.IO.FileStream(downloadedFile, System.IO.FileMode.Create))
+                    {
+                        openFile.Stream.CopyTo(fileStream);
+                    }
+                }
+            }
+            return downloadedFile;
+        }
     }
 }

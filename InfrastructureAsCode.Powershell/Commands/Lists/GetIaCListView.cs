@@ -30,35 +30,31 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
         public override void ExecuteCmdlet()
         {
+            var SelectedWeb = this.ClientContext.Web;
 
-            if (List != null)
+            var list = List.GetList(SelectedWeb);
+            if (list != null)
             {
-                var SelectedWeb = this.ClientContext.Web;
-
-                var list = List.GetList(SelectedWeb);
-                if (list != null)
+                View view = null;
+                IEnumerable<View> views = null;
+                if (Identity != null)
                 {
-                    View view = null;
-                    IEnumerable<View> views = null;
-                    if (Identity != null)
+                    view = Identity.GetView(list);
+                    if (view != null)
                     {
-                        view = Identity.GetView(list);
-                        if (view != null)
-                        {
-                            view.EnsureProperties(v => v.ViewFields, v => v.JSLink, v => v.ViewQuery);
-                            var doc = XDocument.Parse(string.Format("<ViewXml>{0}</ViewXml>", view.ViewQuery));
-                            string indented = doc.ToString();
-                            LogVerbose("View {0} CAML:{1}", view.Title, indented); // write query and Title
-                        }
+                        view.EnsureProperties(v => v.ViewFields, v => v.JSLink, v => v.ViewQuery);
+                        var doc = XDocument.Parse(string.Format("<ViewXml>{0}</ViewXml>", view.ViewQuery));
+                        string indented = doc.ToString();
+                        LogVerbose("View {0} CAML:{1}", view.Title, indented); // write query and Title
+                    }
 
-                        WriteObject(view);
-                    }
-                    else
-                    {
-                        views = ClientContext.LoadQuery(list.Views.IncludeWithDefaultProperties(v => v.ViewFields));
-                        ClientContext.ExecuteQueryRetry();
-                        WriteObject(views, true);
-                    }
+                    WriteObject(view);
+                }
+                else
+                {
+                    views = ClientContext.LoadQuery(list.Views.IncludeWithDefaultProperties(v => v.ViewFields));
+                    ClientContext.ExecuteQueryRetry();
+                    WriteObject(views, true);
                 }
             }
         }
