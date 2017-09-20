@@ -212,7 +212,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="value"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static Guid TryParseGuid(string value, Guid defaultValue)
+        public static Guid TryParseGuid(this string value, Guid defaultValue)
         {
             Guid result;
             if (Guid.TryParse(value, out result))
@@ -229,7 +229,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="value"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static bool TryParseBoolean(string value, bool defaultValue)
+        public static bool TryParseBoolean(this string value, bool defaultValue)
         {
             if (bool.TryParse(value, out bool result))
             {

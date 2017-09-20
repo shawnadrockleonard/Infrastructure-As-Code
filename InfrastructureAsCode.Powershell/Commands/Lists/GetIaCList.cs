@@ -31,12 +31,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             if (Identity != null)
             {
                 var list = Identity.GetList(SelectedWeb);
-                WriteObject(list);
+                list.EnsureProperty(lctx => lctx.SchemaXml);
 
+                WriteObject(list);
             }
             else
             {
-                var lists = ClientContext.LoadQuery(SelectedWeb.Lists.IncludeWithDefaultProperties(l => l.Id, l => l.BaseTemplate, l => l.OnQuickLaunch, l => l.DefaultViewUrl, l => l.Title, l => l.Hidden, l => l.RootFolder.ServerRelativeUrl));
+                var lists = ClientContext.LoadQuery(SelectedWeb.Lists.IncludeWithDefaultProperties(l => l.Id, l => l.BaseTemplate, l => l.OnQuickLaunch, l => l.DefaultViewUrl, l => l.Title, l => l.Hidden, l => l.RootFolder.ServerRelativeUrl, l => l.SchemaXml));
                 ClientContext.ExecuteQueryRetry();
                 WriteObject(lists, true);
             }
