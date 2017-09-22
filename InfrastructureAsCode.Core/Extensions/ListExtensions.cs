@@ -123,51 +123,62 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// Retrieves or creates the folder as a ListItem
         /// </summary>
-        /// <param name="onlineLibrary"></param>
-        /// <param name="destinationFolder"></param>
-        /// <param name="folderName"></param>
-        /// <param name="defaultLastItemId"></param>
+        /// <param name="onlineLibrary">The target list for the folder</param>
+        /// <param name="destinationFolder">The parent folder of the folter to be created</param>
+        /// <param name="folderName">The folder to be created</param>
+        /// <param name="defaultStartItemId">(OPTIONAL) If the list/library is above the threshold this will be the start index of the caml queries</param>
+        /// <param name="defaultLastItemId">(OPTIONAL) If the list/library is above the threshold this will be the terminating index of the caml queries</param>
         /// <returns>The listitem as a folder</returns>
-        public static Folder GetOrCreateFolder(this List onlineLibrary, Folder destinationFolder, string folderName, int? defaultLastItemId = default(int?))
+        public static Folder GetOrCreateFolder(this List onlineLibrary, Folder destinationFolder, string folderName, Nullable<int> defaultStartItemId = default(int?), Nullable<int> defaultLastItemId = default(int?))
         {
-            destinationFolder.EnsureProperties(afold => afold.ServerRelativeUrl, afold => afold.Folders);
-            var folderRelativeUrl = destinationFolder.ServerRelativeUrl;
-            // Remove invalid characters
-            var trimmedFolder = HelperExtensions.GetCleanDirectory(folderName, string.Empty);
+            if (!destinationFolder.IsPropertyAvailable(fctx => fctx.ServerRelativeUrl)
+                || !destinationFolder.IsObjectPropertyInstantiated(fctx => fctx.Folders))
+            {
+                destinationFolder.Context.Load(destinationFolder, afold => afold.ServerRelativeUrl, afold => afold.Folders);
+                destinationFolder.Context.ExecuteQueryRetry();
+            }
+
+
             ListItem folderItem = null;
 
-            var camlFields = new string[] { "Title", "ContentType", "ID" };
+            var folderRelativeUrl = destinationFolder.ServerRelativeUrl;
+            var camlFields = new string[] { "Title", "ID" };
             var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
 
-
+            // Remove invalid characters
+            var trimmedFolder = HelperExtensions.GetCleanDirectory(folderName, string.Empty);
+            var linkFileFilter = CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), trimmedFolder));
             var camlClause = CAML.And(
-                        CAML.And(
-                            CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), folderRelativeUrl)),
-                            CAML.Or(
-                                CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), trimmedFolder)),
-                                CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder))
-                            )
-                        )
-                        ,
-                    CAML.Eq(CAML.FieldValue("FSObjType", FieldType.Integer.ToString("f"), 1.ToString()))
-                    );
+                CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), folderRelativeUrl)),
+                CAML.And(
+                    CAML.Eq(CAML.FieldValue("FSObjType", FieldType.Integer.ToString("f"), 1.ToString())),
+                    CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder))
+                )
+            );
 
-            var camlQueries = onlineLibrary.SafeCamlClauseFromThreshold(camlClause, defaultLastItemId);
+            var camlQueries = onlineLibrary.SafeCamlClauseFromThreshold(1000, camlClause, defaultStartItemId, defaultLastItemId);
             foreach (var camlAndValue in camlQueries)
             {
+                ListItemCollectionPosition itemPosition = null;
                 var camlWhereClause = CAML.Where(camlAndValue);
                 var camlQuery = new CamlQuery()
                 {
-                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, camlWhereClause, string.Empty, camlViewFields, 5)
+                    ViewXml = CAML.ViewQuery(
+                        ViewScope.RecursiveAll, 
+                        camlWhereClause, 
+                        string.Empty, 
+                        camlViewFields, 
+                        5)
                 };
+                camlQuery.ListItemCollectionPosition = itemPosition;
                 var listItems = onlineLibrary.GetItems(camlQuery);
-                onlineLibrary.Context.Load(listItems);
+                onlineLibrary.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
                 onlineLibrary.Context.ExecuteQueryRetry();
 
                 if (listItems.Count() > 0)
                 {
                     folderItem = listItems.FirstOrDefault();
-                    System.Diagnostics.Trace.TraceInformation("Item {0} exists in the destination folder.  Skip item creation file.....", folderName);
+                    System.Diagnostics.Trace.TraceInformation("Folder {0} exists in the destination folder.  Skip folder creation .....", folderName);
                     break;
                 }
             };
@@ -179,10 +190,12 @@ namespace InfrastructureAsCode.Core.Extensions
 
             try
             {
-                var info = new ListItemCreationInformation();
-                info.UnderlyingObjectType = FileSystemObjectType.Folder;
-                info.LeafName = trimmedFolder;
-                info.FolderUrl = folderRelativeUrl;
+                var info = new ListItemCreationInformation
+                {
+                    UnderlyingObjectType = FileSystemObjectType.Folder,
+                    LeafName = trimmedFolder,
+                    FolderUrl = folderRelativeUrl
+                };
 
                 folderItem = onlineLibrary.AddItem(info);
                 folderItem["Title"] = trimmedFolder;
@@ -239,16 +252,17 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns></returns>
         public static Folder ListEnsureFolder(this List parentList, string folderUrl)
         {
-            if (!parentList.IsPropertyAvailable("RootFolder"))
+            if (!parentList.IsObjectPropertyInstantiated(pctx => pctx.RootFolder))
             {
-                parentList.EnsureProperties(pl => pl.RootFolder, pl => pl.RootFolder.ServerRelativeUrl);
+                parentList.Context.Load(parentList, pl => pl.RootFolder, pl => pl.RootFolder.ServerRelativeUrl);
+                parentList.Context.ExecuteQueryRetry();
             }
 
             var listUri = new Uri(parentList.RootFolder.ServerRelativeUrl);
             var relativeUri = listUri.MakeRelativeUri(new Uri(folderUrl));
             var relativeUrl = folderUrl.Replace(parentList.RootFolder.ServerRelativeUrl, "");
 
-            var folder = parentList.RootFolder.ListEnsureFolder(folderUrl);
+            var folder = ListEnsureFolder(parentList.RootFolder, folderUrl);
             return folder;
         }
 
@@ -264,7 +278,7 @@ namespace InfrastructureAsCode.Core.Extensions
             var folderName = folderNames[0];
 
             var ctx = parentFolder.Context;
-            if (!parentFolder.IsPropertyAvailable("Folders"))
+            if (!parentFolder.IsObjectPropertyInstantiated(pctx => pctx.Folders))
             {
                 ctx.Load(parentFolder, inn => inn.ServerRelativeUrl, inn => inn.Folders);
                 ctx.ExecuteQueryRetry();
@@ -282,86 +296,146 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
-        /// Upload a file to the specific library/folder
+        /// Upload a file from disk to the specific <paramref name="onlineFolder"/>
+        /// </summary>
+        /// <param name="onlineLibrary"></param>
+        /// <param name="onlineFolder"></param>
+        /// <param name="fileNameWithPath"></param>
+        /// <param name="clobber">(OPTIONAL) if true then overwrite the existing file</param>
+        /// <exception cref="System.IO.FileNotFoundException">File not found if fullfilename does not exist</exception>
+        /// <returns></returns>
+        public static string UploadFile(this List onlineLibrary, Folder onlineFolder, string fileNameWithPath, bool clobber = false)
+        {
+            var relativeUrl = string.Empty;
+            var fileName = System.IO.Path.GetFileName(fileNameWithPath);
+            if (!System.IO.File.Exists(fileNameWithPath))
+            {
+                throw new System.IO.FileNotFoundException(string.Format("File {0} does not exists on disk", fileNameWithPath));
+            }
+
+            if (!onlineFolder.IsPropertyAvailable(fctx => fctx.ServerRelativeUrl))
+            {
+                try
+                {
+                    // setup processing of folder in the parent folder
+                    onlineFolder.Context.Load(onlineFolder, pf => pf.ServerRelativeUrl);
+                    onlineFolder.Context.ExecuteQueryRetry();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError("Failed to ensure folder server relative url property MSG:{0}", ex.Message);
+                }
+            }
+
+            var logFileItem = GetFileInFolder(onlineLibrary, onlineFolder, fileName);
+            if (logFileItem == null
+                || (clobber && logFileItem != null))
+            {
+                onlineLibrary.Context.Load(onlineFolder, pf => pf.Name, pf => pf.Files, pf => pf.ServerRelativeUrl, pf => pf.TimeCreated);
+                onlineLibrary.Context.ExecuteQueryRetry();
+
+                using (var stream = new System.IO.FileStream(fileNameWithPath, System.IO.FileMode.Open))
+                {
+
+                    var creationInfo = new Microsoft.SharePoint.Client.FileCreationInformation
+                    {
+                        Overwrite = clobber,
+                        ContentStream = stream,
+                        Url = fileName
+                    };
+
+                    var uploadStatus = onlineFolder.Files.Add(creationInfo);
+                    onlineLibrary.Context.Load(uploadStatus, ups => ups.ServerRelativeUrl);
+                    onlineLibrary.Context.ExecuteQueryRetry();
+                    relativeUrl = uploadStatus.ServerRelativeUrl;
+                }
+            }
+            else
+            {
+                onlineLibrary.Context.Load(logFileItem.File, ups => ups.ServerRelativeUrl);
+                onlineLibrary.Context.ExecuteQueryRetry();
+                relativeUrl = logFileItem.File.ServerRelativeUrl;
+            }
+
+            var webUri = new Uri(onlineFolder.Context.Url);
+            var assertedUri = new Uri(webUri, relativeUrl);
+            relativeUrl = assertedUri.AbsoluteUri;
+
+            return relativeUrl;
+        }
+
+        /// <summary>
+        /// Upload a file from disk to the specific <paramref name="onlineLibraryFolder"/> inside the RootFolder
         /// </summary>
         /// <param name="onlineLibrary"></param>
         /// <param name="onlineLibraryFolder"></param>
-        /// <param name="onlineFileName"></param>
+        /// <param name="fileNameWithPath"></param>
+        /// <param name="clobber">(OPTIONAL) if true then overwrite the existing file</param>
+        /// <exception cref="System.IO.FileNotFoundException">File not found if fullfilename does not exist</exception>
         /// <returns></returns>
-        public static string UploadFile(this List onlineLibrary, string onlineLibraryFolder, string onlineFileName)
+        public static string UploadFile(this List onlineLibrary, string onlineLibraryFolder, string fileNameWithPath, bool clobber = false)
         {
-            var relativeUrl = string.Empty;
-            var fileName = System.IO.Path.GetFileName(onlineFileName);
-            try
+            var fileName = System.IO.Path.GetFileName(fileNameWithPath);
+            if (!System.IO.File.Exists(fileNameWithPath))
             {
-                var webUri = new Uri(onlineLibrary.Context.Url);
-
-                var currentFolder = GetOrCreateFolder(onlineLibrary, onlineLibrary.RootFolder, onlineLibraryFolder);
-                var logFileItem = GetFileInFolder(onlineLibrary, currentFolder, fileName);
-                if (logFileItem == null)
-                {
-                    onlineLibrary.Context.Load(currentFolder, pf => pf.Name, pf => pf.Files, pf => pf.ServerRelativeUrl, pf => pf.TimeCreated);
-                    onlineLibrary.Context.ExecuteQuery();
-
-                    using (var stream = new System.IO.FileStream(onlineFileName, System.IO.FileMode.Open))
-                    {
-
-                        var creationInfo = new Microsoft.SharePoint.Client.FileCreationInformation();
-                        creationInfo.Overwrite = true;
-                        creationInfo.ContentStream = stream;
-                        creationInfo.Url = fileName;
-
-                        var uploadStatus = currentFolder.Files.Add(creationInfo);
-                        onlineLibrary.Context.Load(uploadStatus, ups => ups.ServerRelativeUrl);
-                        onlineLibrary.Context.ExecuteQuery();
-                        relativeUrl = uploadStatus.ServerRelativeUrl;
-                    }
-                }
-                else
-                {
-                    onlineLibrary.Context.Load(logFileItem.File, ups => ups.ServerRelativeUrl);
-                    onlineLibrary.Context.ExecuteQuery();
-                    relativeUrl = logFileItem.File.ServerRelativeUrl;
-                }
-
-                var assertedUri = new Uri(webUri, relativeUrl);
-                relativeUrl = assertedUri.AbsoluteUri;
+                throw new System.IO.FileNotFoundException(string.Format("File {0} does not exists on disk", fileNameWithPath));
             }
-            catch (Exception ex)
+
+            if (!onlineLibrary.IsObjectPropertyInstantiated(fctx => fctx.RootFolder)
+                && !onlineLibrary.RootFolder.IsPropertyAvailable(fctx => fctx.ServerRelativeUrl))
             {
-                System.Diagnostics.Trace.TraceError("Failed to upload file {0} MSG:{1}", onlineFileName, ex.Message);
+                try
+                {
+                    // setup processing of folder in the parent folder
+                    onlineLibrary.Context.Load(onlineLibrary, pf => pf.RootFolder, pf => pf.RootFolder.ServerRelativeUrl);
+                    onlineLibrary.Context.ExecuteQueryRetry();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError("Failed to ensure root folder propert MSG:{0}", ex.Message);
+                }
             }
+
+            var currentFolder = GetOrCreateFolder(onlineLibrary, onlineLibrary.RootFolder, onlineLibraryFolder);
+            var relativeUrl = onlineLibrary.UploadFile(currentFolder, fileNameWithPath, clobber);
             return relativeUrl;
         }
 
         /// <summary>
         /// Retreive file from the specified folder
         /// </summary>
-        /// <param name="onlineLibrary"></param>
-        /// <param name="destinationFolder"></param>
-        /// <param name="onlineFileName"></param>
+        /// <param name="onlineLibrary">The library hosting the file</param>
+        /// <param name="destinationFolder">The folder where the file is located</param>
+        /// <param name="onlineFileName">The filename</param>
         /// <returns></returns>
         public static ListItem GetFileInFolder(this List onlineLibrary, Folder destinationFolder, string onlineFileName)
         {
-            destinationFolder.Context.Load(destinationFolder, afold => afold.ServerRelativeUrl);
-            destinationFolder.Context.ExecuteQuery();
+            if (!destinationFolder.IsPropertyAvailable(fctx => fctx.ServerRelativeUrl))
+            {
+                destinationFolder.Context.Load(destinationFolder, afold => afold.ServerRelativeUrl);
+                destinationFolder.Context.ExecuteQueryRetry();
+            }
+
             var relativeUrl = destinationFolder.ServerRelativeUrl;
-            var context = destinationFolder.Context;
+
             try
             {
-                CamlQuery camlQuery = new CamlQuery();
                 var camlAndValue = CAML.And(
                             CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), onlineFileName)),
                              CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), relativeUrl)));
 
-                camlQuery.ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll,
+                var camlQuery = new CamlQuery()
+                {
+                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll,
                     CAML.Where(camlAndValue),
                     string.Empty,
                     CAML.ViewFields(CAML.FieldRef("Title")),
-                    5);
-                ListItemCollection listItems = onlineLibrary.GetItems(camlQuery);
-                context.Load(listItems);
-                context.ExecuteQuery();
+                    5)
+                };
+
+                var listItems = onlineLibrary.GetItems(camlQuery);
+                destinationFolder.Context.Load(listItems);
+                destinationFolder.Context.ExecuteQueryRetry();
 
                 if (listItems.Count() > 0)
                 {
@@ -377,6 +451,33 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
+        /// Moves a file from <paramref name="serverRelativeUrl"/> to <paramref name="newRelativeUrl"/>
+        /// </summary>
+        /// <param name="onlineLibrary">The library/list where the item resides</param>
+        /// <param name="serverRelativeUrl">The current path for the list item</param>
+        /// <param name="newRelativeUrl">The target path for the list item</param>
+        /// <returns></returns>
+        public static bool MoveFileToFolder(this List onlineLibrary, string serverRelativeUrl, string newRelativeUrl)
+        {
+            var context = onlineLibrary.Context;
+            try
+            {
+                var targetItem = onlineLibrary.ParentWeb.GetFileByServerRelativeUrl(serverRelativeUrl);
+                context.Load(targetItem);
+                context.ExecuteQueryRetry();
+
+                targetItem.MoveTo(newRelativeUrl, MoveOperations.None);
+                context.ExecuteQueryRetry();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError(ex.Message);
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Query the list to retreive the last ID
         /// </summary>
         /// <param name="onlineLibrary">The List we will query</param>
@@ -389,38 +490,51 @@ namespace InfrastructureAsCode.Core.Extensions
             var camlViewClause = CAML.ViewFields(camlFieldRefs.Select(s => CAML.FieldRef(s)).ToArray());
             var camlQuery = new CamlQuery()
             {
-                ViewXml = CAML.ViewQuery(string.Empty, CAML.OrderBy(new OrderByField("Modified", false)), 10)
+                ViewXml = CAML.ViewQuery(
+                    ViewScope.RecursiveAll,
+                    string.Empty,
+                    CAML.OrderBy(new OrderByField("ID", false)),
+                    camlViewClause,
+                    1)
             };
 
 
-            if (!lastItemModifiedDate.HasValue)
-            {
-                onlineLibrary.EnsureProperties(olp => olp.LastItemModifiedDate, olp => olp.LastItemUserModifiedDate);
-                lastItemModifiedDate = onlineLibrary.LastItemModifiedDate;
-            }
-
-
-            ListItemCollectionPosition ListItemCollectionPosition = null;
+            ListItemCollectionPosition itemPosition = null;
             while (true)
             {
-                camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
+                camlQuery.ListItemCollectionPosition = itemPosition;
                 var spListItems = onlineLibrary.GetItems(camlQuery);
                 onlineLibrary.Context.Load(spListItems, lti => lti.ListItemCollectionPosition);
                 onlineLibrary.Context.ExecuteQueryRetry();
-                ListItemCollectionPosition = spListItems.ListItemCollectionPosition;
+                itemPosition = spListItems.ListItemCollectionPosition;
 
                 if (spListItems.Any())
                 {
-                    foreach (var item in spListItems)
+                    if (lastItemModifiedDate.HasValue)
                     {
-                        var itemModified = item.RetrieveListItemValue("Modified").ToNullableDatetime();
-                        System.Diagnostics.Trace.TraceInformation("Item {0} Modified {1} IS MATCH:{2}", item.Id, itemModified, (itemModified == lastItemModifiedDate));
+                        foreach (var item in spListItems)
+                        {
+                            var itemModified = item.RetrieveListItemValue("Modified").ToNullableDatetime();
+                            if (itemModified == lastItemModifiedDate)
+                            {
+                                returnId = item.Id;
+                                break;
+                            }
+                        }
                     }
-                    returnId = spListItems.OrderByDescending(ob => ob.Id).FirstOrDefault().Id;
-                    break;
+                    else
+                    {
+                        returnId = spListItems.OrderByDescending(ob => ob.Id).FirstOrDefault().Id;
+                    }
+
+                    if (returnId > 0)
+                    {
+                        // Found the item ID that matches the specified date - return it
+                        break;
+                    }
                 }
 
-                if (ListItemCollectionPosition == null)
+                if (itemPosition == null)
                 {
                     break;
                 }
@@ -433,21 +547,47 @@ namespace InfrastructureAsCode.Core.Extensions
         /// Will evaluate the Library/List and if the list has reached the threshold it will produce SAFE queries
         /// </summary>
         /// <param name="onlineLibrary">The list to query</param>
+        /// <param name="incrementor">(Default) 1000 rows in the query, can specify up to 5000</param>
         /// <param name="camlStatement">A base CAML query upon which the threshold query will be constructed</param>
+        /// <param name="defaultStartItemId">(OPTIONAL) if specified the caml queries will begin at ID >= this value</param>
+        /// <param name="defaultLastItemId">(OPTIONAL) if specified the caml queries will terminate at this value; if not specified a query will be executed to retreive the lastitemid</param>
         /// <returns>A collection of CAML queries NOT including WHERE</returns>
-        public static List<string> SafeCamlClauseFromThreshold(this List onlineLibrary, string camlStatement = null, int? defaultLastItemId = default(int?))
+        public static List<string> SafeCamlClauseFromThreshold(this List onlineLibrary, int incrementor = 1000, string camlStatement = null, Nullable<int> defaultStartItemId = default(Nullable<int>), Nullable<int> defaultLastItemId = default(Nullable<int>))
         {
-            var camlQueries = new List<string>();
+            if(incrementor > 5000)
+            {
+                throw new InvalidOperationException(string.Format("CAML Queries must return fewer than 5000 rows, you specified {0}", incrementor));
+            }
 
-            onlineLibrary.EnsureProperties(olp => olp.ItemCount, olp => olp.LastItemModifiedDate, olp => olp.LastItemUserModifiedDate);
+            var camlQueries = new List<string>();
+            var lastItemId = 0;
+            var startIdx = 0;
+
+            // Check if the List/Library ItemCount exists
+            if (!onlineLibrary.IsPropertyAvailable(octx => octx.ItemCount))
+            {
+                onlineLibrary.Context.Load(onlineLibrary, octx => octx.ItemCount);
+                onlineLibrary.Context.ExecuteQueryRetry();
+            }
 
             // we have reached a threshold and need to parse based on other criteria
             var itemCount = onlineLibrary.ItemCount;
             if (itemCount > 5000)
             {
-                var lastItemId = (defaultLastItemId.HasValue) ? defaultLastItemId.Value : onlineLibrary.QueryLastItemId(onlineLibrary.LastItemModifiedDate);
-                var startIdx = 0;
-                var incrementor = 1000;
+                if (defaultStartItemId.HasValue)
+                {
+                    startIdx = defaultStartItemId.Value;
+                }
+
+                if (defaultLastItemId.HasValue)
+                {
+                    lastItemId = defaultLastItemId.Value;
+                }
+                else
+                {
+
+                    lastItemId = onlineLibrary.QueryLastItemId();
+                }
 
                 for (var idx = startIdx; idx < lastItemId + 1;)
                 {
@@ -493,12 +633,12 @@ namespace InfrastructureAsCode.Core.Extensions
         public static string GetXsltWebPartXML(this List viewList, string pageUrl, string title, Guid viewID)
         {
             var executor = false;
-            if (!viewList.IsPropertyAvailable("Id"))
+            if (!viewList.IsPropertyAvailable(lctx => lctx.Id))
             {
                 viewList.Context.Load(viewList, vl => vl.Id, vl => vl.Title);
                 executor = true;
             }
-            if (!viewList.IsPropertyAvailable("RootFolder"))
+            if (!viewList.IsPropertyAvailable(lctx => lctx.RootFolder))
             {
                 viewList.Context.Load(viewList.RootFolder, rf => rf.ServerRelativeUrl, rf => rf.ItemCount, rf => rf.Name);
                 executor = true;

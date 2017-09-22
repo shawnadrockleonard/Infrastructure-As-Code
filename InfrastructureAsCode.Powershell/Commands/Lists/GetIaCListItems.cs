@@ -26,14 +26,25 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
     [OutputType(typeof(Collection<SPListItemDefinition>))]
     public class GetIaCListItems : IaCCmdlet
     {
-        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 0, HelpMessage = "The ID or Url of the list.")]
-        public ListPipeBind Identity;
+        #region Parameters
+
+        [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0, HelpMessage = "The ID or Url of the list.")]
+        public ListPipeBind Identity { get; set; }
+
+        /// <summary>
+        /// Optional caml entry for testing the query
+        /// </summary>
+        [Parameter(Mandatory = false)]
+        public string CamlStatement { get; set; }
 
         /// <summary>
         /// Should we expand the list item to include its column data
         /// </summary>
         [Parameter(Mandatory = false)]
         public SwitchParameter Expand { get; set; }
+
+        #endregion
+
 
         /// <summary>
         /// Execute the cmdlet
@@ -42,68 +53,106 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         {
             base.ExecuteCmdlet();
 
+
+
             Collection<SPListItemDefinition> results = new Collection<SPListItemDefinition>();
 
-
+            var ctx = this.ClientContext;
             var _list = Identity.GetList(this.ClientContext.Web);
+            ctx.Load(ctx.Web, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
+            ctx.Load(_list, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
+            ctx.ExecuteQueryRetry();
+
+            var webUri = new Uri(ctx.Web.Url);
+
+            // Will query the list to determine the last item id in the list
+            var lastItemId = _list.QueryLastItemId();
+            LogVerbose("List with item count {0} has a last ID of {1}", _list.ItemCount, lastItemId);
+            LogVerbose("List has folder creation = {0}", _list.EnableFolderCreation);
+
+
+            var camlFields = new string[] { "Title", "ID", "Author", "Editor" };
+            var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
 
 
             ListItemCollectionPosition itemPosition = null;
-            var camlQuery = new CamlQuery()
+            var camlQueries = _list.SafeCamlClauseFromThreshold(2000, CamlStatement, 0, lastItemId);
+            foreach (var camlAndValue in camlQueries)
             {
-                ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll,
-                            string.Empty,
-                            CAML.OrderBy(new OrderByField("Title")),
-                            CAML.ViewFields((new string[] { "Title", "Author", "Editor" }).Select(s => CAML.FieldRef(s)).ToArray()),
-                            50)
-            };
-
-            try
-            {
-                while (true)
+                itemPosition = null;
+                var camlQuery = new CamlQuery()
                 {
-  
-                    camlQuery.ListItemCollectionPosition = itemPosition;
-                    ListItemCollection listItems = _list.GetItems(camlQuery);
-                    this.ClientContext.Load(listItems);
-                    this.ClientContext.ExecuteQueryRetry();
-                    itemPosition = listItems.ListItemCollectionPosition;
+                    ViewXml = CAML.ViewQuery(
+                        ViewScope.RecursiveAll,
+                        CAML.Where(camlAndValue),
+                        CAML.OrderBy(new OrderByField("ID")),
+                        camlViewFields,
+                        5)
+                };
 
-                    foreach (var rbiItem in listItems)
+                LogWarning("CAML Query {0}", camlQuery.ViewXml);
+
+                try
+                {
+                    while (true)
                     {
+                        camlQuery.ListItemCollectionPosition = itemPosition;
+                        var listItems = _list.GetItems(camlQuery);
+                        _list.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
+                        _list.Context.ExecuteQueryRetry();
+                        itemPosition = listItems.ListItemCollectionPosition;
 
-                        LogVerbose("Title: {0}; Item ID: {1}", rbiItem["Title"], rbiItem.Id);
-
-                        var author = rbiItem.RetrieveListItemUserValue("Author");
-                        var editor = rbiItem.RetrieveListItemUserValue("Editor");
-
-                        var newitem = new SPListItemDefinition()
+                        foreach (var rbiItem in listItems)
                         {
-                            Title = rbiItem.RetrieveListItemValue("Title"),
-                            Id = rbiItem.Id
-                        };
+                            var itemTitle = rbiItem.RetrieveListItemValue("Title");
+                            LogVerbose("Title: {0}; Item ID: {1}", itemTitle, rbiItem.Id);
 
-                        foreach(var rbiField in rbiItem.FieldValues)
-                        {
-                            newitem.ColumnValues.Add(new SPListItemFieldDefinition()
+                            var newitem = new SPListItemDefinition()
                             {
-                                FieldName = rbiField.Key,
-                                FieldValue = rbiField.Value
-                            });
+                                Title = itemTitle,
+                                Id = rbiItem.Id
+                            };
+
+                            if (Expand)
+                            {
+                                var author = rbiItem.RetrieveListItemUserValue("Author");
+                                var editor = rbiItem.RetrieveListItemUserValue("Editor");
+                                newitem.CreatedBy = new SPPrincipalUserDefinition()
+                                {
+                                    Email = author.ToUserEmailValue(),
+                                    LoginName = author.ToUserValue(),
+                                    Id = author.LookupId
+                                };
+                                newitem.ModifiedBy = new SPPrincipalUserDefinition()
+                                {
+                                    Email = editor.ToUserEmailValue(),
+                                    LoginName = editor.ToUserValue(),
+                                    Id = editor.LookupId
+                                };
+
+                                foreach (var rbiField in rbiItem.FieldValues)
+                                {
+                                    newitem.ColumnValues.Add(new SPListItemFieldDefinition()
+                                    {
+                                        FieldName = rbiField.Key,
+                                        FieldValue = rbiField.Value
+                                    });
+                                }
+                            }
+
+                            results.Add(newitem);
                         }
 
-                        results.Add(newitem);
-                    }
-
-                    if (itemPosition == null)
-                    {
-                        break;
+                        if (itemPosition == null)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex, "Failed to retrieve list item collection");
+                catch (Exception ex)
+                {
+                    LogError(ex, "Failed to retrieve list item collection");
+                }
             }
 
             WriteObject(results, true);

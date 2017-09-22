@@ -1,6 +1,6 @@
 ﻿using InfrastructureAsCode.Powershell;
 using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Powershell.Extensions;
+using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using System;
@@ -17,17 +17,33 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
     [CmdletHelp("Uploads a document or file to a library specified", Category = "Files")]
     public class AddIaCFileUpload : IaCCmdlet
     {
+        #region Parameters 
+
         /// <summary>
         /// The display name for the library
         /// </summary>
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string ListTitle { get; set; }
+        public ListPipeBind ListTitle { get; set; }
 
         /// <summary>
         /// The full path to the file
         /// </summary>
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
         public string FileName { get; set; }
+
+        /// <summary>
+        /// The foldername in which the file will be uploaded
+        /// </summary>
+        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 2)]
+        public string FolderName { get; set; }
+
+        /// <summary>
+        /// Should we overwrite the file if it exists
+        /// </summary>
+        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 3)]
+        public SwitchParameter Clobber { get; set; }
+
+        #endregion
 
 
         protected override void BeginProcessing()
@@ -52,28 +68,26 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                 var ctx = this.ClientContext;
 
                 var w = ctx.Web;
-                var l = ctx.Web.Lists.GetByTitle(ListTitle);
-                ctx.Load(w);
-                ctx.Load(l, listEntity => listEntity.RootFolder.ServerRelativeUrl);
+                var l = ListTitle.GetList(ctx.Web);
+                ctx.Load(w, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
+                ctx.Load(l, listctx => listctx.RootFolder, listctx => listctx.RootFolder.ServerRelativeUrl);
                 ClientContext.ExecuteQueryRetry();
 
-                var serverRelativeUrl = string.Format("{0}/{1}", this.ClientContext.Url, l.RootFolder.ServerRelativeUrl);
-                LogVerbose(string.Format("Context has been established for {0}", serverRelativeUrl));
+                var webUri = new Uri(w.Url);
+                var serverRelativeUrl = new Uri(webUri, Path.Combine(l.RootFolder.ServerRelativeUrl, FolderName));
+                LogVerbose(string.Format("Uploading file to {0}", serverRelativeUrl.AbsoluteUri));
 
-                var fileName = Path.GetFileName(this.FileName);
-                using (var stream = new System.IO.FileStream(this.FileName, FileMode.Open))
+                if (string.IsNullOrEmpty(FolderName))
                 {
-
-                    var creationInfo = new Microsoft.SharePoint.Client.FileCreationInformation();
-                    creationInfo.Overwrite = true;
-                    creationInfo.ContentStream = stream;
-                    creationInfo.Url = fileName;
-
-                    var uploadStatus = l.RootFolder.Files.Add(creationInfo);
-                    ctx.Load(uploadStatus);
-
-                    ctx.ExecuteQuery();
+                    var uploadedFileUrl = l.UploadFile(l.RootFolder, FileName, Clobber);
+                    LogVerbose(string.Format("Uploaded [Clobber:{1}] into RootFolder file URL {0}", uploadedFileUrl, Clobber));
                 }
+                else
+                {
+                    var uploadedFileUrl = l.UploadFile(FolderName, FileName, Clobber);
+                    LogVerbose(string.Format("Uploaded [Clobber:{2}] into Folder {0} file URL {1}", FolderName, uploadedFileUrl, Clobber));
+                }
+
             }
             catch (Exception ex)
             {

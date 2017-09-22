@@ -182,6 +182,7 @@
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
     <Compile Include="Commands\GetSPIaCContext.cs" />
+    <Compile Include="Commands\Lists\AddIaCListFolders.cs" />
     <Compile Include="Commands\Reporting\ReportIaCUsageAnalytics.cs" />
     <Compile Include="Models\CalloutLinkModel.cs" />
     <Compile Include="Commands\Lists\GetIaCList.cs" />

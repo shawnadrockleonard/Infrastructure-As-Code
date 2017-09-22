@@ -202,7 +202,7 @@ namespace InfrastructureAsCode.Core.Extensions
         public static string DownloadFile(this ListItem item, ClientContext itemContext, string targetDirectory)
         {
             var contextWeb = itemContext.Web;
-            if (!contextWeb.IsPropertyAvailable("Url"))
+            if (!contextWeb.IsPropertyAvailable(wctx => wctx.Url))
             {
                 itemContext.Load(contextWeb, wctx => wctx.Url);
                 itemContext.ExecuteQueryRetry();
