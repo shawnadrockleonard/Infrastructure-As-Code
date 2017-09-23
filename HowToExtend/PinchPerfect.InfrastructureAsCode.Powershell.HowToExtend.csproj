@@ -59,6 +59,11 @@
     <None Include="ModuleFiles\InfrastructureAsCode.Powershell.HowToExtend.psd1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.1.nupkg" />
+    <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.2.nupkg" />
+    <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.3.nupkg" />
+    <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.4.nupkg" />
+    <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.5.nupkg" />
     <None Include="README.md" />
     <None Include="SampleFiles\sample-customaction-list.json" />
     <None Include="SampleFiles\sample-customaction-site-scriptblock.json" />
