@@ -1,5 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 using System;
+using System.Linq.Expressions;
 
 namespace InfrastructureAsCode.Powershell.PipeBinds
 {
@@ -52,7 +53,7 @@ namespace InfrastructureAsCode.Powershell.PipeBinds
             get { return _name; }
         }
 
-        internal List GetList(Web web)
+        internal List GetList(Web web, params Expression<Func<List, object>>[] expressions)
         {
             List list = null;
             if (List != null)
@@ -65,13 +66,15 @@ namespace InfrastructureAsCode.Powershell.PipeBinds
             }
             else if (!string.IsNullOrEmpty(Title))
             {
-                list = web.GetListByTitle(Title);
+                list = web.GetListByTitle(Title, expressions);
                 if (list == null)
                 {
-                    list = web.GetListByUrl(Title);
+                    list = web.GetListByUrl(Title, expressions);
                 }
             }
-            if (list != null)
+
+            // if no expressions are supplied then use default settings
+            if (list != null && expressions.Length <= 0)
             {
                 web.Context.Load(list, l => l.Id, l => l.BaseTemplate, l => l.OnQuickLaunch, l => l.DefaultViewUrl, l => l.Title, l => l.Hidden, l => l.ContentTypesEnabled, l => l.RootFolder.ServerRelativeUrl);
                 web.Context.ExecuteQueryRetry();

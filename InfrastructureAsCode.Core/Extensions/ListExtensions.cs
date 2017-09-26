@@ -131,6 +131,12 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns>The listitem as a folder</returns>
         public static Folder GetOrCreateFolder(this List onlineLibrary, Folder destinationFolder, string folderName, Nullable<int> defaultStartItemId = default(int?), Nullable<int> defaultLastItemId = default(int?))
         {
+            if (!onlineLibrary.IsPropertyAvailable(lctx => lctx.BaseType))
+            {
+                onlineLibrary.Context.Load(onlineLibrary, lctx => lctx.BaseType, lctx => lctx.BaseTemplate);
+                onlineLibrary.Context.ExecuteQueryRetry();
+            }
+
             if (!destinationFolder.IsPropertyAvailable(fctx => fctx.ServerRelativeUrl)
                 || !destinationFolder.IsObjectPropertyInstantiated(fctx => fctx.Folders))
             {
@@ -147,12 +153,19 @@ namespace InfrastructureAsCode.Core.Extensions
 
             // Remove invalid characters
             var trimmedFolder = HelperExtensions.GetCleanDirectory(folderName, string.Empty);
-            var linkFileFilter = CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), trimmedFolder));
+            var linkFileFilter = CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder));
+            if(onlineLibrary.BaseType == BaseType.DocumentLibrary)
+            {
+                linkFileFilter = CAML.Or(
+                    linkFileFilter,
+                     CAML.Eq(CAML.FieldValue("LinkFilename", FieldType.Text.ToString("f"), trimmedFolder)));
+            }
+
             var camlClause = CAML.And(
                 CAML.Eq(CAML.FieldValue("FileDirRef", FieldType.Text.ToString("f"), folderRelativeUrl)),
                 CAML.And(
                     CAML.Eq(CAML.FieldValue("FSObjType", FieldType.Integer.ToString("f"), 1.ToString())),
-                    CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder))
+                    linkFileFilter
                 )
             );
 
@@ -164,10 +177,10 @@ namespace InfrastructureAsCode.Core.Extensions
                 var camlQuery = new CamlQuery()
                 {
                     ViewXml = CAML.ViewQuery(
-                        ViewScope.RecursiveAll, 
-                        camlWhereClause, 
-                        string.Empty, 
-                        camlViewFields, 
+                        ViewScope.RecursiveAll,
+                        camlWhereClause,
+                        string.Empty,
+                        camlViewFields,
                         5)
                 };
                 camlQuery.ListItemCollectionPosition = itemPosition;
@@ -554,7 +567,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns>A collection of CAML queries NOT including WHERE</returns>
         public static List<string> SafeCamlClauseFromThreshold(this List onlineLibrary, int incrementor = 1000, string camlStatement = null, Nullable<int> defaultStartItemId = default(Nullable<int>), Nullable<int> defaultLastItemId = default(Nullable<int>))
         {
-            if(incrementor > 5000)
+            if (incrementor > 5000)
             {
                 throw new InvalidOperationException(string.Format("CAML Queries must return fewer than 5000 rows, you specified {0}", incrementor));
             }
