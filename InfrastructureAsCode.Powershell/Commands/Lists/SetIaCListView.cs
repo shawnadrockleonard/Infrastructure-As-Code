@@ -64,10 +64,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         public SwitchParameter PagedView { get; set; }
 
         [Parameter(Mandatory = false, HelpMessage = "If specified, a personal view will be created.")]
-        public SwitchParameter Personal;
+        public SwitchParameter Personal { get; set; }
 
         [Parameter(Mandatory = false, HelpMessage = "If specified, the view will be set as the default view for the list.")]
-        public SwitchParameter SetAsDefault;
+        public SwitchParameter SetAsDefault { get; set; }
 
 
         public override void ExecuteCmdlet()

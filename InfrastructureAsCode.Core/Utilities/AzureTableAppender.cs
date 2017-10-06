@@ -79,7 +79,7 @@ namespace InfrastructureAsCode.Core.Utilities
 
             foreach (var group in grouped)
             {
-                foreach (var batch in group.Batch(100))
+                foreach (var batch in group.Batch(50))
                 {
                     var batchOperation = new TableBatchOperation();
                     foreach (var azureLoggingEvent in batch.Select(GetLogEntity))

@@ -11,6 +11,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace InfrastructureAsCode.Powershell.Commands.Lists
 {
@@ -55,12 +56,14 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
 
 
-            Collection<SPListItemDefinition> results = new Collection<SPListItemDefinition>();
+            var results = new Collection<SPListItemDefinition>();
 
             var ctx = this.ClientContext;
             var _list = Identity.GetList(this.ClientContext.Web);
             ctx.Load(ctx.Web, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
             ctx.Load(_list, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
+
+            // load the list and web properties
             ctx.ExecuteQueryRetry();
 
             var webUri = new Uri(ctx.Web.Url);
@@ -71,7 +74,93 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             LogVerbose("List has folder creation = {0}", _list.EnableFolderCreation);
 
 
-            var camlFields = new string[] { "Title", "ID", "Author", "Editor" };
+            var camlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
+
+
+
+            if (Expand)
+            {
+                // SharePoint URI for XML parsing
+                XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
+
+                // Skip these specific fields
+                var skiptypes = new FieldType[]
+                {
+                    FieldType.Invalid,
+                    FieldType.Computed,
+                    FieldType.ContentTypeId,
+                    FieldType.Invalid,
+                    FieldType.WorkflowStatus,
+                    FieldType.WorkflowEventType,
+                    FieldType.Threading,
+                    FieldType.ThreadIndex,
+                    FieldType.Recurrence,
+                    FieldType.PageSeparator,
+                    FieldType.OutcomeChoice,
+                    FieldType.CrossProjectLink,
+                    FieldType.ModStat,
+                    FieldType.Error,
+                    FieldType.MaxItems
+                };
+
+                var fields = ctx.LoadQuery(_list.Fields
+                        .Include(
+                            v => v.AutoIndexed,
+                            v => v.CanBeDeleted,
+                            v => v.DefaultFormula,
+                            v => v.DefaultValue,
+                            v => v.Description,
+                            v => v.EnforceUniqueValues,
+                            v => v.FieldTypeKind,
+                            v => v.Filterable,
+                            v => v.Group,
+                            v => v.Hidden,
+                            v => v.Id,
+                            v => v.InternalName,
+                            v => v.Indexed,
+                            v => v.JSLink,
+                            v => v.NoCrawl,
+                            v => v.ReadOnlyField,
+                            v => v.Required,
+                            v => v.Title,
+                            v => v.SchemaXml));
+                ClientContext.ExecuteQueryRetry();
+
+
+                foreach (var listField in fields)
+                {
+                    // skip internal fields
+                    if (skiptypes.Any(st => listField.FieldTypeKind == st))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var fieldXml = listField.SchemaXml;
+                        if (!string.IsNullOrEmpty(fieldXml))
+                        {
+                            var xdoc = XDocument.Parse(fieldXml, LoadOptions.PreserveWhitespace);
+                            var xField = xdoc.Element("Field");
+                            var xSourceID = xField.Attribute("SourceID");
+                            var xScope = xField.Element("Scope");
+                            if (xSourceID != null
+                                && xSourceID.Value.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0
+                                && !camlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                camlFields.Add(listField.InternalName);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Failed to parse field {0} MSG:{1}", listField.InternalName, ex.Message);
+                    }
+                }
+            }
+
+
+
             var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
 
 
@@ -104,31 +193,42 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
                         foreach (var rbiItem in listItems)
                         {
+                            var itemId = rbiItem.Id;
                             var itemTitle = rbiItem.RetrieveListItemValue("Title");
-                            LogVerbose("Title: {0}; Item ID: {1}", itemTitle, rbiItem.Id);
+                            var author = rbiItem.RetrieveListItemUserValue("Author");
+                            var editor = rbiItem.RetrieveListItemUserValue("Editor");
+                            LogVerbose("Title: {0}; Item ID: {1}", itemTitle, itemId);
 
                             var newitem = new SPListItemDefinition()
                             {
+                                Id = itemId,
                                 Title = itemTitle,
-                                Id = rbiItem.Id
+                                Created = rbiItem.RetrieveListItemValue("Created").ToNullableDatetime(),
+                                Modified = rbiItem.RetrieveListItemValue("Modified").ToNullableDatetime()
                             };
 
-                            if (Expand)
+                            if (author != null)
                             {
-                                var author = rbiItem.RetrieveListItemUserValue("Author");
-                                var editor = rbiItem.RetrieveListItemUserValue("Editor");
                                 newitem.CreatedBy = new SPPrincipalUserDefinition()
                                 {
                                     Email = author.ToUserEmailValue(),
                                     LoginName = author.ToUserValue(),
                                     Id = author.LookupId
                                 };
+                            }
+                            if (editor != null)
+                            {
                                 newitem.ModifiedBy = new SPPrincipalUserDefinition()
                                 {
                                     Email = editor.ToUserEmailValue(),
                                     LoginName = editor.ToUserValue(),
                                     Id = editor.LookupId
                                 };
+                            }
+
+
+                            if (Expand)
+                            {
 
                                 foreach (var rbiField in rbiItem.FieldValues)
                                 {

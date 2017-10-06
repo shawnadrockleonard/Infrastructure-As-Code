@@ -35,11 +35,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         [Parameter(Mandatory = false, Position = 1)]
         public SwitchParameter ExpandObjects { get; set; }
 
-        /// <summary>
-        /// Extract the list items
-        /// </summary>
-        [Parameter(Mandatory = false, Position = 2)]
-        public SwitchParameter ExtractData { get; set; }
 
 
         public override void ExecuteCmdlet()
@@ -51,6 +46,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             // Skip these specific fields
             var skiptypes = new FieldType[]
             {
+                FieldType.Invalid,
                 FieldType.Computed,
                 FieldType.ContentTypeId,
                 FieldType.Invalid,
@@ -60,7 +56,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                 FieldType.ThreadIndex,
                 FieldType.Recurrence,
                 FieldType.PageSeparator,
-                FieldType.OutcomeChoice
+                FieldType.OutcomeChoice,
+                FieldType.CrossProjectLink,
+                FieldType.ModStat,
+                FieldType.Error,
+                FieldType.MaxItems
             };
 
             // Construct the model
@@ -82,7 +82,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                     var _site = this.ClientContext.Site;
 
                     ClientContext.Load(_contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
-                    ClientContext.Load(_site, cts => cts.Usage, cts => cts.Id);
+                    ClientContext.Load(_site, cts => cts.Id);
 
                     ClientContext.Load(list,
                         lctx => lctx.Id,
@@ -308,73 +308,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                             {
                                 System.Diagnostics.Trace.TraceError("Failed to parse field {0} MSG:{1}", listField.InternalName, ex.Message);
                             }
-                        }
-                    }
-
-                    if (ExtractData)
-                    {
-                        listmodel.ListItems = new List<SPListItemDefinition>();
-
-                        ListItemCollectionPosition itemPosition = null;
-                        var camlQuery = new CamlQuery()
-                        {
-                            ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll,
-                                        string.Empty,
-                                        CAML.OrderBy(new OrderByField("Title")),
-                                        CAML.ViewFields((new string[] { "Title", "Author", "Created", "Editor", "Modified" }).Select(s => CAML.FieldRef(s)).ToArray()),
-                                        50)
-                        };
-
-                        try
-                        {
-                            while (true)
-                            {
-                                camlQuery.ListItemCollectionPosition = itemPosition;
-                                ListItemCollection listItems = list.GetItems(camlQuery);
-                                this.ClientContext.Load(listItems);
-                                this.ClientContext.ExecuteQueryRetry();
-                                itemPosition = listItems.ListItemCollectionPosition;
-
-                                foreach (var rbiItem in listItems)
-                                {
-
-                                    LogVerbose("Title: {0}; Item ID: {1}", rbiItem["Title"], rbiItem.Id);
-
-                                    var author = rbiItem.RetrieveListItemUserValue("Author");
-                                    var editor = rbiItem.RetrieveListItemUserValue("Editor");
-
-                                    var newitem = new SPListItemDefinition()
-                                    {
-                                        Title = rbiItem.RetrieveListItemValue("Title"),
-                                        Id = rbiItem.Id,
-                                        Created = rbiItem.RetrieveListItemValue("Created").ToNullableDatetime(),
-                                        CreatedBy = new SPPrincipalUserDefinition()
-                                        {
-                                            Id = author.LookupId,
-                                            LoginName = author.LookupValue,
-                                            Email = author.Email
-                                        },
-                                        Modified = rbiItem.RetrieveListItemValue("Modified").ToNullableDatetime(),
-                                        ModifiedBy = new SPPrincipalUserDefinition()
-                                        {
-                                            Id = editor.LookupId,
-                                            LoginName = editor.LookupValue,
-                                            Email = editor.Email
-                                        }
-                                    };
-
-                                    listmodel.ListItems.Add(newitem);
-                                }
-
-                                if (itemPosition == null)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            LogError(ex, "Failed to retrieve list item collection");
                         }
                     }
 
