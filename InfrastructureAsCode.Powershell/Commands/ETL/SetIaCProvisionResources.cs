@@ -468,11 +468,23 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         mview => mview.DefaultView,
                                         mview => mview.Hidden,
                                         mview => mview.Toolbar,
-                                        mview => mview.JSLink
+                                        mview => mview.JSLink,
+                                        mview => mview.ViewFields
                                         );
 
                                     view.Scope = modelView.Scope;
                                     view.Title = modelView.Title;
+
+
+                                    if (modelView.FieldRefName != null && modelView.FieldRefName.Any())
+                                    {
+                                        var currentFields = view.ViewFields;
+                                        currentFields.RemoveAll();
+                                        modelView.FieldRefName.ToList().ForEach(vField =>
+                                        {
+                                            currentFields.Add(vField.Trim());
+                                        });
+                                    }
 
                                     if (!string.IsNullOrEmpty(modelView.Aggregations))
                                     {

@@ -126,8 +126,8 @@
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OfficeDevPnP.Core, Version=2.18.1709.0, Culture=neutral, PublicKeyToken=3751622786b357c2, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharePointPnPCoreOnline.2.18.1709.0\lib\net45\OfficeDevPnP.Core.dll</HintPath>
+    <Reference Include="OfficeDevPnP.Core, Version=2.19.1710.0, Culture=neutral, PublicKeyToken=3751622786b357c2, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharePointPnPCoreOnline.2.19.1710.0\lib\net45\OfficeDevPnP.Core.dll</HintPath>
     </Reference>
     <Reference Include="SharePointPnP.IdentityModel.Extensions, Version=1.2.2.0, Culture=neutral, PublicKeyToken=3751622786b357c2, processorArchitecture=MSIL">
       <HintPath>..\packages\SharePointPnP.IdentityModel.Extensions.1.2.2\lib\net45\SharePointPnP.IdentityModel.Extensions.dll</HintPath>
@@ -174,6 +174,7 @@
     <Compile Include="CmdLets\VerbsExtended.cs" />
     <Compile Include="Commands\ConnectSPIaC.cs" />
     <Compile Include="Commands\DisconnectSPIaC.cs" />
+    <Compile Include="Commands\ETL\SetIaCProvisionData.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionViews.cs" />
     <Compile Include="Commands\Fields\SetIaCFieldJsLink.cs" />
     <Compile Include="Commands\Files\GetIaCDownloadFile.cs" />
@@ -187,7 +188,7 @@
     <Compile Include="CmdLets\SPIaCRunspaceWithDelegate.cs" />
     <Compile Include="Commands\Development\SetIaCAppSideLoading.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionResources.cs" />
-    <Compile Include="Commands\GetSPIaCContext.cs" />
+    <Compile Include="Commands\GetIaCSPContext.cs" />
     <Compile Include="Commands\Lists\AddIaCListFolders.cs" />
     <Compile Include="Commands\Reporting\ReportIaCUsageAnalytics.cs" />
     <Compile Include="Models\CalloutLinkModel.cs" />
