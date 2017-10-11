@@ -354,12 +354,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
             if (lists.Any())
             {
-                SiteComponents.Lists = new List<SPListDefinition>();
+                var sitelists = new List<SPListDefinition>();
 
                 foreach (List list in lists.Where(lwt =>
                     (!_filterLists
                         || (_filterLists && SpecificLists.Any(sl => lwt.Title.Equals(sl, StringComparison.InvariantCultureIgnoreCase))))))
                 {
+                    LogVerbose("Processing list {0}", list.Title);
+
                     var listdefinition = new SPListDefinition()
                     {
                         Id = list.Id,
@@ -377,11 +379,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     };
 
 
-                    if (list.ContentTypes.Any())
+                    if (list.ContentTypes != null && list.ContentTypes.Any())
                     {
                         listdefinition.ContentTypes = new List<SPContentTypeDefinition>();
                         foreach (var contenttype in list.ContentTypes)
                         {
+                            LogVerbose("Processing list {0} content type {1}", list.Title, contenttype.Name);
+
                             var ctypemodel = new SPContentTypeDefinition()
                             {
                                 Inherits = true,
@@ -427,11 +431,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         }
                     }
 
-                    if (list.Fields.Any())
+                    var listfields = new List<SPFieldDefinitionModel>();
+                    if (list.Fields != null && list.Fields.Any())
                     {
-                        var listfields = new List<SPFieldDefinitionModel>();
                         foreach (Field listField in list.Fields)
                         {
+                            LogVerbose("Processing list {0} field {1}", list.Title, listField.InternalName);
+
                             // skip internal fields
                             if (skiptypes.Any(st => listField.FieldTypeKind == st)
                                 || skipcolumns.Any(sg => listField.Group.Equals(sg, StringComparison.CurrentCultureIgnoreCase)))
@@ -458,6 +464,11 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                     {
                                         var customField = listField.RetrieveField(contextWeb, groupQuery, xField);
                                         listfields.Add(customField);
+
+                                        if (customField.FieldTypeKind == FieldType.Lookup)
+                                        {
+                                            listdefinition.ListDependency.Add(customField.LookupListName);
+                                        }
                                     }
                                 }
                             }
@@ -478,17 +489,11 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
                         foreach (var view in list.Views)
                         {
+                            LogVerbose("Processing list {0} view {1}", list.Title, view.Title);
+
                             var vinternal = (view.ServerRelativeUrl.IndexOf(listurl, StringComparison.CurrentCultureIgnoreCase) == -1);
 
-                            ViewType viewCamlType = ViewType.None;
-                            foreach (var vtype in Enum.GetNames(typeof(ViewType)))
-                            {
-                                if (vtype.Equals(view.ViewType, StringComparison.InvariantCultureIgnoreCase))
-                                {
-                                    viewCamlType = (ViewType)Enum.Parse(typeof(ViewType), vtype);
-                                    break;
-                                }
-                            }
+                            ViewType viewCamlType = InfrastructureAsCode.Core.Extensions.ListExtensions.TryGetViewType(view.ViewType);
 
                             var viewmodel = new SPViewDefinitionModel()
                             {
@@ -530,18 +535,24 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                 viewmodel.InternalName = view.ServerRelativeUrl.Replace(listurl, "").Replace(".aspx", "");
                             }
 
-                            foreach (var vfields in view.ViewFields)
+                            if (view.ViewFields != null && view.ViewFields.Any())
                             {
-                                viewmodel.FieldRefName.Add(vfields);
+                                foreach (var vfields in view.ViewFields)
+                                {
+                                    viewmodel.FieldRefName.Add(vfields);
+                                }
                             }
 
-                            var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
-                            if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
+                            if (view.JSLink != null && view.JSLink.Any())
                             {
-                                viewmodel.JsLinkFiles = new List<string>();
-                                foreach (var vjslink in vjslinks)
+                                var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                                if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
                                 {
-                                    viewmodel.JsLinkFiles.Add(vjslink);
+                                    viewmodel.JsLinkFiles = new List<string>();
+                                    foreach (var vjslink in vjslinks)
+                                    {
+                                        viewmodel.JsLinkFiles.Add(vjslink);
+                                    }
                                 }
                             }
 
@@ -556,8 +567,57 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         }
                     }
 
+                    sitelists.Add(listdefinition);
+                }
 
-                    SiteComponents.Lists.Add(listdefinition);
+                if (sitelists.Any())
+                {
+                    var idx = 0;
+                    SiteComponents.Lists = new List<SPListDefinition>();
+
+                    // lets add any list with NO lookups first
+                    var nolookups = sitelists.Where(sl => !sl.ListDependency.Any());
+                    nolookups.ToList().ForEach(nolookup =>
+                    {
+                        nolookup.ProvisionOrder = idx++;
+                        SiteComponents.Lists.Add(nolookup);
+                        sitelists.Remove(nolookup);
+                    });
+
+                    // order with first in stack 
+                    var haslookups = sitelists.Where(sl => sl.ListDependency.Any()).OrderByDescending(ob => ob.ListDependency.Count()).ToList();
+                    while (haslookups.Count() > 0)
+                    {
+                        var listPopped = haslookups.FirstOrDefault();
+                        haslookups.Remove(listPopped);
+
+                        if (listPopped.ListDependency.Any(listField => 
+                                !SiteComponents.Lists.Any(sc => sc.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
+                                                             || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase))))
+                        {
+                            // no list definition exists in the collection with the dependent lookup lists
+                            LogWarning("List dependencies {0} do not exists in current collection", string.Join(",", listPopped.ListDependency));
+                        }
+
+                        foreach (var listField in listPopped.ListDependency)
+                        {
+                            if (!SiteComponents.Lists.Any(sc => sc.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
+                                                             || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)))
+                            {
+                                haslookups.Add(listPopped);
+                                listPopped = null;
+                                break;
+                            }
+                        }
+
+                        if (listPopped != null)
+                        {
+                            LogVerbose("Adding list {0} to collection", listPopped.ListName);
+                            SiteComponents.Lists.Add(listPopped);
+                        }
+                    }
+
+
                 }
             }
 

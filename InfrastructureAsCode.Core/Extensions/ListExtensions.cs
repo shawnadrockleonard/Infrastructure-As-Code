@@ -154,7 +154,7 @@ namespace InfrastructureAsCode.Core.Extensions
             // Remove invalid characters
             var trimmedFolder = HelperExtensions.GetCleanDirectory(folderName, string.Empty);
             var linkFileFilter = CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), trimmedFolder));
-            if(onlineLibrary.BaseType == BaseType.DocumentLibrary)
+            if (onlineLibrary.BaseType == BaseType.DocumentLibrary)
             {
                 linkFileFilter = CAML.Or(
                     linkFileFilter,
@@ -775,6 +775,28 @@ namespace InfrastructureAsCode.Core.Extensions
             }
             cssAction.Update();
             list.Context.ExecuteQueryRetry();
+        }
+
+        /// <summary>
+        /// Parses the string value into an <see cref="Microsoft.SharePoint.Client.ViewType"/>
+        /// </summary>
+        /// <param name="viewType"></param>
+        /// <returns></returns>
+        public static ViewType TryGetViewType(string viewType)
+        {
+            ViewType viewCamlType = ViewType.None;
+            if (!string.IsNullOrEmpty(viewType))
+            {
+                foreach (var vtype in Enum.GetNames(typeof(ViewType)))
+                {
+                    if (vtype.Equals(viewType, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        viewCamlType = (ViewType)Enum.Parse(typeof(ViewType), vtype);
+                        break;
+                    }
+                }
+            }
+            return viewCamlType;
         }
     }
 }

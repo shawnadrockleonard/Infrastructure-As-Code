@@ -22,6 +22,7 @@ namespace InfrastructureAsCode.Core.Models
             this.FieldDefinitions = new List<SPFieldDefinitionModel>();
             this.ListItems = new List<SPListItemDefinition>();
             this.RoleBindings = new List<SPPrincipalModel>();
+            this.ListDependency = new List<string>();
         }
 
         public string ServerRelativeUrl { get; set; }
@@ -118,6 +119,17 @@ namespace InfrastructureAsCode.Core.Models
         /// Represents an internal view that is bound to a specific Site Page or Web Part
         /// </summary>
         public List<SPViewDefinitionModel> InternalViews { get; set; }
+
+        /// <summary>
+        /// Contains the collection of list names that should be provisioned first
+        /// </summary>
+        /// <remarks>If a column contains </remarks>
+        public List<string> ListDependency { get; set; }
+
+        /// <summary>
+        /// Contains the order in which the list should be provisioned
+        /// </summary>
+        public int ProvisionOrder { get; set; }
 
         /// <summary>
         /// Projects the properties to Creation Info

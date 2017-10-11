@@ -204,15 +204,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
 
                         foreach (var view in views)
                         {
-                            ViewType viewCamlType = ViewType.None;
-                            foreach (var vtype in Enum.GetNames(typeof(ViewType)))
-                            {
-                                if (vtype.Equals(view.ViewType, StringComparison.InvariantCultureIgnoreCase))
-                                {
-                                    viewCamlType = (ViewType)Enum.Parse(typeof(ViewType), vtype);
-                                    break;
-                                }
-                            }
+                            ViewType viewCamlType = InfrastructureAsCode.Core.Extensions.ListExtensions.TryGetViewType(view.ViewType);
 
                             var viewmodel = new SPViewDefinitionModel()
                             {
@@ -255,18 +247,24 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                                 viewmodel.InternalName = view.ServerRelativeUrl.Replace(listurl, "").Replace(".aspx", "");
                             }
 
-                            foreach (var vfields in view.ViewFields)
+                            if (view.ViewFields != null && view.ViewFields.Any())
                             {
-                                viewmodel.FieldRefName.Add(vfields);
+                                foreach (var vfields in view.ViewFields)
+                                {
+                                    viewmodel.FieldRefName.Add(vfields);
+                                }
                             }
 
-                            var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
-                            if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
+                            if (view.JSLink != null && view.JSLink.Any())
                             {
-                                viewmodel.JsLinkFiles = new List<string>();
-                                foreach (var vjslink in vjslinks)
+                                var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                                if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
                                 {
-                                    viewmodel.JsLinkFiles.Add(vjslink);
+                                    viewmodel.JsLinkFiles = new List<string>();
+                                    foreach (var vjslink in vjslinks)
+                                    {
+                                        viewmodel.JsLinkFiles.Add(vjslink);
+                                    }
                                 }
                             }
 
@@ -311,7 +309,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                         }
                     }
 
-                   SiteComponents.Lists.Add(listmodel);
+                    SiteComponents.Lists.Add(listmodel);
                 }
             }
 
