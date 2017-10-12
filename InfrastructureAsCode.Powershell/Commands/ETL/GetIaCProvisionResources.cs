@@ -184,6 +184,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     linc => linc.IsSiteAssetsLibrary,
                     linc => linc.IsPrivate,
                     linc => linc.IsSystemList,
+                    lctx => lctx.SchemaXml,
                     linc => linc.Views
                     .Include(
                         lvt => lvt.Title,
@@ -579,40 +580,33 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     var nolookups = sitelists.Where(sl => !sl.ListDependency.Any());
                     nolookups.ToList().ForEach(nolookup =>
                     {
+                        LogVerbose("adding list {0}", nolookup.ListName);
                         nolookup.ProvisionOrder = idx++;
                         SiteComponents.Lists.Add(nolookup);
                         sitelists.Remove(nolookup);
                     });
 
                     // order with first in stack 
-                    var haslookups = sitelists.Where(sl => sl.ListDependency.Any()).OrderByDescending(ob => ob.ListDependency.Count()).ToList();
+                    var haslookups = sitelists.Where(sl => sl.ListDependency.Any()).OrderBy(ob => ob.ListDependency.Count()).ToList();
                     while (haslookups.Count() > 0)
                     {
                         var listPopped = haslookups.FirstOrDefault();
                         haslookups.Remove(listPopped);
+                        LogVerbose("adding list {0}", listPopped.ListName);
 
-                        if (listPopped.ListDependency.Any(listField => 
+                        if (listPopped.ListDependency.Any(listField =>
                                 !SiteComponents.Lists.Any(sc => sc.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
                                                              || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase))))
                         {
                             // no list definition exists in the collection with the dependent lookup lists
-                            LogWarning("List dependencies {0} do not exists in current collection", string.Join(",", listPopped.ListDependency));
+                            LogWarning("List {0} depends on {1} which do not exist current collection", listPopped.ListName, string.Join(",", listPopped.ListDependency));
+                            haslookups.Add(listPopped); // add back to collection
+                            listPopped = null;
                         }
-
-                        foreach (var listField in listPopped.ListDependency)
-                        {
-                            if (!SiteComponents.Lists.Any(sc => sc.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
-                                                             || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)))
-                            {
-                                haslookups.Add(listPopped);
-                                listPopped = null;
-                                break;
-                            }
-                        }
-
-                        if (listPopped != null)
+                        else
                         {
                             LogVerbose("Adding list {0} to collection", listPopped.ListName);
+                            listPopped.ProvisionOrder = idx++;
                             SiteComponents.Lists.Add(listPopped);
                         }
                     }

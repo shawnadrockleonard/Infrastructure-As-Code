@@ -88,11 +88,13 @@ namespace InfrastructureAsCode.Core.Extensions
                 throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
-            var fields = hostList.Fields;
-            hostList.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
-            hostList.Context.ExecuteQueryRetry();
+            if (!hostList.IsObjectPropertyInstantiated(hlctx => hlctx.Fields))
+            {
+                hostList.Context.Load(hostList.Fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+                hostList.Context.ExecuteQueryRetry();
+            }
 
-            var returnField = fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName);
+            var returnField = hostList.Fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName);
             if (returnField == null)
             {
                 try

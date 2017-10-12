@@ -275,7 +275,7 @@ namespace InfrastructureAsCode.Powershell.Commands
             // provision content types
             if (string.IsNullOrEmpty(ActionSet) || ActionSet == "ALL" || ActionSet == "ContentTypes")
             {
-                if (siteDefinition.ContentTypes != null)
+                if (siteDefinition.ContentTypes != null && siteDefinition.ContentTypes.Any())
                 {
                     LogVerbose("Content types will be provisioned for {0} ctypes", siteDefinition.ContentTypes.Count());
                     foreach (var contentDef in siteDefinition.ContentTypes)
@@ -283,28 +283,38 @@ namespace InfrastructureAsCode.Powershell.Commands
                         var contentTypeName = contentDef.Name;
                         var contentTypeId = contentDef.ContentTypeId;
 
-                        if (!contextWeb.ContentTypeExistsByName(contentTypeName))
+                        if (!contextWeb.ContentTypeExistsByName(contentTypeName)
+                            && !contextWeb.ContentTypeExistsById(contentTypeId))
                         {
+                            LogVerbose("Provisioning content type {0}", contentTypeName);
                             contextWeb.CreateContentType(contentTypeName, contentTypeId, (string.IsNullOrEmpty(contentDef.ContentTypeGroup) ? "CustomColumn" : contentDef.ContentTypeGroup));
                         }
 
-                        foreach (var fieldDef in contentDef.FieldLinks)
+                        var provisionedContentType = contextWeb.GetContentTypeByName(contentTypeName, true);
+                        if (provisionedContentType != null)
                         {
-                            // Check if FieldLink exists in the Content Type
-                            if (!contextWeb.FieldExistsByNameInContentType(contentTypeName, fieldDef.Name))
+                            LogVerbose("Found content type {0} and is read only {1}", contentTypeName, provisionedContentType.ReadOnly);
+                            if (!provisionedContentType.ReadOnly)
                             {
-                                // Check if FieldLInk column is in the collection of FieldDefinition
-                                var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef.Name);
-                                if (siteColumn != null && !contextWeb.FieldExistsByNameInContentType(contentTypeName, siteColumn.DisplayNameMasked))
+                                foreach (var fieldDef in contentDef.FieldLinks)
                                 {
-                                    var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef.Name);
-                                    if (column == null)
+                                    // Check if FieldLink exists in the Content Type
+                                    if (!contextWeb.FieldExistsByNameInContentType(contentTypeName, fieldDef.Name))
                                     {
-                                        LogWarning("Column {0} was not added to the collection", fieldDef.Name);
-                                    }
-                                    else
-                                    {
-                                        contextWeb.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                                        // Check if FieldLInk column is in the collection of FieldDefinition
+                                        var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef.Name);
+                                        if (siteColumn != null && !contextWeb.FieldExistsByNameInContentType(contentTypeName, siteColumn.DisplayNameMasked))
+                                        {
+                                            var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef.Name);
+                                            if (column == null)
+                                            {
+                                                LogWarning("Column {0} was not added to the collection", fieldDef.Name);
+                                            }
+                                            else
+                                            {
+                                                contextWeb.AddFieldToContentTypeByName(contentTypeName, column.FieldGuid, siteColumn.Required);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -318,8 +328,12 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             if (string.IsNullOrEmpty(ActionSet) || ActionSet == "ALL" || ActionSet == "Lists" || ActionSet == "Views" || ActionSet == "ListData")
             {
-                foreach (var listDef in siteDefinition.Lists
-                .Where(w => (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase)))))
+                var listtoprocess = siteDefinition.Lists
+                    .Where(w => (string.IsNullOrEmpty(SpecificListName) || (!String.IsNullOrEmpty(SpecificListName) && w.ListName.Equals(SpecificListName, StringComparison.InvariantCultureIgnoreCase))))
+                    .OrderBy(w => w.ProvisionOrder)
+                    .ToList();
+
+                foreach (var listDef in listtoprocess)
                 {
                     // Content Type
                     var listName = listDef.ListName;
@@ -346,7 +360,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         if (siteDefinition.ContentTypes != null && siteDefinition.ContentTypes.Any(ct => ct.Name == contentTypeName))
                                         {
                                             contextWeb.AddContentTypeToListByName(listName, contentTypeName, true);
-
+                                            accessContentType = siteList.GetContentTypeByName(contentTypeName);
                                         }
                                         else
                                         {
