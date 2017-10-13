@@ -1,4 +1,5 @@
-﻿using InfrastructureAsCode.Core.Reports.o365Graph;
+﻿using InfrastructureAsCode.Core.Reports;
+using InfrastructureAsCode.Core.Reports.o365Graph;
 using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
 using InfrastructureAsCode.Powershell.CmdLets;
 using System;

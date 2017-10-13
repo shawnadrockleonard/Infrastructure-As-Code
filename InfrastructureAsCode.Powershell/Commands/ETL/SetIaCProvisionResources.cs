@@ -14,6 +14,7 @@ using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using InfrastructureAsCode.Core.Reports;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {
@@ -95,6 +96,12 @@ namespace InfrastructureAsCode.Powershell.Commands
         {
             base.ExecuteCmdlet();
 
+            // Initialize logging instance with Powershell logger
+            ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
+
+            // SharePoint URI for XML parsing
+            XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
+
             // Retreive JSON Provisioner file and deserialize it
             var filePath = new System.IO.FileInfo(this.ProvisionerFilePath);
             SiteProvisionerModel siteDefinition = null;
@@ -120,10 +127,16 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             // Load the Context
             var contextWeb = this.ClientContext.Web;
-            var fields = this.ClientContext.Web.Fields;
-            this.ClientContext.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
-            this.ClientContext.Load(fields);
+            this.ClientContext.Load(contextWeb,
+                ctxw => ctxw.ServerRelativeUrl,
+                ctxw => ctxw.Id,
+                ctxw => ctxw.Fields.Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
 
+            // All Site Columns
+            var siteFields = this.ClientContext.LoadQuery(ClientContext.Web.AvailableFields
+                .Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
+
+            // pull Site Groups
             var groupQuery = this.ClientContext.LoadQuery(contextWeb.SiteGroups
                 .Include(group => group.Id,
                         group => group.Title,
@@ -219,7 +232,7 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             if (string.IsNullOrEmpty(ActionSet) || ActionSet == "ALL" || ActionSet == "Groups")
             {
-                if (siteDefinition.Groups != null)
+                if (siteDefinition.Groups != null && siteDefinition.Groups.Any())
                 {
                     LogVerbose("Group collection will be provisioned for {0} groups", siteDefinition.Groups.Count());
                     foreach (var groupDef in siteDefinition.Groups)
@@ -242,18 +255,14 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             // provision columns
             // Site Columns
-            this.ClientContext.Load(fields, f => f.Include(inc => inc.InternalName, inc => inc.JSLink, inc => inc.Title, inc => inc.Id));
-            this.ClientContext.ExecuteQueryRetry();
-
-
             if (string.IsNullOrEmpty(ActionSet) || ActionSet == "ALL" || ActionSet == "Fields")
             {
-                if (siteDefinition.FieldDefinitions != null)
+                if (siteDefinition.FieldDefinitions != null && siteDefinition.FieldDefinitions.Any())
                 {
                     LogVerbose("Field definitions will be provisioned for {0} fields", siteDefinition.FieldDefinitions.Count());
                     foreach (var fieldDef in siteDefinition.FieldDefinitions)
                     {
-                        var column = contextWeb.CreateColumn(fieldDef, LogVerbose, LogError, siteGroups, siteDefinition.FieldChoices);
+                        var column = contextWeb.CreateColumn(fieldDef, logger, siteGroups, siteDefinition.FieldChoices);
                         if (column == null)
                         {
                             LogWarning("Failed to create column {0}.", fieldDef.InternalName);
@@ -325,7 +334,6 @@ namespace InfrastructureAsCode.Powershell.Commands
 
 
             // provision lists
-
             if (string.IsNullOrEmpty(ActionSet) || ActionSet == "ALL" || ActionSet == "Lists" || ActionSet == "Views" || ActionSet == "ListData")
             {
                 var listtoprocess = siteDefinition.Lists
@@ -347,7 +355,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                     {
                         if (listDef.ContentTypeEnabled && listDef.HasContentTypes)
                         {
-                            if (listDef.ContentTypes != null)
+                            if (listDef.ContentTypes != null && listDef.ContentTypes.Any())
                             {
                                 LogVerbose("List Content types will be provisioned for {0} ctypes", listDef.ContentTypes.Count());
                                 foreach (var contentDef in listDef.ContentTypes)
@@ -383,19 +391,45 @@ namespace InfrastructureAsCode.Powershell.Commands
                         // List Columns
                         foreach (var fieldDef in listDef.FieldDefinitions)
                         {
-                            var column = siteList.CreateListColumn(fieldDef, LogVerbose, LogWarning, siteGroups, provisionerChoices);
-                            if (column == null)
+                            if (fieldDef.FromBaseType == true && fieldDef.SourceID.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) > -1)
                             {
-                                LogWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });
+                                // OOTB Column
+                                var hostsitecolumn = siteFields.FirstOrDefault(fd => fd.InternalName == fieldDef.InternalName || fd.Title == fieldDef.Title);
+                                if (hostsitecolumn != null && !siteList.FieldExistsByName(hostsitecolumn.InternalName))
+                                {
+                                    var column = siteList.Fields.Add(hostsitecolumn);
+                                    siteList.Update();
+                                    siteList.Context.Load(column, cctx => cctx.Id, cctx => cctx.InternalName);
+                                    siteList.Context.ExecuteQueryRetry();
+                                }
+
+                                var sourceListColumns = siteList.GetFields(fieldDef.InternalName);
+                                foreach(var column in sourceListColumns)
+                                {
+                                    listColumns.Add(new SPFieldDefinitionModel()
+                                    {
+                                        InternalName = column.InternalName,
+                                        Title = column.Title,
+                                        FieldGuid = column.Id
+                                    });
+                                }
                             }
                             else
                             {
-                                listColumns.Add(new SPFieldDefinitionModel()
+                                var column = siteList.CreateListColumn(fieldDef, logger, siteGroups, provisionerChoices);
+                                if (column == null)
                                 {
-                                    InternalName = column.InternalName,
-                                    Title = column.Title,
-                                    FieldGuid = column.Id
-                                });
+                                    LogWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });
+                                }
+                                else
+                                {
+                                    listColumns.Add(new SPFieldDefinitionModel()
+                                    {
+                                        InternalName = column.InternalName,
+                                        Title = column.Title,
+                                        FieldGuid = column.Id
+                                    });
+                                }
                             }
                         }
 
@@ -461,11 +495,13 @@ namespace InfrastructureAsCode.Powershell.Commands
                             {
                                 try
                                 {
+                                    var updatecaml = false;
                                     View view = null;
                                     if (views.Any(v => v.Title.Equals(modelView.Title, StringComparison.CurrentCultureIgnoreCase)))
                                     {
                                         LogVerbose("View {0} found in list {1}", modelView.Title, listName);
                                         view = views.FirstOrDefault(v => v.Title.Equals(modelView.Title, StringComparison.CurrentCultureIgnoreCase));
+                                        updatecaml = true;
                                     }
                                     else
                                     {
@@ -483,12 +519,10 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         mview => mview.Hidden,
                                         mview => mview.Toolbar,
                                         mview => mview.JSLink,
-                                        mview => mview.ViewFields
+                                        mview => mview.ViewFields,
+                                        vctx => vctx.ViewQuery
                                         );
-
-                                    view.Scope = modelView.Scope;
-                                    view.Title = modelView.Title;
-
+                                    
 
                                     if (modelView.FieldRefName != null && modelView.FieldRefName.Any())
                                     {
@@ -505,19 +539,31 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         view.Aggregations = modelView.Aggregations;
                                         view.AggregationsStatus = modelView.AggregationsStatus;
                                     }
-                                    if (modelView.Hidden.HasValue)
+
+                                    if (modelView.Hidden.HasValue && modelView.Hidden == true)
                                     {
                                         view.Hidden = modelView.Hidden.Value;
                                     }
+
                                     if (modelView.ToolBarType.HasValue)
                                     {
                                         view.Toolbar = string.Format("<Toolbar Type=\"{0}\"/>", modelView.ToolBarType.ToString());
+                                    }
+
+                                    if (updatecaml)
+                                    {
+                                        view.DefaultView = modelView.DefaultView;
+                                        view.RowLimit = modelView.RowLimit;
+                                        view.ViewQuery = modelView.ViewQuery;
                                     }
 
                                     if (modelView.HasJsLink && modelView.JsLink.IndexOf("clienttemplates.js") == -1)
                                     {
                                         view.JSLink = modelView.JsLink;
                                     }
+
+                                    view.Scope = modelView.Scope;
+                                    view.Title = modelView.Title;
                                     view.Update();
                                     contextWeb.Context.Load(view, v => v.Title, v => v.Id, v => v.ServerRelativeUrl);
                                     contextWeb.Context.ExecuteQueryRetry();

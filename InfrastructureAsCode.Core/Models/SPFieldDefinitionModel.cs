@@ -71,6 +71,15 @@ namespace InfrastructureAsCode.Core.Models
 
         public FieldType FieldTypeKind { get; set; }
 
+        public bool FromBaseType { get; set; }
+
+        public string ScopeID { get; set; }
+
+        public string Scope { get; set; }
+
+        public string SourceID { get; set; }
+
+
         public bool AddToDefaultView { get; set; }
 
         public bool HiddenField { get; set; }
@@ -118,10 +127,6 @@ namespace InfrastructureAsCode.Core.Models
 
 
         public bool NoCrawl { get; set; }
-
-        public string Scope { get; set; }
-
-        public string SourceID { get; set; }
 
         /// <summary>
         /// Read only

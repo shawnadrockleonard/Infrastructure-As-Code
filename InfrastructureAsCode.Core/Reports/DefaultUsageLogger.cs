@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core.Reports.o365Graph
+namespace InfrastructureAsCode.Core.Reports
 {
     public class DefaultUsageLogger : ITraceLogger
     {

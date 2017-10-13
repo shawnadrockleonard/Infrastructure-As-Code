@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Reports;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core;
@@ -75,7 +76,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="provisionerChoices">(OPTIONAL) deserialized choices from JSON</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">For field definitions that do not contain all required data</exception>
-        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDefinition, Action<string, string[]> loggerVerbose, Action<string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
+        public static Field CreateListColumn(this List hostList, SPFieldDefinitionModel fieldDefinition, ITraceLogger logger, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
 
             if (fieldDefinition == null)
@@ -88,11 +89,9 @@ namespace InfrastructureAsCode.Core.Extensions
                 throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
-            if (!hostList.IsObjectPropertyInstantiated(hlctx => hlctx.Fields))
-            {
-                hostList.Context.Load(hostList.Fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
-                hostList.Context.ExecuteQueryRetry();
-            }
+            // load fields into memory
+            hostList.Context.Load(hostList.Fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+            hostList.Context.ExecuteQueryRetry();
 
             var returnField = hostList.Fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName);
             if (returnField == null)
@@ -100,7 +99,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 try
                 {
                     var baseFieldXml = hostList.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
-                    loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, baseFieldXml });
+                    logger.LogInformation("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, baseFieldXml });
 
                     // Should throw an exception if the field ID or Name exist in the list
                     var baseField = hostList.CreateField(baseFieldXml, fieldDefinition.AddToDefaultView, executeQuery: false);
@@ -109,7 +108,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    loggerError("EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, msg });
+                    logger.LogError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, msg });
                 }
                 finally
                 {
@@ -800,5 +799,7 @@ namespace InfrastructureAsCode.Core.Extensions
             }
             return viewCamlType;
         }
+
+
     }
 }

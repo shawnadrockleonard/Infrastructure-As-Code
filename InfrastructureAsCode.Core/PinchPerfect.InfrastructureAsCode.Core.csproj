@@ -239,7 +239,7 @@
     <Compile Include="Reports\o365Graph\AzureAD\IOAuthTokenCache.cs" />
     <Compile Include="Reports\o365Graph\AzureAD\AzureADTokenCache.cs" />
     <Compile Include="Reports\o365Graph\DefaultReportVisitor.cs" />
-    <Compile Include="Reports\o365Graph\DefaultUsageLogger.cs" />
+    <Compile Include="Reports\DefaultUsageLogger.cs" />
     <Compile Include="Reports\o365Graph\QueryFilter.cs" />
     <Compile Include="Reports\o365Graph\ReportingContext.cs" />
     <Compile Include="Reports\o365Graph\ReportingStream.cs" />

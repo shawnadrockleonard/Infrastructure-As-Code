@@ -61,7 +61,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
             if (!string.IsNullOrEmpty(fieldDefinition.Description))
             {
-                attributes.Add(new KeyValuePair<string, string>("Description", fieldDefinition.Description));
+                attributes.Add(new KeyValuePair<string, string>("Description", fieldDefinition.Description.UnescapeXml().EscapeXml(true)));
             }
             if (fieldDefinition.FieldIndexed)
             {
@@ -165,6 +165,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 fieldReferenceXml = string.Format("<FieldRefs>{0}</FieldRefs>", string.Join("", fieldDefinition.FieldReferences.Select(s => CAML.FieldRef(s.Trim())).ToArray()));
             }
 
+            // construct the XML
             var finfo = fieldDefinition.ToCreationObject();
             finfo.AdditionalAttributes = attributes;
             var finfoXml = FieldAndContentTypeExtensions.FormatFieldXml(finfo);
@@ -239,6 +240,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 Description = field.Description,
                 EnforceUniqueValues = field.EnforceUniqueValues,
                 FieldTypeKind = field.FieldTypeKind,
+                FromBaseType = field.FromBaseType,
                 Filterable = field.Filterable,
                 HiddenField = field.Hidden,
                 FieldIndexed = field.Indexed,
@@ -250,6 +252,13 @@ namespace InfrastructureAsCode.Core.Extensions
                 Scope = field.Scope,
                 Title = field.Title,
             };
+
+            // if the schemaXML was not passed in, parse it into a node
+            if (schemaXml == null)
+            {
+                var xdoc = XDocument.Parse(field.SchemaXml, LoadOptions.PreserveWhitespace);
+                schemaXml = xdoc.Element("Field");
+            }
 
             var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.OutcomeChoice };
             if (field.FieldTypeKind == FieldType.DateTime)
@@ -340,12 +349,6 @@ namespace InfrastructureAsCode.Core.Extensions
 
                 if (!string.IsNullOrEmpty(fieldCast.LookupList))
                 {
-                    if (schemaXml == null)
-                    {
-                        var xdoc = XDocument.Parse(field.SchemaXml, LoadOptions.PreserveWhitespace);
-                        schemaXml = xdoc.Element("Field");
-                    }
-
                     var lookupGuid = fieldCast.LookupList.TryParseGuid(Guid.Empty);
                     if (lookupGuid != Guid.Empty)
                     {
@@ -369,11 +372,6 @@ namespace InfrastructureAsCode.Core.Extensions
                     fc => fc.OutputType,
                     fc => fc.ShowAsPercentage);
 
-                if (schemaXml == null)
-                {
-                    var xdoc = XDocument.Parse(field.SchemaXml, LoadOptions.PreserveWhitespace);
-                    schemaXml = xdoc.Element("Field");
-                }
 
                 var xfieldReferences = schemaXml.Element("FieldRefs");
                 if (xfieldReferences != null)

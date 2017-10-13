@@ -265,13 +265,18 @@ namespace InfrastructureAsCode.Core.Extensions
         /// Replaces HTML characters to ensure XML format
         /// </summary>
         /// <param name="s"></param>
+        /// <param name="escapeQuotes">(OPTIONAL) if supplied it will XML encode double quotes</param>
         /// <returns></returns>
-        public static string EscapeXml(this string s)
+        public static string EscapeXml(this string s, bool escapeQuotes = false)
         {
             string unxml = s;
             if (!string.IsNullOrEmpty(unxml))
             {
                 // replace entities with literal values
+                if (escapeQuotes)
+                {
+                    unxml = unxml.Replace("\"", "&quot;").Replace(@"""", "&quot;");
+                }
                 unxml = unxml.Replace("'", "&apos;");
                 unxml = unxml.Replace("&", "&amp;");
             }

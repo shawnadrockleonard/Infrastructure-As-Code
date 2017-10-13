@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Core.Constants;
+using InfrastructureAsCode.Core.Reports;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {
@@ -76,6 +77,8 @@ namespace InfrastructureAsCode.Powershell.Commands
         {
             base.ExecuteCmdlet();
 
+            // Initialize logging instance with Powershell logger
+            ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
             var listItemDefinitions = new List<SPListItemDefinition>();
             SiteProvisionerModel siteDefinition = null;
@@ -122,7 +125,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                 FieldIndexed = true,
                 GroupName = "customcolumns"
             };
-            var dataMigratedField = etlList.CreateListColumn(dataMigratedFieldModel, LogVerbose, LogWarning, null, null);
+            var dataMigratedField = etlList.CreateListColumn(dataMigratedFieldModel, logger, null, null);
 
             var sourceFieldModel = new SPFieldDefinitionModel(FieldType.Integer)
             {
@@ -134,7 +137,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                 FieldIndexed = true,
                 GroupName = "customcolumns"
             };
-            var sourceField = etlList.CreateListColumn(sourceFieldModel, LogVerbose, LogWarning, null, null);
+            var sourceField = etlList.CreateListColumn(sourceFieldModel, logger, null, null);
 
 
             var customListDefinition = siteDefinition.Lists.FirstOrDefault(f => f.ListName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase)

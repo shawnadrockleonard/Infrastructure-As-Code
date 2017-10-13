@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Reports;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.WebParts;
 using OfficeDevPnP.Core.Entities;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace InfrastructureAsCode.Core.Extensions
 {
@@ -108,7 +110,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="SiteGroups">(OPTIONAL) collection of group, required if this is a PeoplePicker field</param>
         /// <param name="provisionerChoices">(OPTIONAL) deserialized choices from JSON</param>
         /// <returns></returns>
-        public static Field CreateColumn(this Web hostWeb, SPFieldDefinitionModel fieldDefinition, Action<string, string[]> loggerVerbose, Action<Exception, string, string[]> loggerError, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
+        public static Field CreateColumn(this Web hostWeb, SPFieldDefinitionModel fieldDefinition, ITraceLogger logger, List<SPGroupDefinitionModel> SiteGroups, List<SiteProvisionerFieldChoiceModel> provisionerChoices = null)
         {
             if (fieldDefinition == null)
             {
@@ -125,8 +127,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 throw new ArgumentNullException("provisionerChoices", string.Format("You must specify a collection of field choices for the field {0}", fieldDefinition.Title));
             }
 
-            var fields = hostWeb.Fields;
-            hostWeb.Context.Load(fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+            var fields = hostWeb.Context.LoadQuery(hostWeb.Fields.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
             hostWeb.Context.ExecuteQueryRetry();
 
 
@@ -134,7 +135,7 @@ namespace InfrastructureAsCode.Core.Extensions
             if (returnField == null)
             {
                 var finfoXml = hostWeb.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
-                loggerVerbose("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, finfoXml });
+                logger.LogInformation("Provision field {0} with XML:{1}", fieldDefinition.InternalName, finfoXml);
                 try
                 {
                     var createdField = hostWeb.CreateField(finfoXml, executeQuery: false);
@@ -142,7 +143,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 }
                 catch (Exception ex)
                 {
-                    loggerError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, ex.Message });
+                    logger.LogError(ex, "EXCEPTION: field {0} with message {1}", fieldDefinition.InternalName, ex.Message);
                 }
                 finally
                 {
@@ -222,6 +223,350 @@ namespace InfrastructureAsCode.Core.Extensions
 
 
             return listToProvision;
+        }
+
+        /// <summary>
+        /// Generate a portable JSON object from the List Template
+        /// </summary>
+        /// <param name="hostWeb">Client Context web</param>
+        /// <param name="list">Hydrated SharePoint list Object</param>
+        /// <param name="ExpandObjects">true - enumerate fields, views, content types</param>
+        /// <param name="logger">Logger implementation for Verbose/Exception handling</param>
+        /// <param name="skiptypes">Collection of field types to be used as a filter statement</param>
+        /// <param name="siteGroups">Collection of hostWeb groups</param>
+        /// <returns></returns>
+        public static SPListDefinition GetListDefinition(this Web hostWeb, List list, bool ExpandObjects, ITraceLogger logger, IEnumerable<FieldType> skiptypes, IEnumerable<Microsoft.SharePoint.Client.Group> siteGroups = null)
+        {
+            logger.LogInformation("Processing list {0}", list.Title);
+
+            if (!hostWeb.IsPropertyAvailable(ctx => ctx.ServerRelativeUrl))
+            {
+                hostWeb.Context.Load(hostWeb, ctx => ctx.ServerRelativeUrl);
+                hostWeb.Context.ExecuteQueryRetry();
+            }
+
+            list.EnsureProperties(
+                    lctx => lctx.Id,
+                    lctx => lctx.Title,
+                    lctx => lctx.Description,
+                    lctx => lctx.DefaultViewUrl,
+                    lctx => lctx.OnQuickLaunch,
+                    lctx => lctx.ContentTypesEnabled,
+                    lctx => lctx.CreatablesInfo,
+                    lctx => lctx.EnableFolderCreation,
+                    lctx => lctx.EnableModeration,
+                    lctx => lctx.EnableVersioning,
+                    lctx => lctx.Hidden,
+                    lctx => lctx.IsApplicationList,
+                    lctx => lctx.IsCatalog,
+                    lctx => lctx.IsSiteAssetsLibrary,
+                    lctx => lctx.IsPrivate,
+                    lctx => lctx.IsSystemList,
+                    lctx => lctx.RootFolder.ServerRelativeUrl,
+                    lctx => lctx.SchemaXml,
+                    lctx => lctx.BaseTemplate,
+                    lctx => lctx.BaseType,
+                    lctx => lctx.CrawlNonDefaultViews,
+                    lctx => lctx.Created,
+                    lctx => lctx.LastItemModifiedDate,
+                    lctx => lctx.LastItemUserModifiedDate,
+                    lctx => lctx.ListExperienceOptions);
+
+            var weburl = TokenHelper.EnsureTrailingSlash(hostWeb.ServerRelativeUrl);
+
+            var listdefinition = new SPListDefinition()
+            {
+                Id = list.Id,
+                ListName = list.Title,
+                ListDescription = list.Description,
+                ServerRelativeUrl = list.DefaultViewUrl,
+                Created = list.Created,
+                LastItemModifiedDate = list.LastItemModifiedDate,
+                LastItemUserModifiedDate = list.LastItemUserModifiedDate,
+                QuickLaunch = list.OnQuickLaunch ? QuickLaunchOptions.On : QuickLaunchOptions.Off,
+                ContentTypeEnabledOverride = list.ContentTypesEnabled,
+                EnableFolderCreation = list.EnableFolderCreation,
+                Hidden = list.Hidden,
+                IsApplicationList = list.IsApplicationList,
+                IsCatalog = list.IsCatalog,
+                IsSiteAssetsLibrary = list.IsSiteAssetsLibrary,
+                IsPrivate = list.IsPrivate,
+                IsSystemList = list.IsSystemList
+            };
+
+            if (ExpandObjects)
+            {
+                var contentTypesFieldset = new List<dynamic>();
+                var definitionListFields = new List<SPFieldDefinitionModel>();
+                var listurl = TokenHelper.EnsureTrailingSlash(list.RootFolder.ServerRelativeUrl);
+
+                // content types
+                var listContentType = list.Context.LoadQuery(list.ContentTypes
+                    .Include(
+                        ict => ict.Id,
+                        ict => ict.Group,
+                        ict => ict.Description,
+                        ict => ict.Name,
+                        ict => ict.Hidden,
+                        ict => ict.JSLink,
+                        ict => ict.FieldLinks,
+                        ict => ict.Fields));
+                // list fields
+                var listFields = list.Context.LoadQuery(list.Fields.Where(wf => wf.ReadOnlyField == false && wf.Hidden == false)
+                    .Include(
+                       fctx => fctx.Id,
+                       fctx => fctx.AutoIndexed,
+                       fctx => fctx.CanBeDeleted,
+                       fctx => fctx.DefaultFormula,
+                       fctx => fctx.DefaultValue,
+                       fctx => fctx.Group,
+                       fctx => fctx.Description,
+                       fctx => fctx.EnforceUniqueValues,
+                       fctx => fctx.FieldTypeKind,
+                       fctx => fctx.Filterable,
+                       fctx => fctx.FromBaseType,
+                       fctx => fctx.Hidden,
+                       fctx => fctx.Indexed,
+                       fctx => fctx.InternalName,
+                       fctx => fctx.JSLink,
+                       fctx => fctx.NoCrawl,
+                       fctx => fctx.ReadOnlyField,
+                       fctx => fctx.Required,
+                       fctx => fctx.SchemaXml,
+                       fctx => fctx.Scope,
+                       fctx => fctx.Title
+                       ));
+                // list views
+                var listViews = list.Context.LoadQuery(list.Views
+                    .Include(
+                        lvt => lvt.Title,
+                        lvt => lvt.DefaultView,
+                        lvt => lvt.ServerRelativeUrl,
+                        lvt => lvt.Id,
+                        lvt => lvt.Aggregations,
+                        lvt => lvt.AggregationsStatus,
+                        lvt => lvt.BaseViewId,
+                        lvt => lvt.Hidden,
+                        lvt => lvt.ImageUrl,
+                        lvt => lvt.JSLink,
+                        lvt => lvt.HtmlSchemaXml,
+                        lvt => lvt.ListViewXml,
+                        lvt => lvt.MobileDefaultView,
+                        lvt => lvt.ModerationType,
+                        lvt => lvt.OrderedView,
+                        lvt => lvt.Paged,
+                        lvt => lvt.PageRenderType,
+                        lvt => lvt.PersonalView,
+                        lvt => lvt.ReadOnlyView,
+                        lvt => lvt.Scope,
+                        lvt => lvt.RowLimit,
+                        lvt => lvt.StyleId,
+                        lvt => lvt.TabularView,
+                        lvt => lvt.Threaded,
+                        lvt => lvt.Toolbar,
+                        lvt => lvt.ToolbarTemplateName,
+                        lvt => lvt.ViewFields,
+                        lvt => lvt.ViewJoins,
+                        lvt => lvt.ViewQuery,
+                        lvt => lvt.ViewType,
+                        lvt => lvt.ViewProjectedFields,
+                        lvt => lvt.Method
+                        ));
+
+                list.Context.ExecuteQueryRetry();
+
+
+                if (listContentType != null && listContentType.Any())
+                {
+                    listdefinition.ContentTypes = new List<SPContentTypeDefinition>();
+                    foreach (var contenttype in listContentType)
+                    {
+                        logger.LogInformation("Processing list {0} content type {1}", list.Title, contenttype.Name);
+
+                        var ctypemodel = new SPContentTypeDefinition()
+                        {
+                            Inherits = true,
+                            ContentTypeId = contenttype.Id.StringValue,
+                            ContentTypeGroup = contenttype.Group,
+                            Description = contenttype.Description,
+                            Name = contenttype.Name,
+                            Hidden = contenttype.Hidden,
+                            JSLink = contenttype.JSLink
+                        };
+
+                        if (contenttype.FieldLinks.Any())
+                        {
+                            ctypemodel.FieldLinks = new List<SPFieldLinkDefinitionModel>();
+                            foreach (var cfieldlink in contenttype.FieldLinks)
+                            {
+                                ctypemodel.FieldLinks.Add(new SPFieldLinkDefinitionModel()
+                                {
+                                    Id = cfieldlink.Id,
+                                    Name = cfieldlink.Name,
+                                    Hidden = cfieldlink.Hidden,
+                                    Required = cfieldlink.Required
+                                });
+
+                                contentTypesFieldset.Add(new { ctypeid = contenttype.Id.StringValue, name = cfieldlink.Name });
+                            }
+                        }
+
+                        if (contenttype.Fields.Any())
+                        {
+                            foreach (var cfield in contenttype.Fields.Where(cf => !ctypemodel.FieldLinks.Any(fl => fl.Name == cf.InternalName)))
+                            {
+                                ctypemodel.FieldLinks.Add(new SPFieldLinkDefinitionModel()
+                                {
+                                    Id = cfield.Id,
+                                    Name = cfield.InternalName,
+                                    Hidden = cfield.Hidden,
+                                    Required = cfield.Required
+                                });
+                            }
+                        }
+
+                        listdefinition.ContentTypes.Add(ctypemodel);
+                    }
+                }
+
+
+                if (listFields != null && listFields.Any())
+                {
+                    var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
+                    foreach (Field listField in listFields)
+                    {
+                        logger.LogInformation("Processing list {0} field {1}", list.Title, listField.InternalName);
+
+                        // skip fields that are defined
+                        if (contentTypesFieldset.Any(ft => ft.name == listField.InternalName))
+                        {
+                            logger.LogWarning("Processing list {0} field {1} In content type field set", list.Title, listField.InternalName);
+                            //continue;
+                        }
+
+                        try
+                        {
+                            var fieldXml = listField.SchemaXml;
+                            if (!string.IsNullOrEmpty(fieldXml))
+                            {
+                                var xdoc = XDocument.Parse(fieldXml, LoadOptions.PreserveWhitespace);
+                                var xField = xdoc.Element("Field");
+                                var xSourceID = xField.Attribute("SourceID");
+                                var xScope = xField.Element("Scope");
+                                //if (xSourceID != null && xSourceID.Value.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0)
+                                //{
+                                // continue; // skip processing an OOTB field
+                                //}
+                                var customField = listField.RetrieveField(hostWeb, siteGroups, xField);
+                                if (xSourceID != null)
+                                {
+                                    customField.SourceID = xSourceID.Value;
+                                }
+                                definitionListFields.Add(customField);
+
+                                if (customField.FieldTypeKind == FieldType.Lookup)
+                                {
+                                    listdefinition.ListDependency.Add(customField.LookupListName);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Failed to parse field {0} MSG:{1}", listField.InternalName, ex.Message);
+                        }
+                    }
+
+                    listdefinition.FieldDefinitions = definitionListFields;
+                }
+
+
+                if (listViews != null && listViews.Any())
+                {
+                    listdefinition.InternalViews = new List<SPViewDefinitionModel>();
+                    listdefinition.Views = new List<SPViewDefinitionModel>();
+
+                    foreach (var view in listViews)
+                    {
+                        logger.LogInformation("Processing list {0} view {1}", list.Title, view.Title);
+
+                        var vinternal = (view.ServerRelativeUrl.IndexOf(listurl, StringComparison.CurrentCultureIgnoreCase) == -1);
+
+                        ViewType viewCamlType = InfrastructureAsCode.Core.Extensions.ListExtensions.TryGetViewType(view.ViewType);
+
+                        var viewmodel = new SPViewDefinitionModel()
+                        {
+                            Id = view.Id,
+                            Title = view.Title,
+                            DefaultView = view.DefaultView,
+                            FieldRefName = new List<string>(),
+                            Aggregations = view.Aggregations,
+                            AggregationsStatus = view.AggregationsStatus,
+                            BaseViewId = view.BaseViewId,
+                            Hidden = view.Hidden,
+                            ImageUrl = view.ImageUrl,
+                            Toolbar = view.Toolbar,
+                            ListViewXml = view.ListViewXml,
+                            MobileDefaultView = view.MobileDefaultView,
+                            ModerationType = view.ModerationType,
+                            OrderedView = view.OrderedView,
+                            Paged = view.Paged,
+                            PageRenderType = view.PageRenderType,
+                            PersonalView = view.PersonalView,
+                            ReadOnlyView = view.ReadOnlyView,
+                            Scope = view.Scope,
+                            RowLimit = view.RowLimit,
+                            StyleId = view.StyleId,
+                            TabularView = view.TabularView,
+                            Threaded = view.Threaded,
+                            ViewJoins = view.ViewJoins,
+                            ViewQuery = view.ViewQuery,
+                            ViewCamlType = viewCamlType
+                        };
+
+                        if (vinternal)
+                        {
+                            viewmodel.SitePage = view.ServerRelativeUrl.Replace(weburl, "");
+                            viewmodel.InternalView = true;
+                        }
+                        else
+                        {
+                            viewmodel.InternalName = view.ServerRelativeUrl.Replace(listurl, "").Replace(".aspx", "");
+                        }
+
+                        if (view.ViewFields != null && view.ViewFields.Any())
+                        {
+                            foreach (var vfields in view.ViewFields)
+                            {
+                                viewmodel.FieldRefName.Add(vfields);
+                            }
+                        }
+
+                        if (view.JSLink != null && view.JSLink.Any())
+                        {
+                            var vjslinks = view.JSLink.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                            if (vjslinks != null && !vjslinks.Any(jl => jl == "clienttemplates.js"))
+                            {
+                                viewmodel.JsLinkFiles = new List<string>();
+                                foreach (var vjslink in vjslinks)
+                                {
+                                    viewmodel.JsLinkFiles.Add(vjslink);
+                                }
+                            }
+                        }
+
+                        if (view.Hidden)
+                        {
+                            listdefinition.InternalViews.Add(viewmodel);
+                        }
+                        else
+                        {
+                            listdefinition.Views.Add(viewmodel);
+                        }
+                    }
+                }
+            }
+
+            return listdefinition;
         }
 
         /// <summary>
