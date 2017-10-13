@@ -211,6 +211,10 @@
     <Compile Include="Models\SPGroupPrincipalModel.cs" />
     <Compile Include="Models\SPId.cs" />
     <Compile Include="Models\SPOSiteCollectionModel.cs" />
+    <Compile Include="Models\SPOTaxonomyItemModel.cs" />
+    <Compile Include="Models\SPOTaxonomyModel.cs" />
+    <Compile Include="Models\SPOTaxonomyTermSetModel.cs" />
+    <Compile Include="Models\SPOTaxonomyTermStoreModel.cs" />
     <Compile Include="Models\SPPrincipalModel.cs" />
     <Compile Include="Models\SPPrincipalUserDefinition.cs" />
     <Compile Include="Models\SPRecycleBinElement.cs" />

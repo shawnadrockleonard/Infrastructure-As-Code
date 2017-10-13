@@ -1,5 +1,7 @@
 ﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Reports;
 using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.Taxonomy;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Utilities;
 using System;
@@ -16,6 +18,21 @@ namespace InfrastructureAsCode.Core.Extensions
     /// </summary>
     public static class FieldDefinitionExtensions
     {
+        /// <summary>
+        /// Xml Generic Schema
+        /// </summary>
+        public static XNamespace ListNS = "http://www.w3.org/2001/XMLSchema";
+
+        /// <summary>
+        /// Xml Generic instance schema
+        /// </summary>
+        public static XNamespace InstanceNS = "http://www.w3.org/2001/XMLSchema-instance";
+
+        /// <summary>
+        /// SharePoint URI for XML parsing
+        /// </summary>
+        public static XNamespace SharePointNS = "http://schemas.microsoft.com/sharepoint/";
+
         /// <summary>
         /// Builds a Field Creation Info object from the Definition model and returns its resulting XML
         /// </summary>
@@ -199,12 +216,13 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// Parse the Field into the portable field definition object
         /// </summary>
+        /// <param name="context">The web context in which the field is provisioned</param>
         /// <param name="field">The field from which we are pulling a portable definition</param>
-        /// <param name="fieldWeb">The web in which the field is provisioned</param>
+        /// <param name="logger">Injectable logger for writing Trace events</param>
         /// <param name="siteGroups">A collection of SharePoint groups</param>
         /// <param name="schemaXml">(OPTIONAL) the schema xml parsed into an XDocument</param>
         /// <returns></returns>
-        public static SPFieldDefinitionModel RetrieveField(this Field field, Web fieldWeb, IEnumerable<Group> siteGroups = null, XElement schemaXml = null)
+        public static SPFieldDefinitionModel RetrieveField(this ClientContext context, Field field, ITraceLogger logger, IEnumerable<Group> siteGroups = null, XElement schemaXml = null)
         {
             field.EnsureProperties(
                 lft => lft.Id,
@@ -258,6 +276,13 @@ namespace InfrastructureAsCode.Core.Extensions
             {
                 var xdoc = XDocument.Parse(field.SchemaXml, LoadOptions.PreserveWhitespace);
                 schemaXml = xdoc.Element("Field");
+            }
+
+            var fieldTypeFromXml = string.Empty;
+            if (schemaXml.Attribute("Type") != null)
+            {
+                fieldTypeFromXml = schemaXml.Attribute("Type").Value;
+                fieldModel.FieldTypeKindText = fieldTypeFromXml;
             }
 
             var choices = new FieldType[] { FieldType.Choice, FieldType.GridChoice, FieldType.OutcomeChoice };
@@ -320,9 +345,9 @@ namespace InfrastructureAsCode.Core.Extensions
                     var groupId = fieldCast.SelectionGroup;
                     if (siteGroups == null)
                     {
-                        siteGroups = fieldWeb.Context.LoadQuery(fieldWeb.SiteGroups
+                        siteGroups = context.LoadQuery(context.Web.SiteGroups
                             .Where(w => w.Id == groupId).Include(group => group.Id, group => group.Title));
-                        fieldWeb.Context.ExecuteQueryRetry();
+                        context.ExecuteQueryRetry();
                     }
 
                     if (siteGroups.Any(sg => sg.Id == groupId))
@@ -352,9 +377,9 @@ namespace InfrastructureAsCode.Core.Extensions
                     var lookupGuid = fieldCast.LookupList.TryParseGuid(Guid.Empty);
                     if (lookupGuid != Guid.Empty)
                     {
-                        var fieldLookup = fieldWeb.Lists.GetById(lookupGuid);
-                        field.Context.Load(fieldLookup, flp => flp.Title);
-                        field.Context.ExecuteQueryRetry();
+                        var fieldLookup = context.Web.Lists.GetById(lookupGuid);
+                        context.Load(fieldLookup, flp => flp.Title);
+                        context.ExecuteQueryRetry();
 
                         fieldModel.LookupListName = fieldLookup.Title;
                         fieldModel.LookupListFieldName = fieldCast.LookupField;
@@ -380,10 +405,9 @@ namespace InfrastructureAsCode.Core.Extensions
                     var xFields = xfieldReferences.Elements("FieldRef");
                     if (xFields != null)
                     {
-
-                        foreach (var xField in xFields)
+                        foreach (var xFieldName in xFields.Select(s => s.Attribute("Name")))
                         {
-                            var xFieldName = xField.Attribute("Name");
+                            //   var xFieldName = xField.Attribute("Name");
                             fieldreferences.Add(xFieldName.Value);
                         }
                     }
@@ -461,6 +485,27 @@ namespace InfrastructureAsCode.Core.Extensions
                 fieldModel.FieldChoices = choiceOptions;
                 fieldModel.ChoiceFormat = fieldCast.EditFormat;
                 fieldModel.MultiChoice = field.FieldTypeKind == FieldType.MultiChoice;
+            }
+            else if (field.FieldTypeKind == FieldType.Invalid
+                && fieldTypeFromXml.IndexOf("TaxonomyFieldType", StringComparison.InvariantCultureIgnoreCase) > -1)
+            {
+                var termsetproperties = schemaXml.Element("Customization").Element("ArrayOfProperty").Elements("Property");
+                var termsetpropkeyvalue = new List<KeyValuePair<string, string>>();
+                foreach (var termsetproperty in termsetproperties)
+                {
+                    var termsetname = termsetproperty.Element("Name");
+                    var termsetvalue = termsetproperty.Element("Value");
+                    termsetpropkeyvalue.Add(new KeyValuePair<string, string>(termsetname.Value, (termsetvalue != null ? termsetvalue.Value : string.Empty)));
+                }
+
+                var termSetId = termsetpropkeyvalue.First(f => f.Key == "TermSetId");
+                var termSetGuid = termSetId.Value.TryParseGuid(Guid.Empty);
+                if (termSetGuid != Guid.Empty)
+                {
+                    var taxonomyDetails = context.GetTaxonomyFieldInfo(logger, termSetGuid);
+                    taxonomyDetails.Customization = termsetpropkeyvalue;
+                    fieldModel.TaxonomyInformation = taxonomyDetails;
+                }
             }
 
 

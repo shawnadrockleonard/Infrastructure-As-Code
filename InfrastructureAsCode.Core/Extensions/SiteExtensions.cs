@@ -1,4 +1,7 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Reports;
+using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.Taxonomy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +15,208 @@ namespace InfrastructureAsCode.Core.Extensions
     /// </summary>
     public static class SiteExtensions
     {
+        /// <summary>
+        /// Returns Taxonomy store and set details
+        /// </summary>
+        /// <param name="clientContext"></param>
+        /// <param name="logger"></param>
+        /// <param name="termSetId"></param>
+        /// <returns>NULL if an Exception is thrown</returns>
+        public static SPOTaxonomyModel GetTaxonomyFieldInfo(this ClientContext clientContext, ITraceLogger logger, Guid termSetId)
+        {
+
+            TaxonomySession session = TaxonomySession.GetTaxonomySession(clientContext);
+            TermStore termStore = session.GetDefaultSiteCollectionTermStore();
+            TermSet termSet = termStore.GetTermSet(termSetId);
+
+            SPOTaxonomyTermStoreModel modelTermStore = null;
+            SPOTaxonomyTermSetModel modelTermSet = null;
+            try
+            {
+                clientContext.Load(termSet,
+                    tctx => tctx.Id,
+                    tctx => tctx.CustomSortOrder,
+                    tctx => tctx.IsAvailableForTagging,
+                    tctx => tctx.Owner,
+                    tctx => tctx.CreatedDate,
+                    tctx => tctx.LastModifiedDate,
+                    tctx => tctx.Name,
+                    tctx => tctx.Description,
+                    tctx => tctx.TermStore,
+                    tctx => tctx.Group,
+                    tctx => tctx.IsOpenForTermCreation);
+
+                clientContext.Load(termStore,
+                    tctx => tctx.Id,
+                    tctx => tctx.Name,
+                    tctx => tctx.IsOnline,
+                    tctx => tctx.DefaultLanguage,
+                    tctx => tctx.ContentTypePublishingHub,
+                    tctx => tctx.WorkingLanguage);
+                clientContext.ExecuteQueryRetry();
+
+                modelTermStore = new SPOTaxonomyTermStoreModel()
+                {
+                    Id = termStore.Id,
+                    Name = termStore.Name,
+                    IsOnline = termStore.IsOnline,
+                    DefaultLanguage = termStore.DefaultLanguage,
+                    ContentTypePublishingHub = termStore.ContentTypePublishingHub,
+                    WorkingLanguage = termStore.WorkingLanguage
+                };
+
+                modelTermSet = new SPOTaxonomyTermSetModel()
+                {
+                    Id = termSet.Id,
+                    IsAvailableForTagging = termSet.IsAvailableForTagging,
+                    IsOpenForTermCreation = termSet.IsOpenForTermCreation,
+                    CustomSortOrder = termSet.CustomSortOrder,
+                    Owner = termSet.Owner,
+                    CreatedDate = termSet.CreatedDate,
+                    LastModifiedDate = termSet.LastModifiedDate,
+                    Name = termSet.Name,
+                    Description = termSet.Description
+                };
+
+                if(termSet.TermStore != null
+                    && termSet.TermStore.Id != null)
+                {
+                    var tempStore = termSet.TermStore;
+                    modelTermSet.TermStoreId = tempStore.Id;
+                }
+
+                if(termSet.Group != null)
+                {
+                    var termGroup = termSet.Group;
+                    modelTermSet.Group = new SPOTaxonomyItemModel()
+                    {
+                        Id = termGroup.Id,
+                        Name = termGroup.Name,
+                        CreatedDate = termGroup.CreatedDate,
+                        LastModifiedDate = termGroup.LastModifiedDate
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to retreive TermStore session {0} with message {1}", termSetId, ex.Message);
+                return null;
+            }
+
+            // Build model
+            var termsetModel = new SPOTaxonomyModel()
+            {
+                TermSetName = termSet.Name,
+                TermSet = modelTermSet,
+                TermStore = modelTermStore
+            };
+
+            return termsetModel;
+        }
+        
+        /// <summary>
+        /// Returns Taxonomy store and set details
+        /// </summary>
+        /// <param name="clientContext"></param>
+        /// <param name="logger"></param>
+        /// <param name="termSetName"></param>
+        /// <param name="cultureId"></param>
+        /// <returns>NULL if an Exception is thrown</returns>
+        public static SPOTaxonomyModel GetTaxonomyFieldInfo(this ClientContext clientContext, ITraceLogger logger, string termSetName, int cultureId = 1033)
+        {
+
+            TaxonomySession session = TaxonomySession.GetTaxonomySession(clientContext);
+            TermStore termStore = session.GetDefaultSiteCollectionTermStore();
+            TermSetCollection termSets = termStore.GetTermSetsByName(termSetName, cultureId);
+
+            SPOTaxonomyTermSetModel modelTermSet = null;
+            SPOTaxonomyTermStoreModel modelTermStore = null;
+
+            try
+            {
+                clientContext.Load(termSets, 
+                    tsc => tsc.Include(
+                        tctx => tctx.Id,
+                        tctx => tctx.CustomSortOrder,
+                        tctx => tctx.IsAvailableForTagging,
+                        tctx => tctx.Owner,
+                        tctx => tctx.CreatedDate,
+                        tctx => tctx.LastModifiedDate,
+                        tctx => tctx.Name,
+                        tctx => tctx.Description,
+                        tctx => tctx.TermStore,
+                        tctx => tctx.Group,
+                        tctx => tctx.IsOpenForTermCreation));
+
+                clientContext.Load(termStore,
+                    tctx => tctx.Id,
+                    tctx => tctx.Name,
+                    tctx => tctx.IsOnline,
+                    tctx => tctx.DefaultLanguage,
+                    tctx => tctx.ContentTypePublishingHub,
+                    tctx => tctx.WorkingLanguage);
+                clientContext.ExecuteQueryRetry();
+
+                modelTermStore = new SPOTaxonomyTermStoreModel()
+                {
+                    Id = termStore.Id,
+                    Name = termStore.Name,
+                    IsOnline = termStore.IsOnline,
+                    DefaultLanguage = termStore.DefaultLanguage,
+                    ContentTypePublishingHub = termStore.ContentTypePublishingHub,
+                    WorkingLanguage = termStore.WorkingLanguage
+                };
+
+                TermSet termSet = termSets.FirstOrDefault();
+                modelTermSet = new SPOTaxonomyTermSetModel()
+                {
+                    Id = termSet.Id,
+                    IsAvailableForTagging = termSet.IsAvailableForTagging,
+                    IsOpenForTermCreation = termSet.IsOpenForTermCreation,
+                    CustomSortOrder = termSet.CustomSortOrder,
+                    Owner = termSet.Owner,
+                    CreatedDate = termSet.CreatedDate,
+                    LastModifiedDate = termSet.LastModifiedDate,
+                    Name = termSet.Name,
+                    Description = termSet.Description
+                };
+
+                if (termSet.TermStore != null
+                    && termSet.TermStore.Id != null)
+                {
+                    var tempStore = termSet.TermStore;
+                    modelTermSet.TermStoreId = tempStore.Id;
+                }
+
+                if (termSet.Group != null)
+                {
+                    var termGroup = termSet.Group;
+                    modelTermSet.Group = new SPOTaxonomyItemModel()
+                    {
+                        Id = termGroup.Id,
+                        Name = termGroup.Name,
+                        CreatedDate = termGroup.CreatedDate,
+                        LastModifiedDate = termGroup.LastModifiedDate
+                    };
+                }
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "Failed to retreive TermStore session {0} with message {1}", termSetName, ex.Message);
+                return null;
+            }
+
+            // Build model
+            var termsetModel = new SPOTaxonomyModel()
+            {
+                TermSetName = termSetName,
+                TermStore = modelTermStore,
+                TermSet = modelTermSet
+            };
+
+            return termsetModel;
+        }
+
         /// <summary>
         /// Adds or Updates an existing Custom Action [ScriptSrc] into the [Site] Custom Actions
         /// </summary>

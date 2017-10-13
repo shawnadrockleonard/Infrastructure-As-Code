@@ -357,7 +357,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                         {
                             if (listDef.ContentTypes != null && listDef.ContentTypes.Any())
                             {
-                                LogVerbose("List Content types will be provisioned for {0} ctypes", listDef.ContentTypes.Count());
+                                LogVerbose("List {0} => Content types will be provisioned for {1} ctypes", listDef.ListName, listDef.ContentTypes.Count());
                                 foreach (var contentDef in listDef.ContentTypes)
                                 {
                                     var contentTypeName = contentDef.Name;
@@ -388,13 +388,41 @@ namespace InfrastructureAsCode.Powershell.Commands
                             }
                         }
 
+                        if (listDef.ListName == "CollectionSiteTypesLK")
+                        {
+
+                        }
+
+                        // Existing columns
+                        var internalNamesForList = listDef.FieldDefinitions.Select(s => s.InternalName).ToArray();
+                        var internalNamesFoundInList = new List<string>();
+                        try
+                        {
+                            var existingListColumns = siteList.GetFields(internalNamesForList);
+                            foreach (var column in existingListColumns)
+                            {
+                                listColumns.Add(new SPFieldDefinitionModel()
+                                {
+                                    InternalName = column.InternalName,
+                                    Title = column.Title,
+                                    FieldGuid = column.Id
+                                });
+                                internalNamesFoundInList.Add(column.InternalName);
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            LogError(ex, "List {0} => failed to query columns by internal names {1}", listDef.ListName, ex.Message);
+                        }
+
                         // List Columns
-                        foreach (var fieldDef in listDef.FieldDefinitions)
+                        var nonExistingListColumns = listDef.FieldDefinitions.Where(fd => !internalNamesFoundInList.Any(inf => fd.InternalName.Equals(inf, StringComparison.InvariantCultureIgnoreCase)));
+                        foreach (var fieldDef in nonExistingListColumns)
                         {
                             if (fieldDef.FromBaseType == true && fieldDef.SourceID.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) > -1)
                             {
                                 // OOTB Column
-                                var hostsitecolumn = siteFields.FirstOrDefault(fd => fd.InternalName == fieldDef.InternalName || fd.Title == fieldDef.Title);
+                                var hostsitecolumn = siteFields.FirstOrDefault(fd => fd.InternalName == fieldDef.InternalName);
                                 if (hostsitecolumn != null && !siteList.FieldExistsByName(hostsitecolumn.InternalName))
                                 {
                                     var column = siteList.Fields.Add(hostsitecolumn);
@@ -404,7 +432,31 @@ namespace InfrastructureAsCode.Powershell.Commands
                                 }
 
                                 var sourceListColumns = siteList.GetFields(fieldDef.InternalName);
-                                foreach(var column in sourceListColumns)
+                                foreach (var column in sourceListColumns)
+                                {
+                                    listColumns.Add(new SPFieldDefinitionModel()
+                                    {
+                                        InternalName = column.InternalName,
+                                        Title = column.Title,
+                                        FieldGuid = column.Id
+                                    });
+                                }
+                            }
+                            else if (fieldDef.FieldTypeKind == FieldType.Invalid
+                                && fieldDef.FieldTypeKindText.IndexOf("TaxonomyFieldType", StringComparison.InvariantCultureIgnoreCase) > -1)
+                            {
+                                // Taxonomy Column
+                                var hostsitecolumn = siteFields.FirstOrDefault(fd => fd.InternalName == fieldDef.InternalName);
+                                if (hostsitecolumn != null && !siteList.FieldExistsByName(hostsitecolumn.InternalName))
+                                {
+                                    var column = siteList.Fields.Add(hostsitecolumn);
+                                    siteList.Update();
+                                    siteList.Context.Load(column, cctx => cctx.Id, cctx => cctx.InternalName);
+                                    siteList.Context.ExecuteQueryRetry();
+                                }
+
+                                var sourceListColumns = siteList.GetFields(fieldDef.InternalName);
+                                foreach (var column in sourceListColumns)
                                 {
                                     listColumns.Add(new SPFieldDefinitionModel()
                                     {
@@ -419,7 +471,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                 var column = siteList.CreateListColumn(fieldDef, logger, siteGroups, provisionerChoices);
                                 if (column == null)
                                 {
-                                    LogWarning("Failed to create column {0}.", new string[] { fieldDef.InternalName });
+                                    LogWarning("Failed to create column {0}.", fieldDef.InternalName);
                                 }
                                 else
                                 {
@@ -452,7 +504,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         var column = listColumns.FirstOrDefault(f => f.InternalName == fieldInternalName.Name);
                                         if (column == null)
                                         {
-                                            LogWarning("Failed to associate field link {0}.", new string[] { fieldInternalName.Name });
+                                            LogWarning("List {0} => Failed to associate field link {1}.", listDef.ListName, fieldInternalName.Name);
                                             continue;
                                         }
 
@@ -463,7 +515,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         var convertedInternalName = column.DisplayNameMasked;
                                         if (!fieldLinks.Any(a => a.Name == column.InternalName || a.Name == convertedInternalName))
                                         {
-                                            LogVerbose("Content Type {0} Adding Field {1}", new string[] { contentTypeName, column.InternalName });
+                                            LogVerbose("List {0} => Content Type {1} Adding Field {2}", listDef.ListName, contentTypeName, column.InternalName);
                                             var siteColumn = siteList.GetFieldById<Field>(column.FieldGuid);
                                             contextWeb.Context.ExecuteQueryRetry();
 
@@ -499,13 +551,13 @@ namespace InfrastructureAsCode.Powershell.Commands
                                     View view = null;
                                     if (views.Any(v => v.Title.Equals(modelView.Title, StringComparison.CurrentCultureIgnoreCase)))
                                     {
-                                        LogVerbose("View {0} found in list {1}", modelView.Title, listName);
+                                        LogVerbose("List {0} => View {1} found in list", listName, modelView.Title);
                                         view = views.FirstOrDefault(v => v.Title.Equals(modelView.Title, StringComparison.CurrentCultureIgnoreCase));
                                         updatecaml = true;
                                     }
                                     else
                                     {
-                                        LogVerbose("Creating View {0} in list {1}", modelView.Title, listName);
+                                        LogVerbose("List {0} => Creating View {0} in list", listName, modelView.Title);
                                         view = siteList.CreateView(modelView.CalculatedInternalName, modelView.ViewCamlType, modelView.FieldRefName.ToArray(), modelView.RowLimit, modelView.DefaultView, modelView.ViewQuery, modelView.PersonalView, modelView.Paged);
                                     }
 
@@ -522,7 +574,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                         mview => mview.ViewFields,
                                         vctx => vctx.ViewQuery
                                         );
-                                    
+
 
                                     if (modelView.FieldRefName != null && modelView.FieldRefName.Any())
                                     {
@@ -570,7 +622,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                                 }
                                 catch (Exception ex)
                                 {
-                                    LogError(ex, "Failed to create view {0} with XML:{1}", modelView.Title, modelView.ViewQuery);
+                                    LogError(ex, "List {0} => Failed to create view {1} with XML:{2}", listDef.ListName, modelView.Title, modelView.ViewQuery);
                                 }
                             }
                         }

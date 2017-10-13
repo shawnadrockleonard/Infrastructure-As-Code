@@ -231,7 +231,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
                     try
                     {
-                        var fieldModel = field.RetrieveField(contextWeb, groupQuery);
+                        var fieldModel = ClientContext.RetrieveField(field, logger, groupQuery);
                         webfields.Add(fieldModel);
                     }
                     catch (Exception ex)
@@ -297,7 +297,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     (!_filterLists
                         || (_filterLists && SpecificLists.Any(sl => lwt.Title.Equals(sl, StringComparison.InvariantCultureIgnoreCase))))))
                 {
-                    var listdefinition = contextWeb.GetListDefinition(list, true, logger, skiptypes, groupQuery);
+                    var listdefinition = ClientContext.GetListDefinition(contextWeb, list, true, logger, skiptypes, groupQuery);
                     sitelists.Add(listdefinition);
                 }
 
@@ -341,7 +341,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                             foreach (var dependent in listPopped.ListDependency.Where(dlist => !haslookups.Any(hl => hl.ListName == dlist)))
                             {
                                 var sitelist = contextWeb.GetListByTitle(dependent, lctx => lctx.Id, lctx => lctx.Title, lctx => lctx.RootFolder.ServerRelativeUrl);
-                                var listDefinition = contextWeb.GetListDefinition(sitelist, true, logger, skiptypes, groupQuery);
+                                var listDefinition = ClientContext.GetListDefinition(contextWeb, sitelist, true, logger, skiptypes, groupQuery);
                                 haslookups.Add(listDefinition);
                             }
                             

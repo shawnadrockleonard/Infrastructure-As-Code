@@ -117,7 +117,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                     var weburl = TokenHelper.EnsureTrailingSlash(_contextWeb.ServerRelativeUrl);
 
 
-                    var listmodel = _contextWeb.GetListDefinition(list, ExpandObjects, logger, skiptypes, null);
+                    var listmodel = ClientContext.GetListDefinition(_contextWeb, list, ExpandObjects, logger, skiptypes, null);
 
 
                     SiteComponents.Lists.Add(listmodel);

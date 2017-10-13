@@ -15,7 +15,7 @@ namespace InfrastructureAsCode.Core.Models
         public SPListDefinition() : base()
         {
             this.ListTemplate = ListTemplateType.GenericList;
-            this.ContentTypeEnabledOverride = false;
+            this.ContentTypeEnabled = false;
             this.Views = new List<SPViewDefinitionModel>();
             this.InternalViews = new List<SPViewDefinitionModel>();
             this.ContentTypes = new List<SPContentTypeDefinition>();
@@ -44,23 +44,18 @@ namespace InfrastructureAsCode.Core.Models
 
         public ListTemplateType ListTemplate { get; set; }
 
-        /// <summary>
-        /// List/Library should have content types enabled but no content types are specified
-        /// </summary>
-        public bool ContentTypeEnabledOverride { get; set; }
+
+        public int BaseTemplate { get; set; }
+
 
         /// <summary>
         /// If content types are specified or override is set [Enable] content types
         /// </summary>
-        public bool ContentTypeEnabled
-        {
-            get
-            {
-                if (ContentTypeEnabledOverride) return true;
-                return HasContentTypes;
-            }
-        }
+        public bool ContentTypeEnabled { get; set; }
 
+        /// <summary>
+        /// Collection of Content Types
+        /// </summary>
         public List<SPContentTypeDefinition> ContentTypes { get; set; }
 
         /// <summary>
@@ -70,7 +65,7 @@ namespace InfrastructureAsCode.Core.Models
         {
             get
             {
-                if (ContentTypes != null && ContentTypes.Count > 0)
+                if (ContentTypes != null && ContentTypes.Any())
                     return true;
                 return false;
             }

@@ -28,6 +28,7 @@ namespace InfrastructureAsCode.Core.Models
         public SPFieldDefinitionModel(FieldType fType) : this()
         {
             this.FieldTypeKind = fType;
+            this.FieldTypeKindText = fType.ToString("f");
         }
 
         /// <summary>
@@ -70,6 +71,8 @@ namespace InfrastructureAsCode.Core.Models
         public string SchemaXml { get; set; }
 
         public FieldType FieldTypeKind { get; set; }
+
+        public string FieldTypeKindText { get; set; }
 
         public bool FromBaseType { get; set; }
 
@@ -214,6 +217,11 @@ namespace InfrastructureAsCode.Core.Models
         /// Calculated or Lookup columns reference other fields
         /// </summary>
         public List<string> FieldReferences { get; set; }
+
+        /// <summary>
+        /// Represents an extension set of attributes for a Taxonomy field
+        /// </summary>
+        public SPOTaxonomyModel TaxonomyInformation { get; set; }
 
         /// <summary>
         /// Project the field defintion into the expected provisioning CSOM object

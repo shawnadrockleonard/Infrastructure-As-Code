@@ -135,7 +135,7 @@ namespace InfrastructureAsCode.Core.Extensions
             if (returnField == null)
             {
                 var finfoXml = hostWeb.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
-                logger.LogInformation("Provision field {0} with XML:{1}", fieldDefinition.InternalName, finfoXml);
+                logger.LogInformation("Provision Site field {0} with XML:{1}", fieldDefinition.InternalName, finfoXml);
                 try
                 {
                     var createdField = hostWeb.CreateField(finfoXml, executeQuery: false);
@@ -228,6 +228,25 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// Generate a portable JSON object from the List Template
         /// </summary>
+        /// <param name="context">Client Context web</param>
+        /// <param name="list">Hydrated SharePoint list Object</param>
+        /// <param name="ExpandObjects">true - enumerate fields, views, content types</param>
+        /// <param name="logger">Logger implementation for Verbose/Exception handling</param>
+        /// <param name="skiptypes">Collection of field types to be used as a filter statement</param>
+        /// <param name="siteGroups">Collection of hostWeb groups</param>
+        /// <returns></returns>
+        public static SPListDefinition GetListDefinition(this ClientContext context, List list, bool ExpandObjects, ITraceLogger logger, IEnumerable<FieldType> skiptypes, IEnumerable<Microsoft.SharePoint.Client.Group> siteGroups = null)
+        {
+            logger.LogInformation("Processing Client Context for list {0}", list.Title);
+
+            var listDefinition = context.GetListDefinition(context.Web, list, ExpandObjects, logger, skiptypes, siteGroups);
+            return listDefinition;
+        }
+
+        /// <summary>
+        /// Generate a portable JSON object from the List Template
+        /// </summary>
+        /// <param name="context">Client Context web</param>
         /// <param name="hostWeb">Client Context web</param>
         /// <param name="list">Hydrated SharePoint list Object</param>
         /// <param name="ExpandObjects">true - enumerate fields, views, content types</param>
@@ -235,9 +254,9 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <param name="skiptypes">Collection of field types to be used as a filter statement</param>
         /// <param name="siteGroups">Collection of hostWeb groups</param>
         /// <returns></returns>
-        public static SPListDefinition GetListDefinition(this Web hostWeb, List list, bool ExpandObjects, ITraceLogger logger, IEnumerable<FieldType> skiptypes, IEnumerable<Microsoft.SharePoint.Client.Group> siteGroups = null)
+        public static SPListDefinition GetListDefinition(this ClientContext context, Web hostWeb, List list, bool ExpandObjects, ITraceLogger logger, IEnumerable<FieldType> skiptypes, IEnumerable<Microsoft.SharePoint.Client.Group> siteGroups = null)
         {
-            logger.LogInformation("Processing list {0}", list.Title);
+            logger.LogInformation("Processing Web list {0}", list.Title);
 
             if (!hostWeb.IsPropertyAvailable(ctx => ctx.ServerRelativeUrl))
             {
@@ -251,6 +270,10 @@ namespace InfrastructureAsCode.Core.Extensions
                     lctx => lctx.Description,
                     lctx => lctx.DefaultViewUrl,
                     lctx => lctx.OnQuickLaunch,
+                    lctx => lctx.BaseTemplate,
+                    lctx => lctx.BaseType,
+                    lctx => lctx.CrawlNonDefaultViews,
+                    lctx => lctx.Created,
                     lctx => lctx.ContentTypesEnabled,
                     lctx => lctx.CreatablesInfo,
                     lctx => lctx.EnableFolderCreation,
@@ -264,15 +287,13 @@ namespace InfrastructureAsCode.Core.Extensions
                     lctx => lctx.IsSystemList,
                     lctx => lctx.RootFolder.ServerRelativeUrl,
                     lctx => lctx.SchemaXml,
-                    lctx => lctx.BaseTemplate,
-                    lctx => lctx.BaseType,
-                    lctx => lctx.CrawlNonDefaultViews,
-                    lctx => lctx.Created,
                     lctx => lctx.LastItemModifiedDate,
                     lctx => lctx.LastItemUserModifiedDate,
-                    lctx => lctx.ListExperienceOptions);
+                    lctx => lctx.ListExperienceOptions,
+                    lctx => lctx.TemplateFeatureId);
 
             var weburl = TokenHelper.EnsureTrailingSlash(hostWeb.ServerRelativeUrl);
+            var listTemplateType = list.GetListTemplateType();
 
             var listdefinition = new SPListDefinition()
             {
@@ -280,11 +301,13 @@ namespace InfrastructureAsCode.Core.Extensions
                 ListName = list.Title,
                 ListDescription = list.Description,
                 ServerRelativeUrl = list.DefaultViewUrl,
+                BaseTemplate = list.BaseTemplate,
+                ListTemplate = listTemplateType,
                 Created = list.Created,
                 LastItemModifiedDate = list.LastItemModifiedDate,
                 LastItemUserModifiedDate = list.LastItemUserModifiedDate,
                 QuickLaunch = list.OnQuickLaunch ? QuickLaunchOptions.On : QuickLaunchOptions.Off,
-                ContentTypeEnabledOverride = list.ContentTypesEnabled,
+                ContentTypeEnabled = list.ContentTypesEnabled,
                 EnableFolderCreation = list.EnableFolderCreation,
                 Hidden = list.Hidden,
                 IsApplicationList = list.IsApplicationList,
@@ -457,7 +480,7 @@ namespace InfrastructureAsCode.Core.Extensions
                                 //{
                                 // continue; // skip processing an OOTB field
                                 //}
-                                var customField = listField.RetrieveField(hostWeb, siteGroups, xField);
+                                var customField = context.RetrieveField(listField, logger, siteGroups, xField);
                                 if (xSourceID != null)
                                 {
                                     customField.SourceID = xSourceID.Value;

@@ -90,7 +90,7 @@ namespace InfrastructureAsCode.Core.Extensions
             }
 
             // load fields into memory
-            hostList.Context.Load(hostList.Fields, fc => fc.Include(f => f.Id, f => f.InternalName, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
+            hostList.Context.Load(hostList.Fields, fc => fc.Include(f => f.Id, f => f.InternalName, fctx => fctx.Title, f => f.Title, f => f.JSLink, f => f.Indexed, f => f.CanBeDeleted, f => f.Required));
             hostList.Context.ExecuteQueryRetry();
 
             var returnField = hostList.Fields.FirstOrDefault(f => f.Id == fieldDefinition.FieldGuid || f.InternalName == fieldDefinition.InternalName);
@@ -99,7 +99,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 try
                 {
                     var baseFieldXml = hostList.CreateFieldDefinition(fieldDefinition, SiteGroups, provisionerChoices);
-                    logger.LogInformation("Provision field {0} with XML:{1}", new string[] { fieldDefinition.InternalName, baseFieldXml });
+                    logger.LogInformation("Provision List {0} field {1} with XML:{2}", hostList.Title, fieldDefinition.InternalName, baseFieldXml);
 
                     // Should throw an exception if the field ID or Name exist in the list
                     var baseField = hostList.CreateField(baseFieldXml, fieldDefinition.AddToDefaultView, executeQuery: false);
@@ -108,7 +108,7 @@ namespace InfrastructureAsCode.Core.Extensions
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    logger.LogError(ex, "EXCEPTION: field {0} with message {1}", new string[] { fieldDefinition.InternalName, msg });
+                    logger.LogError(ex, "EXCEPTION: field {0} with message {1}", fieldDefinition.InternalName, msg);
                 }
                 finally
                 {
@@ -800,6 +800,21 @@ namespace InfrastructureAsCode.Core.Extensions
             return viewCamlType;
         }
 
-
+        /// <summary>
+        /// Get List Template Type
+        /// </summary>
+        /// <param name="list">List template CSOM</param>
+        /// <returns>returns List template type </returns>
+        public static ListTemplateType GetListTemplateType(this List list)
+        {
+            try
+            {
+                return (ListTemplateType)Enum.Parse(typeof(ListTemplateType), list.BaseTemplate.ToString());
+            }
+            catch
+            {
+                throw new System.ComponentModel.InvalidEnumArgumentException("ListTemplateType", list.BaseTemplate, typeof(ListTemplateType));
+            }
+        }
     }
 }
