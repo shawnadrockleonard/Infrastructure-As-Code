@@ -20,6 +20,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "IaCProvisionResources")]
     [CmdletHelp("Get site definition components and write to JSON file.", Category = "ETL")]
+    [OutputType(typeof(SiteProvisionerModel))]
     public class GetIaCProvisionResources : IaCCmdlet
     {
         /// <summary>
@@ -83,9 +84,6 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             // Initialize logging instance with Powershell logger
             ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
-            // SharePoint URI for XML parsing
-            XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
-
             // Skip these specific fields
             var skiptypes = new FieldType[]
             {
@@ -98,7 +96,12 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 FieldType.ThreadIndex,
                 FieldType.Recurrence,
                 FieldType.PageSeparator,
-                FieldType.OutcomeChoice
+                FieldType.OutcomeChoice,
+                FieldType.CrossProjectLink,
+                FieldType.ModStat,
+                FieldType.Error,
+                FieldType.MaxItems,
+                FieldType.Attachments
             };
 
             var skipcolumns = new string[]

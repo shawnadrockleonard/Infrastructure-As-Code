@@ -1,4 +1,5 @@
-﻿using InfrastructureAsCode.Core.Models;
+﻿using InfrastructureAsCode.Core.Constants;
+using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Core.Reports;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.WebParts;
@@ -456,16 +457,11 @@ namespace InfrastructureAsCode.Core.Extensions
                 if (listFields != null && listFields.Any())
                 {
                     var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
+                    logger.LogWarning("Processing list {0} found {1} fields to be processed", list.Title, filteredListFields.Count());
+
                     foreach (Field listField in listFields)
                     {
                         logger.LogInformation("Processing list {0} field {1}", list.Title, listField.InternalName);
-
-                        // skip fields that are defined
-                        if (contentTypesFieldset.Any(ft => ft.name == listField.InternalName))
-                        {
-                            logger.LogWarning("Processing list {0} field {1} In content type field set", list.Title, listField.InternalName);
-                            //continue;
-                        }
 
                         try
                         {
@@ -475,10 +471,9 @@ namespace InfrastructureAsCode.Core.Extensions
                                 var xdoc = XDocument.Parse(fieldXml, LoadOptions.PreserveWhitespace);
                                 var xField = xdoc.Element("Field");
                                 var xSourceID = xField.Attribute("SourceID");
-                                var xScope = xField.Element("Scope");
-                                //if (xSourceID != null && xSourceID.Value.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0)
+                                //if (xSourceID != null && xSourceID.Value.IndexOf(ConstantsXmlNamespaces.SharePointNS.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0)
                                 //{
-                                // continue; // skip processing an OOTB field
+                                //    continue; // skip processing an OOTB field
                                 //}
                                 var customField = context.RetrieveField(listField, logger, siteGroups, xField);
                                 if (xSourceID != null)

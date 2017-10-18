@@ -172,6 +172,7 @@
     <Compile Include="Constants\ConstantsFields.cs" />
     <Compile Include="Constants\ConstantsLibraryFields.cs" />
     <Compile Include="Constants\ConstantsListFields.cs" />
+    <Compile Include="Constants\ConstantsXmlNamespaces.cs" />
     <Compile Include="Enums\AssociatedGroupType.cs" />
     <Compile Include="Enums\AuthenticationType.cs" />
     <Compile Include="Enums\ConnectionType.cs" />

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Management.Automation;
 using System.Linq;
 
-namespace InfrastructureAsCode.Powershell.Commands
+namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
     /// <summary>
     /// The function cmdlet will upgrade the site specified in the connection to the latest configuration changes

@@ -19,21 +19,6 @@ namespace InfrastructureAsCode.Core.Extensions
     public static class FieldDefinitionExtensions
     {
         /// <summary>
-        /// Xml Generic Schema
-        /// </summary>
-        public static XNamespace ListNS = "http://www.w3.org/2001/XMLSchema";
-
-        /// <summary>
-        /// Xml Generic instance schema
-        /// </summary>
-        public static XNamespace InstanceNS = "http://www.w3.org/2001/XMLSchema-instance";
-
-        /// <summary>
-        /// SharePoint URI for XML parsing
-        /// </summary>
-        public static XNamespace SharePointNS = "http://schemas.microsoft.com/sharepoint/";
-
-        /// <summary>
         /// Builds a Field Creation Info object from the Definition model and returns its resulting XML
         /// </summary>
         /// <param name="host">The instantiated web/list/library to which the field will be added</param>

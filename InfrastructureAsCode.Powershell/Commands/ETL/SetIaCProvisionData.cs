@@ -18,7 +18,7 @@ using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Core.Constants;
 using InfrastructureAsCode.Core.Reports;
 
-namespace InfrastructureAsCode.Powershell.Commands
+namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
     /// <summary>
     /// The function cmdlet will accept the site provisioning template and a JSON file containing list data.  
@@ -36,18 +36,6 @@ namespace InfrastructureAsCode.Powershell.Commands
         [Parameter(Mandatory = true, HelpMessage = "Provide a full path to the provisioner JSON file", Position = 0, ValueFromPipeline = true)]
         public string ProvisionerFilePath { get; set; }
 
-        /// <summary>
-        /// Represents the JSON file containing data
-        /// </summary>
-        [Parameter(Mandatory = true, HelpMessage = "Provide a full path to the JSON file containing data", Position = 1, ValueFromPipeline = true)]
-        public string DataFilePath { get; set; }
-
-        /// <summary>
-        /// Specific list to be updated from the above action list
-        /// </summary>
-        [Parameter(Mandatory = true, Position = 2, ValueFromPipeline = true)]
-        public ListPipeBind ListName { get; set; }
-
 
         #endregion
 
@@ -62,12 +50,6 @@ namespace InfrastructureAsCode.Powershell.Commands
                 var fileinfo = new System.IO.FileInfo(ProvisionerFilePath);
                 throw new System.IO.FileNotFoundException("The provisioner file was not found", fileinfo.Name);
             }
-
-            if (!System.IO.File.Exists(this.DataFilePath))
-            {
-                var fileinfo = new System.IO.FileInfo(DataFilePath);
-                throw new System.IO.FileNotFoundException("The data file was not found", fileinfo.Name);
-            }
         }
 
         /// <summary>
@@ -80,7 +62,28 @@ namespace InfrastructureAsCode.Powershell.Commands
             // Initialize logging instance with Powershell logger
             ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
-            var listItemDefinitions = new List<SPListItemDefinition>();
+            // Skip these specific fields
+            var skiptypes = new FieldType[]
+            {
+                FieldType.Invalid,
+                FieldType.Computed,
+                FieldType.ContentTypeId,
+                FieldType.Invalid,
+                FieldType.WorkflowStatus,
+                FieldType.WorkflowEventType,
+                FieldType.Threading,
+                FieldType.ThreadIndex,
+                FieldType.Recurrence,
+                FieldType.PageSeparator,
+                FieldType.OutcomeChoice,
+                FieldType.CrossProjectLink,
+                FieldType.ModStat,
+                FieldType.Error,
+                FieldType.MaxItems,
+                FieldType.Attachments
+            };
+
+            // Definition file to operate on
             SiteProvisionerModel siteDefinition = null;
 
             try
@@ -92,77 +95,145 @@ namespace InfrastructureAsCode.Powershell.Commands
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed to parse {0} Exception {1}", ProvisionerFilePath, ex.Message);
+                logger.LogError(ex, "Failed to parse {0} Exception {1}", ProvisionerFilePath, ex.Message);
                 return;
             }
+
+
+            foreach (var siteList in siteDefinition.Lists.OrderBy(ob => ob.ProvisionOrder))
+            {
+                var etlList = this.ClientContext.Web.GetListByTitle(siteList.ListName,
+                    lctx => lctx.Id, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.Title);
+                logger.LogInformation("List {0}", etlList.Title);
+
+
+                var dataMigratedFieldModel = new SPFieldDefinitionModel(FieldType.Boolean)
+                {
+                    InternalName = "DataMigrated",
+                    Title = "DataMigrated",
+                    AddToDefaultView = false,
+                    AutoIndexed = true,
+                    DefaultValue = "0",
+                    FieldGuid = new Guid("9a353694-a5b4-4be4-a77a-c67bb071fbb5"),
+                    FieldIndexed = true,
+                    GroupName = "customcolumns"
+                };
+                var dataMigratedField = etlList.CreateListColumn(dataMigratedFieldModel, logger, null, null);
+
+                var sourceFieldModel = new SPFieldDefinitionModel(FieldType.Integer)
+                {
+                    InternalName = "SourceItemID",
+                    Title = "SourceItemID",
+                    AddToDefaultView = false,
+                    AutoIndexed = true,
+                    FieldGuid = new Guid("e57a0936-5e8b-45d6-8c1c-d3e971c5b570"),
+                    FieldIndexed = true,
+                    GroupName = "customcolumns"
+                };
+                var sourceField = etlList.CreateListColumn(sourceFieldModel, logger, null, null);
+
+                // Expectation is that list already exists in target location
+                var customListDefinition = siteDefinition.Lists.FirstOrDefault(f => f.ListName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase)
+                    || f.InternalName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase));
+
+                // pull the internal names from list definition
+                var customFields = customListDefinition.FieldDefinitions
+                    .Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st))
+                    .Select(s => s.InternalName);
+                logger.LogWarning("Processing list {0} found {1} fields to be processed", etlList.Title, customFields.Count());
+
+                // enumerate list items and add them to the list
+
+                if (siteList.ListItems != null && siteList.ListItems.Any())
+                {
+                    foreach (var item in siteList.ListItems)
+                    {
+                        ListItemCreationInformation lici = new ListItemCreationInformation();
+                        ListItem newItem = etlList.AddItem(lici);
+                        newItem[ConstantsFields.Field_Title] = item.Title;
+                        newItem["SourceItemID"] = item.Id;
+                        newItem["DataMigrated"] = true;
+                        logger.LogInformation("Setting up Item {0} with Source ID {1}", item.Title, item.Id);
+
+                        var customColumns = item.ColumnValues.Where(cv => customFields.Any(cf => cf.Equals(cv.FieldName)));
+                        foreach (var spRefCol in customColumns)
+                        {
+                            newItem[spRefCol.FieldName] = spRefCol.FieldValue;
+                        }
+                        newItem.Update();
+                        etlList.Context.ExecuteQueryRetry();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines if the column is a lookup
+        /// </summary>
+        /// <param name="List"></param>
+        /// <param name="ColumnName"></param>
+        /// <param name="LookupListName"></param>
+        /// <returns></returns>
+        static bool IsLookup(SPListDefinition List, string ColumnName, out string LookupListName)
+        {
+            LookupListName = string.Empty;
+            foreach (var spc in List.FieldDefinitions)
+            {
+                if (spc.InternalName == ColumnName && spc.FieldTypeKind == FieldType.Lookup)
+                {
+                    LookupListName = spc.LookupListName;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines if the column is a lookup
+        /// </summary>
+        /// <param name="List"></param>
+        /// <param name="ColumnName"></param>
+        /// <returns></returns>
+        static bool IsUser(SPListDefinition List, string ColumnName)
+        {
+            foreach (var spc in List.FieldDefinitions)
+            {
+                if (spc.InternalName == ColumnName && spc.FieldTypeKind == FieldType.User)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the parent item ID
+        /// </summary>
+        /// <param name="cContext"></param>
+        /// <param name="ItemName"></param>
+        /// <returns></returns>
+        static int GetUserID(ClientContext cContext, string ItemName, ITraceLogger logger)
+        {
+            int nReturn = -1;
 
             try
             {
-                var dataFilePath = new System.IO.FileInfo(this.DataFilePath);
-                var listItemJSON = System.IO.File.ReadAllText(dataFilePath.FullName);
-                listItemDefinitions = JsonConvert.DeserializeObject<List<SPListItemDefinition>>(listItemJSON);
+                logger.LogInformation("Start GetUserID {0}", ItemName);
+                Web wWeb = cContext.Web;
+                var iUser = cContext.Web.EnsureUser(ItemName);
+                cContext.Load(iUser);
+                cContext.ExecuteQueryRetry();
+                if (iUser != null)
+                {
+                    return iUser.Id;
+                }
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed to parse {0} Exception {1}", DataFilePath, ex.Message);
-                return;
+                logger.LogError(ex, "Failed to find {0} in web {1}", ItemName, ex.Message);
             }
 
-
-            var etlList = ListName.GetList(this.ClientContext.Web,
-                lctx => lctx.Id, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.Title);
-            LogVerbose("List {0}", etlList.Title);
-
-
-            var dataMigratedFieldModel = new SPFieldDefinitionModel(FieldType.Boolean)
-            {
-                InternalName = "DataMigrated",
-                Title = "DataMigrated",
-                AddToDefaultView = false,
-                AutoIndexed = true,
-                DefaultValue = "0",
-                FieldGuid = new Guid("9a353694-a5b4-4be4-a77a-c67bb071fbb5"),
-                FieldIndexed = true,
-                GroupName = "customcolumns"
-            };
-            var dataMigratedField = etlList.CreateListColumn(dataMigratedFieldModel, logger, null, null);
-
-            var sourceFieldModel = new SPFieldDefinitionModel(FieldType.Integer)
-            {
-                InternalName = "SourceItemID",
-                Title = "SourceItemID",
-                AddToDefaultView = false,
-                AutoIndexed = true,
-                FieldGuid = new Guid("e57a0936-5e8b-45d6-8c1c-d3e971c5b570"),
-                FieldIndexed = true,
-                GroupName = "customcolumns"
-            };
-            var sourceField = etlList.CreateListColumn(sourceFieldModel, logger, null, null);
-
-
-            var customListDefinition = siteDefinition.Lists.FirstOrDefault(f => f.ListName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase)
-                || f.InternalName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase));
-            var customFields = customListDefinition.FieldDefinitions.Select(s => s.InternalName);
-
-
-            foreach (var item in listItemDefinitions)
-            {
-                ListItemCreationInformation lici = new ListItemCreationInformation();
-                ListItem newItem = etlList.AddItem(lici);
-                newItem[ConstantsFields.Field_Title] = item.Title;
-                newItem["SourceItemID"] = item.Id;
-                newItem["DataMigrated"] = true;
-                LogVerbose("Setting up Item {0} with Source ID {1}", item.Title, item.Id);
-
-                var customColumns = item.ColumnValues.Where(cv => customFields.Any(cf => cf.Equals(cv.FieldName)));
-                foreach (var spRefCol in customColumns)
-                {
-                    newItem[spRefCol.FieldName] = spRefCol.FieldValue;
-                }
-                newItem.Update();
-                etlList.Context.ExecuteQueryRetry();
-            }
-
+            return nReturn;
         }
     }
 }

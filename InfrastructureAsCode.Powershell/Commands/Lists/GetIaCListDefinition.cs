@@ -44,8 +44,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             // Initialize logging instance with Powershell logger
             ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
-            // SharePoint URI for XML parsing
-            XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
 
             // Skip these specific fields
             var skiptypes = new FieldType[]
@@ -64,11 +62,16 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                 FieldType.CrossProjectLink,
                 FieldType.ModStat,
                 FieldType.Error,
-                FieldType.MaxItems
+                FieldType.MaxItems,
+                FieldType.Attachments
             };
 
             // Construct the model
-            var SiteComponents = new SiteProvisionerModel();
+            var SiteComponents = new SiteProvisionerModel()
+            {
+                FieldChoices = new List<SiteProvisionerFieldChoiceModel>(),
+                Lists = new List<SPListDefinition>()
+            };
 
 
             if (Identity != null)
@@ -76,42 +79,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                 var list = Identity.GetList(this.ClientContext.Web);
                 if (list != null)
                 {
-                    // We'll focus on the List Definition and not Site elements
-                    SiteComponents.FieldChoices = new List<SiteProvisionerFieldChoiceModel>();
-                    SiteComponents.Lists = new List<SPListDefinition>();
-
-                    // ---> Site Usage Properties
                     var _ctx = this.ClientContext;
                     var _contextWeb = this.ClientContext.Web;
                     var _site = this.ClientContext.Site;
 
                     ClientContext.Load(_contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
                     ClientContext.Load(_site, cts => cts.Id);
-
-                    ClientContext.Load(list,
-                        lctx => lctx.Id,
-                        lctx => lctx.Title,
-                        lctx => lctx.Description,
-                        lctx => lctx.DefaultViewUrl,
-                        lctx => lctx.Hidden,
-                        lctx => lctx.IsApplicationList,
-                        lctx => lctx.IsCatalog,
-                        lctx => lctx.IsSiteAssetsLibrary,
-                        lctx => lctx.IsPrivate,
-                        lctx => lctx.IsSystemList,
-                        lctx => lctx.Created,
-                        lctx => lctx.LastItemModifiedDate,
-                        lctx => lctx.LastItemUserModifiedDate,
-                        lctx => lctx.OnQuickLaunch,
-                        lctx => lctx.ContentTypesEnabled,
-                        lctx => lctx.EnableFolderCreation,
-                        lctx => lctx.EnableModeration,
-                        lctx => lctx.EnableVersioning,
-                        lctx => lctx.CreatablesInfo,
-                        lctx => lctx.EnableVersioning,
-                        lctx => lctx.RootFolder.ServerRelativeUrl);
                     ClientContext.ExecuteQueryRetry();
-
 
 
                     var weburl = TokenHelper.EnsureTrailingSlash(_contextWeb.ServerRelativeUrl);

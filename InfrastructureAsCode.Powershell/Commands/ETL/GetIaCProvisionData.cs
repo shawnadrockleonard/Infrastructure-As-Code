@@ -1,5 +1,7 @@
-﻿using InfrastructureAsCode.Core.Extensions;
+﻿using InfrastructureAsCode.Core.Constants;
+using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Reports;
 using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
@@ -13,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace InfrastructureAsCode.Powershell.Commands.Lists
+namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
     /// <summary>
     /// Get List Items for the specifed list
@@ -22,10 +24,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
     /// Get-IaCListItems -Identity /Lists/Announcements
     /// Get-IaCListItems -Identity "Announcements"
     /// </remarks>
-    [Cmdlet(VerbsCommon.Get, "IaCListItems", SupportsShouldProcess = true)]
-    [CmdletHelp("Query the list and output the list items.", Category = "ListItems")]
-    [OutputType(typeof(Collection<SPListItemDefinition>))]
-    public class GetIaCListItems : IaCCmdlet
+    [Cmdlet(VerbsCommon.Get, "IaCProvisionData", SupportsShouldProcess = true)]
+    [CmdletHelp("Query the list and output the list items.", Category = "ETL")]
+    [OutputType(typeof(SiteProvisionerModel))]
+    public class GetIaCProvisionData : IaCCmdlet
     {
         #region Parameters
 
@@ -42,7 +44,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         /// Should we expand the list item to include its column data
         /// </summary>
         [Parameter(Mandatory = false)]
-        public SwitchParameter Expand { get; set; }
+        public SwitchParameter ExpandObjects { get; set; }
 
         #endregion
 
@@ -55,106 +57,72 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             base.ExecuteCmdlet();
 
 
+            // Initialize logging instance with Powershell logger
+            ITraceLogger logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
-            var results = new Collection<SPListItemDefinition>();
+
+            // Construct the model
+            var SiteComponents = new SiteProvisionerModel()
+            {
+                Lists = new List<SPListDefinition>()
+            };
 
             var ctx = this.ClientContext;
-            var _list = Identity.GetList(this.ClientContext.Web);
-            ctx.Load(ctx.Web, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
-            ctx.Load(_list, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
+            var _list = Identity.GetList(this.ClientContext.Web, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
 
-            // load the list and web properties
+            ctx.Load(ctx.Web, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
             ctx.ExecuteQueryRetry();
 
             var webUri = new Uri(ctx.Web.Url);
 
             // Will query the list to determine the last item id in the list
             var lastItemId = _list.QueryLastItemId();
-            LogVerbose("List with item count {0} has a last ID of {1}", _list.ItemCount, lastItemId);
-            LogVerbose("List has folder creation = {0}", _list.EnableFolderCreation);
+            logger.LogInformation("List with item count {0} has a last ID of {1}", _list.ItemCount, lastItemId);
+            logger.LogInformation("List has folder creation = {0}", _list.EnableFolderCreation);
 
 
-            var camlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
-
-
-
-            if (Expand)
+            // Skip these specific fields
+            var skiptypes = new FieldType[]
             {
-                // SharePoint URI for XML parsing
-                XNamespace ns = "http://schemas.microsoft.com/sharepoint/";
+                FieldType.Invalid,
+                FieldType.Computed,
+                FieldType.ContentTypeId,
+                FieldType.Invalid,
+                FieldType.WorkflowStatus,
+                FieldType.WorkflowEventType,
+                FieldType.Threading,
+                FieldType.ThreadIndex,
+                FieldType.Recurrence,
+                FieldType.PageSeparator,
+                FieldType.OutcomeChoice,
+                FieldType.CrossProjectLink,
+                FieldType.ModStat,
+                FieldType.Error,
+                FieldType.MaxItems,
+                FieldType.Attachments
+            };
 
-                // Skip these specific fields
-                var skiptypes = new FieldType[]
+            // pull a small portion of the list 
+            var listDefinition = this.ClientContext.GetListDefinition(_list, ExpandObjects, logger, skiptypes);
+            listDefinition.ListItems = new List<SPListItemDefinition>();
+
+
+            var ootbCamlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
+            var camlFields = new List<string>(ootbCamlFields);
+
+
+            if (ExpandObjects)
+            {
+                // list fields
+                var listFields = listDefinition.FieldDefinitions;
+                if (listFields != null && listFields.Any())
                 {
-                    FieldType.Invalid,
-                    FieldType.Computed,
-                    FieldType.ContentTypeId,
-                    FieldType.Invalid,
-                    FieldType.WorkflowStatus,
-                    FieldType.WorkflowEventType,
-                    FieldType.Threading,
-                    FieldType.ThreadIndex,
-                    FieldType.Recurrence,
-                    FieldType.PageSeparator,
-                    FieldType.OutcomeChoice,
-                    FieldType.CrossProjectLink,
-                    FieldType.ModStat,
-                    FieldType.Error,
-                    FieldType.MaxItems
-                };
-
-                var fields = ctx.LoadQuery(_list.Fields
-                        .Include(
-                            v => v.AutoIndexed,
-                            v => v.CanBeDeleted,
-                            v => v.DefaultFormula,
-                            v => v.DefaultValue,
-                            v => v.Description,
-                            v => v.EnforceUniqueValues,
-                            v => v.FieldTypeKind,
-                            v => v.Filterable,
-                            v => v.Group,
-                            v => v.Hidden,
-                            v => v.Id,
-                            v => v.InternalName,
-                            v => v.Indexed,
-                            v => v.JSLink,
-                            v => v.NoCrawl,
-                            v => v.ReadOnlyField,
-                            v => v.Required,
-                            v => v.Title,
-                            v => v.SchemaXml));
-                ClientContext.ExecuteQueryRetry();
-
-
-                foreach (var listField in fields)
-                {
-                    // skip internal fields
-                    if (skiptypes.Any(st => listField.FieldTypeKind == st))
+                    var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
+                    var notInCamlFields = listFields.Where(listField => !ootbCamlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)));
+                    foreach (var listField in notInCamlFields)
                     {
-                        continue;
-                    }
-
-                    try
-                    {
-                        var fieldXml = listField.SchemaXml;
-                        if (!string.IsNullOrEmpty(fieldXml))
-                        {
-                            var xdoc = XDocument.Parse(fieldXml, LoadOptions.PreserveWhitespace);
-                            var xField = xdoc.Element("Field");
-                            var xSourceID = xField.Attribute("SourceID");
-                            var xScope = xField.Element("Scope");
-                            if (xSourceID != null
-                                && xSourceID.Value.IndexOf(ns.NamespaceName, StringComparison.CurrentCultureIgnoreCase) < 0
-                                && !camlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)))
-                            {
-                                camlFields.Add(listField.InternalName);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Trace.TraceError("Failed to parse field {0} MSG:{1}", listField.InternalName, ex.Message);
+                        logger.LogInformation("Processing list {0} field {1}", _list.Title, listField.InternalName);
+                        camlFields.Add(listField.InternalName);
                     }
                 }
             }
@@ -169,22 +137,22 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
             foreach (var camlAndValue in camlQueries)
             {
                 itemPosition = null;
+                var camlWhereClause = (string.IsNullOrEmpty(camlAndValue) ? string.Empty : CAML.Where(camlAndValue));
                 var camlQuery = new CamlQuery()
                 {
                     ViewXml = CAML.ViewQuery(
                         ViewScope.RecursiveAll,
-                        CAML.Where(camlAndValue),
+                        camlWhereClause,
                         CAML.OrderBy(new OrderByField("ID")),
                         camlViewFields,
-                        5)
+                        500)
                 };
-
-                LogWarning("CAML Query {0}", camlQuery.ViewXml);
 
                 try
                 {
                     while (true)
                     {
+                        logger.LogWarning("CAML Query {0} at position {1}", camlWhereClause, (itemPosition == null ? string.Empty : itemPosition.PagingInfo));
                         camlQuery.ListItemCollectionPosition = itemPosition;
                         var listItems = _list.GetItems(camlQuery);
                         _list.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
@@ -197,7 +165,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                             var itemTitle = rbiItem.RetrieveListItemValue("Title");
                             var author = rbiItem.RetrieveListItemUserValue("Author");
                             var editor = rbiItem.RetrieveListItemUserValue("Editor");
-                            LogVerbose("Title: {0}; Item ID: {1}", itemTitle, itemId);
+                            logger.LogInformation("Title: {0}; Item ID: {1}", itemTitle, itemId);
 
                             var newitem = new SPListItemDefinition()
                             {
@@ -227,10 +195,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                             }
 
 
-                            if (Expand)
+                            if (ExpandObjects)
                             {
-
-                                foreach (var rbiField in rbiItem.FieldValues)
+                                var fieldValuesToWrite = rbiItem.FieldValues.Where(rfield => !ootbCamlFields.Any(oc => rfield.Key.Equals(oc, StringComparison.CurrentCultureIgnoreCase)));
+                                foreach (var rbiField in fieldValuesToWrite)
                                 {
                                     newitem.ColumnValues.Add(new SPListItemFieldDefinition()
                                     {
@@ -240,7 +208,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                                 }
                             }
 
-                            results.Add(newitem);
+                            listDefinition.ListItems.Add(newitem);
                         }
 
                         if (itemPosition == null)
@@ -251,11 +219,16 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
                 }
                 catch (Exception ex)
                 {
-                    LogError(ex, "Failed to retrieve list item collection");
+                    logger.LogError(ex, "Failed to retrieve list item collection");
                 }
             }
 
-            WriteObject(results, true);
+
+            SiteComponents.Lists.Add(listDefinition);
+
+
+
+            WriteObject(SiteComponents);
         }
     }
 }
