@@ -147,9 +147,32 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
             // Load the Context
             var contextWeb = this.ClientContext.Web;
-            var fields = this.ClientContext.Web.Fields;
             this.ClientContext.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, ctxw => ctxw.Id);
-            this.ClientContext.Load(fields);
+
+            // Get Site/Web fields
+            var fields = this.ClientContext.LoadQuery(contextWeb.Fields
+                .Include(
+                    fctx => fctx.Id,
+                    fctx => fctx.FieldTypeKind,
+                    fctx => fctx.Group,
+                    lft => lft.AutoIndexed,
+                    lft => lft.CanBeDeleted,
+                    lft => lft.DefaultFormula,
+                    lft => lft.DefaultValue,
+                    lft => lft.Description,
+                    lft => lft.EnforceUniqueValues,
+                    lft => lft.Filterable,
+                    lft => lft.FromBaseType,
+                    lft => lft.Hidden,
+                    lft => lft.Indexed,
+                    lft => lft.InternalName,
+                    lft => lft.JSLink,
+                    lft => lft.NoCrawl,
+                    lft => lft.ReadOnlyField,
+                    lft => lft.Required,
+                    lft => lft.SchemaXml,
+                    lft => lft.Scope,
+                    lft => lft.Title));
 
             var groupQuery = this.ClientContext.LoadQuery(contextWeb.SiteGroups
                 .Include(group => group.Id,
@@ -173,8 +196,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         ict => ict.Fields));
 
 
-            var collists = contextWeb.Lists;
-            var lists = this.ClientContext.LoadQuery(collists
+            var lists = this.ClientContext.LoadQuery(contextWeb.Lists
                 .Include(
                     linc => linc.Title,
                     linc => linc.Id,
@@ -220,11 +242,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             }
 
 
-
             if (fields.Any())
             {
                 var webfields = new List<SPFieldDefinitionModel>();
-                foreach (Microsoft.SharePoint.Client.Field field in fields)
+                foreach (var field in fields)
                 {
                     if (skiptypes.Any(st => field.FieldTypeKind == st)
                         || skipcolumns.Any(sg => field.Group.Equals(sg, StringComparison.CurrentCultureIgnoreCase)))
@@ -313,7 +334,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     var nolookups = sitelists.Where(sl => !sl.ListDependency.Any());
                     nolookups.ToList().ForEach(nolookup =>
                     {
-                        LogVerbose("adding list {0}", nolookup.ListName);
+                        logger.LogInformation("adding list {0}", nolookup.ListName);
                         nolookup.ProvisionOrder = idx++;
                         SiteComponents.Lists.Add(nolookup);
                         sitelists.Remove(nolookup);
@@ -325,13 +346,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     {
                         var listPopped = haslookups.FirstOrDefault();
                         haslookups.Remove(listPopped);
-                        LogVerbose("adding list {0}", listPopped.ListName);
+                        logger.LogInformation("adding list {0}", listPopped.ListName);
 
                         if(listPopped.ListDependency.Any(listField => listPopped.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
                                                              || listPopped.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             // the list has a dependency on itself
-                            LogVerbose("Adding list {0} with dependency on itself", listPopped.ListName);
+                            logger.LogInformation("Adding list {0} with dependency on itself", listPopped.ListName);
                             listPopped.ProvisionOrder = idx++;
                             SiteComponents.Lists.Add(listPopped);
                         }
@@ -340,7 +361,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                                              || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase))))
                         {
                             // no list definition exists in the collection with the dependent lookup lists
-                            LogWarning("List {0} depends on {1} which do not exist current collection", listPopped.ListName, string.Join(",", listPopped.ListDependency));
+                            logger.LogWarning("List {0} depends on {1} which do not exist current collection", listPopped.ListName, string.Join(",", listPopped.ListDependency));
                             foreach (var dependent in listPopped.ListDependency.Where(dlist => !haslookups.Any(hl => hl.ListName == dlist)))
                             {
                                 var sitelist = contextWeb.GetListByTitle(dependent, lctx => lctx.Id, lctx => lctx.Title, lctx => lctx.RootFolder.ServerRelativeUrl);
@@ -353,7 +374,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         }
                         else
                         {
-                            LogVerbose("Adding list {0} to collection", listPopped.ListName);
+                            logger.LogInformation("Adding list {0} to collection", listPopped.ListName);
                             listPopped.ProvisionOrder = idx++;
                             SiteComponents.Lists.Add(listPopped);
                         }

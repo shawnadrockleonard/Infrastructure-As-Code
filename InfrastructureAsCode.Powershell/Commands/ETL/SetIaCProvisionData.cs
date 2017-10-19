@@ -17,6 +17,7 @@ using System.Xml.Linq;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Core.Constants;
 using InfrastructureAsCode.Core.Reports;
+using OfficeDevPnP.Core.Utilities;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
@@ -158,7 +159,22 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         var customColumns = item.ColumnValues.Where(cv => customFields.Any(cf => cf.Equals(cv.FieldName)));
                         foreach (var spRefCol in customColumns)
                         {
-                            newItem[spRefCol.FieldName] = spRefCol.FieldValue;
+                            SPFieldDefinitionModel strParent = null;
+                            var internalFieldName = spRefCol.FieldName;
+                            var itemColumnValue = spRefCol.FieldValue;
+
+                            if (IsLookup(siteList, internalFieldName, out strParent))
+                            {
+                                newItem[internalFieldName] = GetParentItemID(this.ClientContext, itemColumnValue, strParent, logger);
+                            }
+                            else if (IsUser(siteList, internalFieldName))
+                            {
+                                newItem[internalFieldName] = GetUserID(this.ClientContext, itemColumnValue, logger);
+                            }
+                            else
+                            {
+                                newItem[internalFieldName] = itemColumnValue;
+                            }
                         }
                         newItem.Update();
                         etlList.Context.ExecuteQueryRetry();
@@ -174,14 +190,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <param name="ColumnName"></param>
         /// <param name="LookupListName"></param>
         /// <returns></returns>
-        static bool IsLookup(SPListDefinition List, string ColumnName, out string LookupListName)
+        static bool IsLookup(SPListDefinition List, string ColumnName, out SPFieldDefinitionModel LookupField)
         {
-            LookupListName = string.Empty;
+            LookupField = null;
             foreach (var spc in List.FieldDefinitions)
             {
                 if (spc.InternalName == ColumnName && spc.FieldTypeKind == FieldType.Lookup)
                 {
-                    LookupListName = spc.LookupListName;
+                    LookupField = spc;
                     return true;
                 }
             }
@@ -211,6 +227,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// </summary>
         /// <param name="cContext"></param>
         /// <param name="ItemName"></param>
+        /// <param name="logger">diagnostics logger</param>
         /// <returns></returns>
         static int GetUserID(ClientContext cContext, string ItemName, ITraceLogger logger)
         {
@@ -231,6 +248,72 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to find {0} in web {1}", ItemName, ex.Message);
+            }
+
+            return nReturn;
+        }
+
+        /// <summary>
+        /// Returns the parent item ID
+        /// </summary>
+        /// <param name="cContext"></param>
+        /// <param name="ItemName"></param>
+        /// <param name="ParentListColumn"></param>
+        /// <param name="logger">diagnostics logger</param>
+        /// <returns></returns>
+        static int GetParentItemID(ClientContext cContext, string ItemName, SPFieldDefinitionModel ParentListColumn, ITraceLogger logger)
+        {
+            int nReturn = -1;
+            var parentListName = string.Empty;
+
+            try
+            {
+                parentListName = ParentListColumn.Title;
+                logger.LogInformation("Start GetParentItemID {0} for column {1}", parentListName, ItemName);
+
+                Web wWeb = cContext.Web;
+                
+                var lParentList = cContext.Web.GetListByTitle(parentListName, lctx => lctx.Id, lctx => lctx.Title);
+                var camlQuery = new CamlQuery()
+                {
+                    ViewXml = CAML.ViewQuery(
+                        CAML.Where(
+                            CAML.Eq(
+                                CAML.FieldValue(ParentListColumn.LookupListFieldName, FieldType.Text.ToString("f"), ItemName))
+                            ),
+                        string.Empty,
+                        100
+                    )
+                };
+
+                ListItemCollectionPosition itemPosition = null;
+                while (true)
+                {
+                    var collListItem = lParentList.GetItems(camlQuery);
+                    lParentList.Context.Load(collListItem, lictx => lictx.ListItemCollectionPosition);
+                    lParentList.Context.ExecuteQueryRetry();
+                    itemPosition = collListItem.ListItemCollectionPosition;
+
+                    foreach (ListItem oListItem in collListItem)
+                    {
+                        if (oListItem["Title"].ToString() == ItemName)
+                        {
+                            nReturn = oListItem.Id;
+                            break;
+                        }
+                    }
+
+                    if(itemPosition == null)
+                    {
+                        break;
+                    }
+                }
+
+                logger.LogInformation("Complete GetParentItemID {0} for column {1}", parentListName, ItemName);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to query lookup value {0}", ex.Message);
             }
 
             return nReturn;

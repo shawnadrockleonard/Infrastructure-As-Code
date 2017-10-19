@@ -335,6 +335,7 @@ namespace InfrastructureAsCode.Core.Extensions
                         ict => ict.JSLink,
                         ict => ict.FieldLinks,
                         ict => ict.Fields));
+
                 // list fields
                 var listFields = list.Context.LoadQuery(list.Fields.Where(wf => wf.ReadOnlyField == false && wf.Hidden == false)
                     .Include(
@@ -360,6 +361,7 @@ namespace InfrastructureAsCode.Core.Extensions
                        fctx => fctx.Scope,
                        fctx => fctx.Title
                        ));
+
                 // list views
                 var listViews = list.Context.LoadQuery(list.Views
                     .Include(

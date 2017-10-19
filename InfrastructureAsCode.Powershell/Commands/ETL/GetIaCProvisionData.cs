@@ -68,18 +68,22 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             };
 
             var ctx = this.ClientContext;
-            var _list = Identity.GetList(this.ClientContext.Web, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
-
-            ctx.Load(ctx.Web, wctx => wctx.Url, wctx => wctx.ServerRelativeUrl);
+            var contextWeb = this.ClientContext.Web;
+            ctx.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, wctx => wctx.Url, ctxw => ctxw.Id);
             ctx.ExecuteQueryRetry();
 
-            var webUri = new Uri(ctx.Web.Url);
+            var _list = Identity.GetList(contextWeb, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
+            
+            
+            var webUri = new Uri(contextWeb.Url);
 
             // Will query the list to determine the last item id in the list
             var lastItemId = _list.QueryLastItemId();
             logger.LogInformation("List with item count {0} has a last ID of {1}", _list.ItemCount, lastItemId);
             logger.LogInformation("List has folder creation = {0}", _list.EnableFolderCreation);
 
+            // store the OOTB standard fields
+            var ootbCamlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
 
             // Skip these specific fields
             var skiptypes = new FieldType[]
@@ -103,129 +107,184 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             };
 
             // pull a small portion of the list 
-            var listDefinition = this.ClientContext.GetListDefinition(_list, ExpandObjects, logger, skiptypes);
-            listDefinition.ListItems = new List<SPListItemDefinition>();
-
-
-            var ootbCamlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
-            var camlFields = new List<string>(ootbCamlFields);
-
-
-            if (ExpandObjects)
+            // wire up temporary array
+            var sitelists = new List<SPListDefinition>()
             {
-                // list fields
-                var listFields = listDefinition.FieldDefinitions;
-                if (listFields != null && listFields.Any())
+                ctx.GetListDefinition(_list, ExpandObjects, logger, skiptypes)
+            };
+
+            if (sitelists.Any())
+            {
+                var idx = 0;
+
+                // lets add any list with NO lookups first
+                var nolookups = sitelists.Where(sl => !sl.ListDependency.Any());
+                nolookups.ToList().ForEach(nolookup =>
                 {
-                    var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
-                    var notInCamlFields = listFields.Where(listField => !ootbCamlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)));
-                    foreach (var listField in notInCamlFields)
+                    logger.LogInformation("adding list {0}", nolookup.ListName);
+                    nolookup.ProvisionOrder = idx++;
+                    SiteComponents.Lists.Add(nolookup);
+                    sitelists.Remove(nolookup);
+                });
+
+                // order with first in stack 
+                var haslookups = sitelists.Where(sl => sl.ListDependency.Any()).OrderBy(ob => ob.ListDependency.Count()).ToList();
+                while (haslookups.Count() > 0)
+                {
+                    var listPopped = haslookups.FirstOrDefault();
+                    haslookups.Remove(listPopped);
+                    logger.LogInformation("popping list {0}", listPopped.ListName);
+
+                    if (listPopped.ListDependency.Any(listField => listPopped.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
+                                                          || listPopped.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        logger.LogInformation("Processing list {0} field {1}", _list.Title, listField.InternalName);
-                        camlFields.Add(listField.InternalName);
+                        // the list has a dependency on itself
+                        logger.LogInformation("Adding list {0} with dependency on itself", listPopped.ListName);
+                        listPopped.ProvisionOrder = idx++;
+                        SiteComponents.Lists.Add(listPopped);
+                    }
+                    else if (listPopped.ListDependency.Any(listField =>
+                            !SiteComponents.Lists.Any(sc => sc.ListName.Equals(listField, StringComparison.InvariantCultureIgnoreCase)
+                                                         || sc.InternalName.Equals(listField, StringComparison.InvariantCultureIgnoreCase))))
+                    {
+                        // no list definition exists in the collection with the dependent lookup lists
+                        logger.LogWarning("List {0} depends on {1} which do not exist current collection", listPopped.ListName, string.Join(",", listPopped.ListDependency));
+                        foreach (var dependent in listPopped.ListDependency.Where(dlist => !haslookups.Any(hl => hl.ListName == dlist)))
+                        {
+                            var sitelist = contextWeb.GetListByTitle(dependent, lctx => lctx.Id, lctx => lctx.Title, lctx => lctx.RootFolder.ServerRelativeUrl);
+                            var sitelistDefinition = ctx.GetListDefinition(contextWeb, sitelist, true, logger, skiptypes);
+                            haslookups.Add(sitelistDefinition);
+                        }
+
+                        haslookups.Add(listPopped); // add back to collection
+                        listPopped = null;
+                    }
+                    else
+                    {
+                        logger.LogInformation("Adding list {0} to collection", listPopped.ListName);
+                        listPopped.ProvisionOrder = idx++;
+                        SiteComponents.Lists.Add(listPopped);
                     }
                 }
             }
 
-
-
-            var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
-
-
-            ListItemCollectionPosition itemPosition = null;
-            var camlQueries = _list.SafeCamlClauseFromThreshold(2000, CamlStatement, 0, lastItemId);
-            foreach (var camlAndValue in camlQueries)
+            foreach (var listDefinition in SiteComponents.Lists)
             {
-                itemPosition = null;
-                var camlWhereClause = (string.IsNullOrEmpty(camlAndValue) ? string.Empty : CAML.Where(camlAndValue));
-                var camlQuery = new CamlQuery()
-                {
-                    ViewXml = CAML.ViewQuery(
-                        ViewScope.RecursiveAll,
-                        camlWhereClause,
-                        CAML.OrderBy(new OrderByField("ID")),
-                        camlViewFields,
-                        500)
-                };
+                listDefinition.ListItems = new List<SPListItemDefinition>();
 
-                try
+                var camlFields = new List<string>(ootbCamlFields);
+
+                if (ExpandObjects)
                 {
-                    while (true)
+                    // list fields
+                    var listFields = listDefinition.FieldDefinitions;
+                    if (listFields != null && listFields.Any())
                     {
-                        logger.LogWarning("CAML Query {0} at position {1}", camlWhereClause, (itemPosition == null ? string.Empty : itemPosition.PagingInfo));
-                        camlQuery.ListItemCollectionPosition = itemPosition;
-                        var listItems = _list.GetItems(camlQuery);
-                        _list.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
-                        _list.Context.ExecuteQueryRetry();
-                        itemPosition = listItems.ListItemCollectionPosition;
-
-                        foreach (var rbiItem in listItems)
+                        var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
+                        var notInCamlFields = listFields.Where(listField => !ootbCamlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)));
+                        foreach (var listField in notInCamlFields)
                         {
-                            var itemId = rbiItem.Id;
-                            var itemTitle = rbiItem.RetrieveListItemValue("Title");
-                            var author = rbiItem.RetrieveListItemUserValue("Author");
-                            var editor = rbiItem.RetrieveListItemUserValue("Editor");
-                            logger.LogInformation("Title: {0}; Item ID: {1}", itemTitle, itemId);
+                            logger.LogInformation("Processing list {0} field {1}", _list.Title, listField.InternalName);
+                            camlFields.Add(listField.InternalName);
+                        }
+                    }
+                }
+                
+                var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
 
-                            var newitem = new SPListItemDefinition()
-                            {
-                                Id = itemId,
-                                Title = itemTitle,
-                                Created = rbiItem.RetrieveListItemValue("Created").ToNullableDatetime(),
-                                Modified = rbiItem.RetrieveListItemValue("Modified").ToNullableDatetime()
-                            };
 
-                            if (author != null)
+                ListItemCollectionPosition itemPosition = null;
+                var camlQueries = _list.SafeCamlClauseFromThreshold(2000, CamlStatement, 0, lastItemId);
+                foreach (var camlAndValue in camlQueries)
+                {
+                    itemPosition = null;
+                    var camlWhereClause = (string.IsNullOrEmpty(camlAndValue) ? string.Empty : CAML.Where(camlAndValue));
+                    var camlQuery = new CamlQuery()
+                    {
+                        ViewXml = CAML.ViewQuery(
+                            ViewScope.RecursiveAll,
+                            camlWhereClause,
+                            CAML.OrderBy(new OrderByField("ID")),
+                            camlViewFields,
+                            500)
+                    };
+
+                    try
+                    {
+                        while (true)
+                        {
+                            logger.LogWarning("CAML Query {0} at position {1}", camlWhereClause, (itemPosition == null ? string.Empty : itemPosition.PagingInfo));
+                            camlQuery.ListItemCollectionPosition = itemPosition;
+                            var listItems = _list.GetItems(camlQuery);
+                            _list.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
+                            _list.Context.ExecuteQueryRetry();
+                            itemPosition = listItems.ListItemCollectionPosition;
+
+                            foreach (var rbiItem in listItems)
                             {
-                                newitem.CreatedBy = new SPPrincipalUserDefinition()
+                                var itemId = rbiItem.Id;
+                                var itemTitle = rbiItem.RetrieveListItemValue("Title");
+                                var author = rbiItem.RetrieveListItemUserValue("Author");
+                                var editor = rbiItem.RetrieveListItemUserValue("Editor");
+                                logger.LogInformation("Title: {0}; Item ID: {1}", itemTitle, itemId);
+
+                                var newitem = new SPListItemDefinition()
                                 {
-                                    Email = author.ToUserEmailValue(),
-                                    LoginName = author.ToUserValue(),
-                                    Id = author.LookupId
+                                    Id = itemId,
+                                    Title = itemTitle,
+                                    Created = rbiItem.RetrieveListItemValue("Created").ToNullableDatetime(),
+                                    Modified = rbiItem.RetrieveListItemValue("Modified").ToNullableDatetime()
                                 };
-                            }
-                            if (editor != null)
-                            {
-                                newitem.ModifiedBy = new SPPrincipalUserDefinition()
-                                {
-                                    Email = editor.ToUserEmailValue(),
-                                    LoginName = editor.ToUserValue(),
-                                    Id = editor.LookupId
-                                };
-                            }
 
-
-                            if (ExpandObjects)
-                            {
-                                var fieldValuesToWrite = rbiItem.FieldValues.Where(rfield => !ootbCamlFields.Any(oc => rfield.Key.Equals(oc, StringComparison.CurrentCultureIgnoreCase)));
-                                foreach (var rbiField in fieldValuesToWrite)
+                                if (author != null)
                                 {
-                                    newitem.ColumnValues.Add(new SPListItemFieldDefinition()
+                                    newitem.CreatedBy = new SPPrincipalUserDefinition()
                                     {
-                                        FieldName = rbiField.Key,
-                                        FieldValue = rbiField.Value
-                                    });
+                                        Email = author.ToUserEmailValue(),
+                                        LoginName = author.ToUserValue(),
+                                        Id = author.LookupId
+                                    };
                                 }
+                                if (editor != null)
+                                {
+                                    newitem.ModifiedBy = new SPPrincipalUserDefinition()
+                                    {
+                                        Email = editor.ToUserEmailValue(),
+                                        LoginName = editor.ToUserValue(),
+                                        Id = editor.LookupId
+                                    };
+                                }
+
+
+                                if (ExpandObjects)
+                                {
+                                    var fieldValuesToWrite = rbiItem.FieldValues.Where(rfield => !ootbCamlFields.Any(oc => rfield.Key.Equals(oc, StringComparison.CurrentCultureIgnoreCase)));
+                                    foreach (var rbiField in fieldValuesToWrite)
+                                    {
+                                        newitem.ColumnValues.Add(new SPListItemFieldDefinition()
+                                        {
+                                            FieldName = rbiField.Key,
+                                            FieldValue = rbiField.Value
+                                        });
+                                    }
+                                }
+
+                                listDefinition.ListItems.Add(newitem);
                             }
 
-                            listDefinition.ListItems.Add(newitem);
-                        }
-
-                        if (itemPosition == null)
-                        {
-                            break;
+                            if (itemPosition == null)
+                            {
+                                break;
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to retrieve list item collection");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to retrieve list item collection");
-                }
+                
             }
-
-
-            SiteComponents.Lists.Add(listDefinition);
-
 
 
             WriteObject(SiteComponents);
