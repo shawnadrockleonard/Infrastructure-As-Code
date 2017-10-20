@@ -72,15 +72,15 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             ctx.Load(contextWeb, ctxw => ctxw.ServerRelativeUrl, wctx => wctx.Url, ctxw => ctxw.Id);
             ctx.ExecuteQueryRetry();
 
-            var _list = Identity.GetList(contextWeb, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
+            var _targetList = Identity.GetList(contextWeb, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.RootFolder.Folders);
             
             
             var webUri = new Uri(contextWeb.Url);
 
             // Will query the list to determine the last item id in the list
-            var lastItemId = _list.QueryLastItemId();
-            logger.LogInformation("List with item count {0} has a last ID of {1}", _list.ItemCount, lastItemId);
-            logger.LogInformation("List has folder creation = {0}", _list.EnableFolderCreation);
+            var lastItemId = _targetList.QueryLastItemId();
+            logger.LogInformation("List with item count {0} has a last ID of {1}", _targetList.ItemCount, lastItemId);
+            logger.LogInformation("List has folder creation = {0}", _targetList.EnableFolderCreation);
 
             // store the OOTB standard fields
             var ootbCamlFields = new List<string>() { "Title", "ID", "Author", "Editor", "Created", "Modified" };
@@ -110,7 +110,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             // wire up temporary array
             var sitelists = new List<SPListDefinition>()
             {
-                ctx.GetListDefinition(_list, ExpandObjects, logger, skiptypes)
+                ctx.GetListDefinition(_targetList, ExpandObjects, logger, skiptypes)
             };
 
             if (sitelists.Any())
@@ -168,11 +168,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 }
             }
 
-            foreach (var listDefinition in SiteComponents.Lists)
+            foreach (var listDefinition in SiteComponents.Lists.OrderBy(ob => ob.ProvisionOrder))
             {
                 listDefinition.ListItems = new List<SPListItemDefinition>();
 
-                var camlFields = new List<string>(ootbCamlFields);
+                var camlFields = new List<string>();
+                var listTitle = listDefinition.ListName;
+                var etlList = this.ClientContext.Web.GetListByTitle(listTitle, 
+                    lctx => lctx.Id, lctx => lctx.ItemCount, lctx => lctx.EnableFolderCreation, lctx => lctx.RootFolder.ServerRelativeUrl);
 
                 if (ExpandObjects)
                 {
@@ -181,20 +184,21 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     if (listFields != null && listFields.Any())
                     {
                         var filteredListFields = listFields.Where(lf => !skiptypes.Any(st => lf.FieldTypeKind == st)).ToList();
-                        var notInCamlFields = listFields.Where(listField => !ootbCamlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)));
+                        var notInCamlFields = listFields.Where(listField => !ootbCamlFields.Any(cf => cf.Equals(listField.InternalName, StringComparison.CurrentCultureIgnoreCase)) && !skiptypes.Any(st => listField.FieldTypeKind == st));
                         foreach (var listField in notInCamlFields)
                         {
-                            logger.LogInformation("Processing list {0} field {1}", _list.Title, listField.InternalName);
+                            logger.LogInformation("Processing list {0} field {1}", etlList.Title, listField.InternalName);
                             camlFields.Add(listField.InternalName);
                         }
                     }
                 }
-                
+
+                camlFields.AddRange(ootbCamlFields);
                 var camlViewFields = CAML.ViewFields(camlFields.Select(s => CAML.FieldRef(s)).ToArray());
 
 
                 ListItemCollectionPosition itemPosition = null;
-                var camlQueries = _list.SafeCamlClauseFromThreshold(2000, CamlStatement, 0, lastItemId);
+                var camlQueries = etlList.SafeCamlClauseFromThreshold(2000, CamlStatement, 0, lastItemId);
                 foreach (var camlAndValue in camlQueries)
                 {
                     itemPosition = null;
@@ -215,9 +219,9 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         {
                             logger.LogWarning("CAML Query {0} at position {1}", camlWhereClause, (itemPosition == null ? string.Empty : itemPosition.PagingInfo));
                             camlQuery.ListItemCollectionPosition = itemPosition;
-                            var listItems = _list.GetItems(camlQuery);
-                            _list.Context.Load(listItems, lti => lti.ListItemCollectionPosition);
-                            _list.Context.ExecuteQueryRetry();
+                            var listItems = etlList.GetItems(camlQuery);
+                            etlList.Context.Load(listItems);
+                            etlList.Context.ExecuteQueryRetry();
                             itemPosition = listItems.ListItemCollectionPosition;
 
                             foreach (var rbiItem in listItems)

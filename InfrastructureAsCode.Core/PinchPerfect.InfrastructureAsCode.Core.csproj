@@ -194,6 +194,8 @@
     <Compile Include="Models\Enums\ViewToolBarEnum.cs" />
     <Compile Include="Models\Minimal\DefinitionFieldModel.cs" />
     <Compile Include="Models\Minimal\DefinitionListModel.cs" />
+    <Compile Include="Models\NativeCSOM\NativeFieldLookupValue.cs" />
+    <Compile Include="Models\NativeCSOM\NativeFieldUserValue.cs" />
     <Compile Include="Models\REST\IRestListItemObj.cs" />
     <Compile Include="Models\REST\RestBaseMinimalObject.cs" />
     <Compile Include="Models\REST\RestBaseObject.cs" />

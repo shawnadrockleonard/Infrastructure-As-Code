@@ -18,6 +18,7 @@ using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Core.Constants;
 using InfrastructureAsCode.Core.Reports;
 using OfficeDevPnP.Core.Utilities;
+using InfrastructureAsCode.Core.Models.NativeCSOM;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {
@@ -37,6 +38,9 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         [Parameter(Mandatory = true, HelpMessage = "Provide a full path to the provisioner JSON file", Position = 0, ValueFromPipeline = true)]
         public string ProvisionerFilePath { get; set; }
 
+
+        [Parameter(Mandatory = false, HelpMessage = "")]
+        public SwitchParameter Clobber { get; set; }
 
         #endregion
 
@@ -101,9 +105,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             }
 
 
-            foreach (var siteList in siteDefinition.Lists.OrderBy(ob => ob.ProvisionOrder))
+            // Expectation is that list already exists in target location
+            foreach (var customListDefinition in siteDefinition.Lists.OrderBy(ob => ob.ProvisionOrder))
             {
-                var etlList = this.ClientContext.Web.GetListByTitle(siteList.ListName,
+                var etlList = this.ClientContext.Web.GetListByTitle(customListDefinition.ListName,
                     lctx => lctx.Id, lctx => lctx.RootFolder.ServerRelativeUrl, lctx => lctx.Title);
                 logger.LogInformation("List {0}", etlList.Title);
 
@@ -133,9 +138,6 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 };
                 var sourceField = etlList.CreateListColumn(sourceFieldModel, logger, null, null);
 
-                // Expectation is that list already exists in target location
-                var customListDefinition = siteDefinition.Lists.FirstOrDefault(f => f.ListName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase)
-                    || f.InternalName.Equals(etlList.Title, StringComparison.InvariantCultureIgnoreCase));
 
                 // pull the internal names from list definition
                 var customFields = customListDefinition.FieldDefinitions
@@ -144,30 +146,29 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 logger.LogWarning("Processing list {0} found {1} fields to be processed", etlList.Title, customFields.Count());
 
                 // enumerate list items and add them to the list
-
-                if (siteList.ListItems != null && siteList.ListItems.Any())
+                if (customListDefinition.ListItems != null && customListDefinition.ListItems.Any())
                 {
-                    foreach (var item in siteList.ListItems)
+                    foreach (var item in customListDefinition.ListItems)
                     {
-                        ListItemCreationInformation lici = new ListItemCreationInformation();
-                        ListItem newItem = etlList.AddItem(lici);
+                        var lici = new ListItemCreationInformation();
+                        var newItem = etlList.AddItem(lici);
                         newItem[ConstantsFields.Field_Title] = item.Title;
                         newItem["SourceItemID"] = item.Id;
                         newItem["DataMigrated"] = true;
-                        logger.LogInformation("Setting up Item {0} with Source ID {1}", item.Title, item.Id);
+                        newItem.Update();
+                        logger.LogInformation("Processing list {0} Setting up Item {1}", etlList.Title, item.Id);
 
                         var customColumns = item.ColumnValues.Where(cv => customFields.Any(cf => cf.Equals(cv.FieldName)));
                         foreach (var spRefCol in customColumns)
                         {
-                            SPFieldDefinitionModel strParent = null;
                             var internalFieldName = spRefCol.FieldName;
                             var itemColumnValue = spRefCol.FieldValue;
 
-                            if (IsLookup(siteList, internalFieldName, out strParent))
+                            if (IsLookup(customListDefinition, internalFieldName, out SPFieldDefinitionModel strParent))
                             {
                                 newItem[internalFieldName] = GetParentItemID(this.ClientContext, itemColumnValue, strParent, logger);
                             }
-                            else if (IsUser(siteList, internalFieldName))
+                            else if (IsUser(customListDefinition, internalFieldName))
                             {
                                 newItem[internalFieldName] = GetUserID(this.ClientContext, itemColumnValue, logger);
                             }
@@ -175,8 +176,8 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                             {
                                 newItem[internalFieldName] = itemColumnValue;
                             }
+                            newItem.Update();
                         }
-                        newItem.Update();
                         etlList.Context.ExecuteQueryRetry();
                     }
                 }
@@ -193,13 +194,11 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         static bool IsLookup(SPListDefinition List, string ColumnName, out SPFieldDefinitionModel LookupField)
         {
             LookupField = null;
-            foreach (var spc in List.FieldDefinitions)
+            foreach (var spc in List.FieldDefinitions
+                .Where(sfield => sfield.InternalName.Equals(ColumnName, StringComparison.CurrentCultureIgnoreCase) && sfield.FieldTypeKind == FieldType.Lookup))
             {
-                if (spc.InternalName == ColumnName && spc.FieldTypeKind == FieldType.Lookup)
-                {
-                    LookupField = spc;
-                    return true;
-                }
+                LookupField = spc;
+                return true;
             }
             return false;
         }
@@ -212,12 +211,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <returns></returns>
         static bool IsUser(SPListDefinition List, string ColumnName)
         {
-            foreach (var spc in List.FieldDefinitions)
+            foreach (var spc in List.FieldDefinitions
+                .Where(sfield => sfield.InternalName.Equals(ColumnName, StringComparison.CurrentCultureIgnoreCase) && sfield.FieldTypeKind == FieldType.User))
             {
-                if (spc.InternalName == ColumnName && spc.FieldTypeKind == FieldType.User)
-                {
-                    return true;
-                }
+                return true;
             }
             return false;
         }
@@ -229,15 +226,21 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <param name="ItemName"></param>
         /// <param name="logger">diagnostics logger</param>
         /// <returns></returns>
-        static int GetUserID(ClientContext cContext, string ItemName, ITraceLogger logger)
+        static int GetUserID(ClientContext cContext, dynamic ItemName, ITraceLogger logger)
         {
             int nReturn = -1;
+            NativeFieldUserValue userValue = null;
 
             try
             {
-                logger.LogInformation("Start GetUserID {0}", ItemName);
+                string itemJsonString = ItemName.ToString();
+                Newtonsoft.Json.Linq.JObject jobject = Newtonsoft.Json.Linq.JObject.Parse(itemJsonString);
+                userValue = jobject.ToObject<NativeFieldUserValue>();
+
+
+                logger.LogInformation("Start GetUserID {0}", userValue.Email);
                 Web wWeb = cContext.Web;
-                var iUser = cContext.Web.EnsureUser(ItemName);
+                var iUser = cContext.Web.EnsureUser(userValue.Email);
                 cContext.Load(iUser);
                 cContext.ExecuteQueryRetry();
                 if (iUser != null)
@@ -261,28 +264,37 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <param name="ParentListColumn"></param>
         /// <param name="logger">diagnostics logger</param>
         /// <returns></returns>
-        static int GetParentItemID(ClientContext cContext, string ItemName, SPFieldDefinitionModel ParentListColumn, ITraceLogger logger)
+        static int GetParentItemID(ClientContext cContext, dynamic ItemName, SPFieldDefinitionModel ParentListColumn, ITraceLogger logger)
         {
             int nReturn = -1;
             var parentListName = string.Empty;
+            var parentListColumnName = string.Empty;
+            NativeFieldLookupValue lookupValue = null;
 
             try
             {
-                parentListName = ParentListColumn.Title;
-                logger.LogInformation("Start GetParentItemID {0} for column {1}", parentListName, ItemName);
+                string itemJsonString = ItemName.ToString();
+                Newtonsoft.Json.Linq.JObject jobject = Newtonsoft.Json.Linq.JObject.Parse(itemJsonString);
+                lookupValue = jobject.ToObject<NativeFieldLookupValue>();
+
+
+
+                parentListName = ParentListColumn.LookupListName;
+                parentListColumnName = ParentListColumn.LookupListFieldName;
+                logger.LogInformation("Start GetParentItemID {0} for column {1}", parentListName, parentListColumnName);
 
                 Web wWeb = cContext.Web;
-                
+
                 var lParentList = cContext.Web.GetListByTitle(parentListName, lctx => lctx.Id, lctx => lctx.Title);
                 var camlQuery = new CamlQuery()
                 {
                     ViewXml = CAML.ViewQuery(
                         CAML.Where(
                             CAML.Eq(
-                                CAML.FieldValue(ParentListColumn.LookupListFieldName, FieldType.Text.ToString("f"), ItemName))
+                                CAML.FieldValue(parentListColumnName, FieldType.Text.ToString("f"), lookupValue.LookupValue))
                             ),
                         string.Empty,
-                        100
+                        10
                     )
                 };
 
@@ -290,26 +302,24 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 while (true)
                 {
                     var collListItem = lParentList.GetItems(camlQuery);
-                    lParentList.Context.Load(collListItem, lictx => lictx.ListItemCollectionPosition);
-                    lParentList.Context.ExecuteQueryRetry();
+                    cContext.Load(collListItem, lictx => lictx.ListItemCollectionPosition);
+                    cContext.ExecuteQueryRetry();
                     itemPosition = collListItem.ListItemCollectionPosition;
 
-                    foreach (ListItem oListItem in collListItem)
+                    foreach (var oListItem in collListItem)
                     {
-                        if (oListItem["Title"].ToString() == ItemName)
-                        {
-                            nReturn = oListItem.Id;
-                            break;
-                        }
+                        nReturn = oListItem.Id;
+                        break;
                     }
 
-                    if(itemPosition == null)
+                    // we drop out of the forloop above but if we are paging do we want to skip duplicate results
+                    if (itemPosition == null)
                     {
                         break;
                     }
                 }
 
-                logger.LogInformation("Complete GetParentItemID {0} for column {1}", parentListName, ItemName);
+                logger.LogInformation("Complete GetParentItemID {0} resulted in ID => {1}", parentListName, nReturn);
             }
             catch (Exception ex)
             {
