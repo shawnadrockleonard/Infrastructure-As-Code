@@ -6,16 +6,14 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    public class OneDriveUsageStorage
+    public class SharePointActivityPages
     {
         public DateTime ReportRefreshDate { get; set; }
 
+        public Int64 VisitedPageCount { get; set; }
+
         public DateTime ReportDate { get; set; }
 
-        public string SiteType { get; set; }
-
-        public Int64 StorageUsed_Bytes { get; set; }
-
-        public int ReportingPeriodDays { get; set; }
+        public int ReportPeriod { get; set; }
     }
 }

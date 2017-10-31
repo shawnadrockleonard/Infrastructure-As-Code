@@ -8,6 +8,8 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace InfrastructureAsCode.Powershell.Commands.Reporting
 {
@@ -40,9 +42,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
         [Parameter(Mandatory = false, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 6)]
         public Nullable<DateTime> Date { get; set; }
 
-        [Parameter(Mandatory = true, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 7)]
-        public ReportUsageViewTypeEnum ViewType { get; set; }
-
 
         public override void ExecuteCmdlet()
         {
@@ -61,15 +60,22 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
             {
                 O365Period = Period,
                 O365ReportType = ReportType,
-                ViewType = ViewType,
                 Date = Date
             };
 
+            // CSV config to process in memory
+            var csvconfig = new Configuration()
+            {
+                Delimiter = ",",
+                HasHeaderRecord = true
+            };
+
+
             var ilogger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
-            ilogger.LogInformation("Report => Usage Type {0} View Type {1} Period {2}", ReportType, ViewType, Period);
+            ilogger.LogInformation("Report => Usage Type {0} Period {1}", ReportType, Period);
 
 
-            using (var reporter = new DefaultReportVisitor(ilogger))
+            using (var reporter = new ExampleReportVisitor(csvconfig, filter, ilogger))
             {
                 ReportingStream stream = new ReportingStream(filter, config, ilogger);
                 stream.RetrieveData(reporter);

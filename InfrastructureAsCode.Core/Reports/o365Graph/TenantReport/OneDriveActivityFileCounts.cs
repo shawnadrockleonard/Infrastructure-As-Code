@@ -6,19 +6,11 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    public class OneDriveActivityFiles
+    public class OneDriveActivityFileCounts
     {
-        /*
-Data as of,
-Viewed or edited,
-Synced,
-Shared internally,
-Shared externally,
-Last activity date (UTC),
-Reporting period in days
-         */
 
-        public DateTime DataAsOf { get; set; }
+
+        public DateTime ReportRefreshDate { get; set; }
 
         public Int32 FilesViewedModified { get; set; }
 
@@ -28,8 +20,8 @@ Reporting period in days
 
         public Int64 FilesSharedEXT { get; set; }
 
-        public DateTime LastActivityDateUTC { get; set; }
+        public DateTime ReportDate { get; set; }
 
-        public int ReportingPeriodDays { get; set; }
+        public int ReportPeriod { get; set; }
     }
 }

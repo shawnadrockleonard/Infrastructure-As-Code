@@ -10,8 +10,6 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
     {
         public ReportUsageTypeEnum O365ReportType { get; set; }
 
-        public ReportUsageViewTypeEnum ViewType { get; set; }
-
         public Nullable<ReportUsagePeriodEnum> O365Period { get; set; }
 
         public Nullable<DateTime> Date { get; set; }
@@ -28,22 +26,41 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             var str = string.Empty;
 
             // We always have a view to start with that
-            var parameterset = string.Format("view='{0}',", ViewType.ToString("f"));
+            var parameterset = string.Empty;
 
             // If period is specified then add that to the parameters unless it is not supported
-            if (!Date.HasValue && O365Period.HasValue && O365ReportType != ReportUsageTypeEnum.Office365Activations)
+            var activations = new ReportUsageTypeEnum[]
+            {
+                ReportUsageTypeEnum.getOffice365ActivationsUserDetail,
+                ReportUsageTypeEnum.getOffice365ActivationCounts,
+                ReportUsageTypeEnum.getOffice365ActivationsUserCounts
+            };
+            if (!Date.HasValue && O365Period.HasValue && !activations.Any(a => a == O365ReportType))
             {
                 str = string.Format("period='{0}',", O365Period.Value.ToString("f"));
                 parameterset += str;
             }
 
             // If the date is specified then add that to the parameters unless it is not supported
-            if (Date.HasValue 
-                && !(O365ReportType == ReportUsageTypeEnum.MailboxUsage 
-                  || O365ReportType == ReportUsageTypeEnum.Office365Activations 
-                  || O365ReportType == ReportUsageTypeEnum.SfbOrganizerActivity))
+            var mailboxes = new ReportUsageTypeEnum[]
             {
-                str = string.Format("date='{0}'", Date.Value.ToString("yyyy-MM-dd"));
+                ReportUsageTypeEnum.getMailboxUsageDetail,
+                ReportUsageTypeEnum.getMailboxUsageMailboxCounts,
+                ReportUsageTypeEnum.getMailboxUsageQuotaMailboxStatusCounts,
+                ReportUsageTypeEnum.getMailboxUsageStorage
+            };
+            var skypeactivities = new ReportUsageTypeEnum[]
+            {
+                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityCounts,
+                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityUserCounts,
+                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityMinuteCounts
+            };
+            if (Date.HasValue
+                && !(mailboxes.Any(a => a == O365ReportType)
+                  || activations.Any(a => a == O365ReportType)
+                  || skypeactivities.Any(a => a == O365ReportType)))
+            {
+                str = string.Format("date={0}", Date.Value.ToString("yyyy-MM-dd"));
                 parameterset += str;
             }
 

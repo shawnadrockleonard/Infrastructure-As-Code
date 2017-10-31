@@ -128,33 +128,41 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             webRequest.ContentType = "application/json";
             webRequest.Headers.Add(System.Net.HttpRequestHeader.Authorization, Token.CreateAuthorizationHeader());
 
-            var webResponse = webRequest.GetResponse();
-            using (Stream webStream = webResponse.GetResponseStream())
+            try
             {
-                using (StreamReader responseReader = new StreamReader(webStream))
+                var webResponse = webRequest.GetResponse();
+                using (Stream webStream = webResponse.GetResponseStream())
                 {
-                    try
+                    using (StreamReader responseReader = new StreamReader(webStream))
                     {
-                        if (responseReader != null)
+                        try
                         {
-                            visitor.ProcessReport(responseReader);
+                            if (responseReader != null)
+                            {
+                                visitor.ProcessReport(responseReader);
+                            }
+                            else
+                            {
+                                throw new Exception("Response content is Null");
+                            }
                         }
-                        else
+                        catch (HttpRequestException hex)
                         {
-                            throw new Exception("Response content is Null");
+                            Logger.LogError(hex, "HTTP Failed to query URI {0}", serviceFullUrl);
+                            throw hex;
                         }
-                    }
-                    catch (HttpRequestException hex)
-                    {
-                        Logger.LogError(hex, "HTTP Failed to query URI {0}", serviceFullUrl);
-                        throw hex;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Generic Failed to query URI {0}", serviceFullUrl);
-                        throw ex;
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Generic Failed to query URI {0}", serviceFullUrl);
+                            throw ex;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Generic Failed to query URI {0} => {1}", serviceFullUrl, ex.Message);
+                throw ex;
             }
         }
     }

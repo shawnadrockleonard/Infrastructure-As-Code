@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    /// <summary>
-    /// WebResponse:
-    ///     Data as of,ExchangeActive,ExchangeInActive,OneDriveActive,OneDriveInActive,SharePointActive,SharePointInActive,SkypeActive,SkypeInActive,YammerActive,YammerInActive,Reporting period in days
-    /// </summary>
     public class Office365ActiveUsersServices
     {
-        public DateTime DataAsOf { get; set; }
+        public DateTime ReportRefreshDate { get; set; }
         public long ExchangeActive { get; set; }
         public long ExchangeInActive { get; set; }
         public long OneDriveActive { get; set; }
@@ -23,6 +19,8 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
         public long SkypeInActive { get; set; }
         public long YammerActive { get; set; }
         public long YammerInActive { get; set; }
+        public long MSTeamActive { get; set; }
+        public long MSTeamInActive { get; set; }
         public int ReportingPeriodDays { get; set; }
     }
 }

@@ -6,20 +6,11 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    public class OneDriveUsageAccount
+    public class OneDriveUsageAccountCounts
     {
-        /*
-Data as of,
-SiteType,
-Total accounts,
-Active accounts,
-Last activity date (UTC),
-Reporting period in days
-         */
+        public DateTime ReportRefreshDate { get; set; }
 
-        public DateTime DataAsOf { get; set; }
-
-        public DateTime LastActivityDateUTC { get; set; }
+        public DateTime ReportDate { get; set; }
 
         public string SiteType { get; set; }
 
@@ -27,6 +18,6 @@ Reporting period in days
 
         public Int64 Active_Accounts { get; set; }
 
-        public int ReportingPeriodDays { get; set; }
+        public int ReportPeriod { get; set; }
     }
 }
