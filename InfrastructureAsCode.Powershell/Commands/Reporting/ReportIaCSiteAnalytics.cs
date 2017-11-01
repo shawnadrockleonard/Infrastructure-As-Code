@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Powershell.CmdLets;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
@@ -11,17 +12,26 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Reporting
 {
-    [Cmdlet(VerbsCommon.Get, "IaCAnalytics")]
+    [Cmdlet(VerbsExtended.Report, "IaCSiteAnalytics")]
     [CmdletHelp("Returns a report of the entire farm", Category = "Reporting")]
-    public class GetIaCAnalytics : IaCAdminCmdlet
+    public class ReportIaCSiteAnalytics : IaCAdminCmdlet
     {
+        #region Parameters
+
         /// <summary>
         /// The absolute URL to the site collection or web
         /// </summary>
         [Parameter(Mandatory = true, HelpMessage = "Provides a specific site to query and manipulate")]
         public string SiteUrl { get; set; }
 
+        #endregion
+
+        #region Private Variables
+
         public List<SPWebDefinitionModel> WebModels { get; set; }
+
+        #endregion
+
 
         /// <summary>
         /// Will enumerate the farm and return diagnostics and auditing information
@@ -64,7 +74,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
 
                     ctx.Load(_web, s => s.UIVersion, s => s.LastItemModifiedDate, s => s.Created, s => s.AssociatedOwnerGroup, s => s.Lists.Include(i => i.Id, i => i.Title, i => i.BaseType, i => i.ItemCount));
                     ctx.Load(subWebs);
-                    ctx.Load(_site, s => s.Usage);
+                    ctx.Load(_site, s => s.Usage, cts => cts.Id, ctxs => ctxs.AllowMasterPageEditing);
                     ctx.ExecuteQueryRetry();
 
                     var siteOwner = string.Empty;
@@ -83,7 +93,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
 
                     var totalListCount = _web.Lists.Count();
                     var totalListItemCount = _web.Lists.Sum(l => l.ItemCount);
+
+
+                    // ---> Site Usage Properties
                     UsageInfo _usageInfo = _site.Usage;
+                    var _usageProcessed = _site.GetSiteUsageMetric();
+                    
+                    DateTime _createdDate = (DateTime)ctx.Web.Created;
 
 
                     var model = new SPWebDefinitionModel()

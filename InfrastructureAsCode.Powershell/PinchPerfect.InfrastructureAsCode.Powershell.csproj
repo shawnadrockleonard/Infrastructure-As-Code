@@ -231,7 +231,7 @@
     <Compile Include="Commands\Lists\GetIaCListItemCount.cs" />
     <Compile Include="Commands\Development\GetIaCAppPermissions.cs" />
     <Compile Include="Commands\Principals\GetIaCUserProfilesFromMembership.cs" />
-    <Compile Include="Commands\Reporting\GetIaCAnalytics.cs" />
+    <Compile Include="Commands\Reporting\ReportIaCSiteAnalytics.cs" />
     <Compile Include="Commands\ETL\GetIaCProvisionData.cs" />
     <Compile Include="Commands\Lists\GetIaCListItemsREST.cs" />
     <Compile Include="Commands\Principals\GetIaCListUserAlerts.cs" />

@@ -32,7 +32,7 @@ Report Period
             Map(m => m.SiteURL).Name("Site URL").Index(1).Default(string.Empty);
             Map(m => m.OwnerDisplayName).Name("Owner Display Name").Index(2).Default(string.Empty);
             Map(m => m.IsDeleted).Name("Is Deleted").Index(3).Default(false);
-            Map(m => m.LastActivityDate).Name("Last Activity Date").Index(4).Default(default(DateTime));
+            Map(m => m.LastActivityDate).Name("Last Activity Date").Index(4).Default(default(Nullable<DateTime>));
             Map(m => m.FileCount).Name("File Count").Index(5).Default(0);
             Map(m => m.ActiveFileCount).Name("Active File Count").Index(6).Default(0);
             Map(m => m.PageViewCount).Name("Page View Count").Index(7).Default(0);

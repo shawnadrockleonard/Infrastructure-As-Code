@@ -16,7 +16,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 
         public bool IsDeleted { get; set; }
 
-        public DateTime LastActivityDate { get; set; }
+        public Nullable<DateTime> LastActivityDate { get; set; }
 
         public Int64 FileCount { get; set; }
 

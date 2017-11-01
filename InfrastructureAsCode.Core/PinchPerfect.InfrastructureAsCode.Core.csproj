@@ -234,6 +234,7 @@
     <Compile Include="Models\SPListItemDefinition.cs" />
     <Compile Include="Models\SPListItemFieldDefinition.cs" />
     <Compile Include="Models\SPSiteModel.cs" />
+    <Compile Include="Models\SPSiteUsageModel.cs" />
     <Compile Include="Models\SPThresholdEnumerationModel.cs" />
     <Compile Include="Models\SPUniqueId.cs" />
     <Compile Include="Models\SPUserAlertDefinition.cs" />
