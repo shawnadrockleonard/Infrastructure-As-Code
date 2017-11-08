@@ -28,13 +28,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
         public string FilePath { get; set; }
 
 
-        [Parameter(Mandatory = false, ParameterSetName = "RemoveAction")]
-        public SwitchParameter RemoveParameter { get; set; }
-
-        [Parameter(Mandatory = false, ParameterSetName = "RemoveAction")]
-        public string ActionName { get; set; }
-
-
         /// <summary>
         /// Evaluate the full path
         /// </summary>
@@ -46,14 +39,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
                 if (!fileInfo.Exists)
                 {
                     throw new System.IO.FileNotFoundException("File not found", fileInfo.Name);
-                }
-            }
-
-            if(this.ParameterSetName == "RemoveAction")
-            {
-                if(string.IsNullOrEmpty(ActionName))
-                {
-                    throw new ArgumentNullException("ActionName", "You must supply the actionname to be removed.");
                 }
             }
         }
@@ -72,79 +57,62 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
             var weburl = TokenHelper.EnsureTrailingSlash(web.ServerRelativeUrl);
 
 
-            if (this.ParameterSetName == "Default")
+            var fileInfo = new System.IO.FileInfo(FilePath);
+            var actions = JsonConvert.DeserializeObject<SPCustomAction>(System.IO.File.ReadAllText(fileInfo.FullName));
+            if (actions.Site != null)
             {
-                var fileInfo = new System.IO.FileInfo(FilePath);
-                var actions = JsonConvert.DeserializeObject<SPCustomAction>(System.IO.File.ReadAllText(fileInfo.FullName));
-                if (actions.Site != null)
+                if (actions.Site.scriptblocks != null && actions.Site.scriptblocks.Any())
                 {
-                    if (actions.Site.scriptblocks != null && actions.Site.scriptblocks.Any())
+                    actions.Site.scriptblocks.ForEach(cab =>
                     {
-                        actions.Site.scriptblocks.ForEach(cab =>
-                        {
-                            var htmlblock = cab.htmlblock.Replace("~SiteCollection/", siteurl);
-                            htmlblock = htmlblock.Replace("~Site/", weburl);
+                        var htmlblock = cab.htmlblock.Replace("~SiteCollection/", siteurl);
+                        htmlblock = htmlblock.Replace("~Site/", weburl);
 
-                            site.AddOrUpdateCustomActionLinkBlock(cab.name, htmlblock, cab.sequence);
-                        });
-                    }
-                    if (actions.Site.scriptlinks != null && actions.Site.scriptlinks.Any())
-                    {
-                        actions.Site.scriptlinks.ForEach(cab =>
-                        {
-                            site.AddOrUpdateCustomActionLink(cab.name, cab.linkurl, cab.sequence);
-                        });
-                    }
+                        site.AddOrUpdateCustomActionLinkBlock(cab.name, htmlblock, cab.sequence);
+                    });
                 }
-
-                if (actions.Web != null)
+                if (actions.Site.scriptlinks != null && actions.Site.scriptlinks.Any())
                 {
-                    if (actions.Web.scriptblocks != null && actions.Web.scriptblocks.Any())
+                    actions.Site.scriptlinks.ForEach(cab =>
                     {
-                        actions.Web.scriptblocks.ForEach(cab =>
-                        {
-                            var htmlblock = cab.htmlblock.Replace("~SiteCollection/", siteurl);
-                            htmlblock = htmlblock.Replace("~Site/", weburl);
-
-                            web.AddOrUpdateCustomActionLinkBlock(cab.name, htmlblock, cab.sequence);
-                        });
-                    }
-                    if (actions.Web.scriptlinks != null && actions.Web.scriptlinks.Any())
-                    {
-                        actions.Web.scriptlinks.ForEach(cab =>
-                        {
-                            web.AddOrUpdateCustomActionLink(cab.name, cab.linkurl, cab.sequence);
-                        });
-                    }
-                }
-
-                if (actions.List != null && actions.List.Any())
-                {
-                    foreach (var list in actions.List)
-                    {
-                        var weblist = web.GetListByTitle(list.Title);
-                        foreach (var listaction in list.scriptcommands)
-                        {
-                            var htmllink = listaction.ImageUrl.Replace("~SiteCollection/", siteurl);
-                            htmllink = htmllink.Replace("~Site/", weburl);
-                            listaction.ImageUrl = htmllink;
-                            weblist.AddOrUpdateCustomActionLink(listaction);
-                        }
-                    }
+                        site.AddOrUpdateCustomActionLink(cab.name, cab.linkurl, cab.sequence);
+                    });
                 }
             }
 
-            if(ParameterSetName == "RemoveAction")
+            if (actions.Web != null)
             {
-                if (site.RemoveCustomActionLink(ActionName))
+                if (actions.Web.scriptblocks != null && actions.Web.scriptblocks.Any())
                 {
-                    LogVerbose("Successfully removed [Site] action {0}", ActionName);
+                    actions.Web.scriptblocks.ForEach(cab =>
+                    {
+                        var htmlblock = cab.htmlblock.Replace("~SiteCollection/", siteurl);
+                        htmlblock = htmlblock.Replace("~Site/", weburl);
+
+                        web.AddOrUpdateCustomActionLinkBlock(cab.name, htmlblock, cab.sequence);
+                    });
                 }
-
-
-                if (web.RemoveCustomActionLink(ActionName))
+                if (actions.Web.scriptlinks != null && actions.Web.scriptlinks.Any())
                 {
-                    LogVerbose("Successfully removed [Web] action {0}", ActionName);
+                    actions.Web.scriptlinks.ForEach(cab =>
+                    {
+                        web.AddOrUpdateCustomActionLink(cab.name, cab.linkurl, cab.sequence);
+                    });
+                }
+            }
+
+            if (actions.List != null && actions.List.Any())
+            {
+                foreach (var list in actions.List)
+                {
+                    var weblist = web.GetListByTitle(list.Title);
+                    foreach (var listaction in list.scriptcommands)
+                    {
+                        var htmllink = listaction.ImageUrl.Replace("~SiteCollection/", siteurl);
+                        htmllink = htmllink.Replace("~Site/", weburl);
+                        listaction.ImageUrl = htmllink;
+                        weblist.AddOrUpdateCustomActionLink(listaction);
+                    }
                 }
             }
         }

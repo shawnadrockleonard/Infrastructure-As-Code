@@ -8,16 +8,16 @@ using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.Commands.Sites
+namespace InfrastructureAsCode.Powershell.Commands.Lists
 {
     /// <summary>
-    /// The function cmdlet will set the JS Link for the field definition
+    /// The function cmdlet will set the indexed property of a field definition
     /// </summary>
     /// <remarks>
-    ///     Set-IaCFieldJsLink -Identity "List Title" -FieldName "Internal_x0020_Name" -JsLink "/SiteAssets/CSS/NewSite.css" 
+    ///     Set-IaCListFieldIndex -Identity "List Title" -FieldName "Internal_x0020_Name" -Enabled" 
     /// </remarks>
-    [Cmdlet(VerbsCommon.Set, "IaCFieldJsLink", SupportsShouldProcess = true)]
-    public class SetIaCFieldJsLink : IaCCmdlet
+    [Cmdlet(VerbsCommon.Set, "IaCListFieldIndex", SupportsShouldProcess = true)]
+    public class SetIaCListFieldIndex : IaCCmdlet
     {
         /// <summary>
         /// Internal Names of the View
@@ -34,8 +34,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
         /// <summary>
         /// Internal Names of the View
         /// </summary>
-        [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 2)]
-        public string JsLink { get; set; }
+        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 2)]
+        public SwitchParameter Enabled { get; set; }
 
         /// <summary>
         /// Process the request
@@ -48,20 +48,19 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
             var _list = Identity.GetList(_web);
 
             _web.EnsureProperties(wctx => wctx.ServerRelativeUrl);
-            _list.EnsureProperties(lctx => lctx.Fields.Include(lctxi => lctxi.InternalName, lctxi => lctxi.JSLink));
+            _list.EnsureProperties(lctx => lctx.Fields.Include(lctxi => lctxi.InternalName, lctxi => lctxi.Indexed, lctxi => lctxi.AutoIndexed));
 
 
             string webRelativeUrl = _web.ServerRelativeUrl;
-        
+
             var fieldToMod = _list.Fields.FirstOrDefault(fod => fod.InternalName == FieldIdentity.Name);
-            if (fieldToMod != null)
+            if (fieldToMod != null
+                && fieldToMod.Indexed != Enabled
+                && ShouldProcess(string.Format("Processing field {0} with JSLINK {1}", FieldIdentity.Name, Enabled)))
             {
-                if (ShouldProcess(string.Format("Processing field {0} with JSLINK {1}", FieldIdentity.Name, JsLink)))
-                {
-                    fieldToMod.JSLink = JsLink;
-                    fieldToMod.Update();
-                    ClientContext.ExecuteQueryRetry();
-                }
+                fieldToMod.Indexed = Enabled;
+                fieldToMod.Update();
+                ClientContext.ExecuteQueryRetry();
             }
         }
     }

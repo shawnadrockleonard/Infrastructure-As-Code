@@ -1,4 +1,6 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
+﻿using InfrastructureAsCode.Core.Extensions;
+using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Powershell.CmdLets;
 using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
@@ -55,6 +57,20 @@ namespace InfrastructureAsCode.Powershell.Commands.Sites
                     web.DeleteCustomAction(customActionId);
                 }
             }
+
+
+
+            if (site.RemoveCustomActionLink(ActionName))
+            {
+                LogVerbose("Successfully removed [Site] action {0}", ActionName);
+            }
+
+
+            if (web.RemoveCustomActionLink(ActionName))
+            {
+                LogVerbose("Successfully removed [Web] action {0}", ActionName);
+            }
+
         }
     }
 }
