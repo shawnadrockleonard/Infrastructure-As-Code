@@ -78,7 +78,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                 LogVerbose(string.Format("Uploading file to {0}", serverRelativeUrl.AbsoluteUri));
 
 
-                UploadFileWithBuffer(ctx, l, serverRelativeUrl, FileName, 5);
+                if (UploadFileWithBuffer(ctx, l, serverRelativeUrl, FileName, 10))
+                {
+                    LogVerbose("Successfully uploaded {0}", FileName);
+                }
 
             }
             catch (Exception ex)
@@ -115,7 +118,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                 {
                     foreach (var folderName in targetFolderPath)
                     {
+                        LogVerbose("Provisioning folder {0} into location {1}", folderName, relativeUri);
                         targetFolder = library.GetOrCreateFolder(targetFolder, folderName);
+                        if(targetFolder == null)
+                        {
+                            LogWarning("Failed to provision folder {0}", folderName);
+                            return false;
+                        }
                     }
                 }
                 m_ensuredPath = true;
@@ -169,6 +178,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             var fileSize = fileNameWithPathInfo.Length;
             if (fileSize <= blockSize)
             {
+                LogVerbose("File length {0}MB uploading with synchronous context {1}", fileSize.TryParseMB(), uniqueFileName);
                 // Use regular approach.
                 using (FileStream fs = new FileStream(fileNameWithPathInfo.FullName, FileMode.Open))
                 {
@@ -186,6 +196,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             }
             else
             {
+                var totalMBs = fileSize.TryParseMB();
+                LogVerbose("File length {0}MB uploading with buffer context {1}", totalMBs, uniqueFileName);
+
                 // Use large file upload approach.
                 ClientResult<long> bytesUploaded = null;
 
@@ -219,6 +232,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
 
                             if (first)
                             {
+                                LogVerbose("File length {0}MB uploading with synchronous context {1} => Started", totalMBs, uniqueFileName);
+
                                 using (MemoryStream contentStream = new MemoryStream())
                                 {
                                     // Add an empty file.
@@ -249,6 +264,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
 
                                 if (last)
                                 {
+                                    LogVerbose("File length {0}MB uploading with synchronous context {1} FinishUploading => {2}", totalMBs, uniqueFileName, fileoffset.TryParseMB());
+
                                     // Is this the last slice of data?
                                     using (MemoryStream s = new MemoryStream(lastBuffer))
                                     {
@@ -262,6 +279,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                                 }
                                 else
                                 {
+                                    LogVerbose("File length {0}MB uploading with synchronous context {1} fileoffset => {2}MB", totalMBs, uniqueFileName, fileoffset.TryParseMB());
+
                                     using (MemoryStream s = new MemoryStream(buffer))
                                     {
                                         // Continue sliced upload.

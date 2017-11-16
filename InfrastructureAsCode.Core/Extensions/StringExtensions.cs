@@ -169,17 +169,17 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
-        ///
+        /// Converts bytes into MegaBytes
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="totalBytes"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static decimal TryParseGB(this double value, decimal defaultValue = 0)
+        public static long TryParseMB(this long totalBytes, long defaultValue = 0)
         {
-            decimal result = 0;
+            long result = 0;
             try
             {
-                result = ((decimal)value / 1024);
+                result = (long)(totalBytes / Math.Pow(1024, 2));
                 return result;
             }
             catch { }
@@ -188,17 +188,36 @@ namespace InfrastructureAsCode.Core.Extensions
         }
 
         /// <summary>
-        ///
+        /// Converts Bytes into GigaBytes
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="totalBytes"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static decimal TryParseTB(this double value, decimal defaultValue = 0)
+        public static long TryParseGB(this long totalBytes, long defaultValue = 0)
         {
-            decimal result = 0;
+            long result = 0;
             try
             {
-                result = ((decimal)value / 1048576);
+                result = (long)(totalBytes / (Math.Pow(1024, 3)));
+                return result;
+            }
+            catch { }
+
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Converts Bytes into TeraBytes
+        /// </summary>
+        /// <param name="totalBytes"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static long TryParseTB(this long totalBytes, long defaultValue = 0)
+        {
+            long result = 0;
+            try
+            {
+                result = (long)(totalBytes / Math.Pow(1024, 4));
                 return result;
             }
             catch { }
