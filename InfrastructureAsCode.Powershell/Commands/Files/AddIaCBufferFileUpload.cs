@@ -182,10 +182,12 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                 // Use regular approach.
                 using (FileStream fs = new FileStream(fileNameWithPathInfo.FullName, FileMode.Open))
                 {
-                    FileCreationInformation fileInfo = new FileCreationInformation();
-                    fileInfo.ContentStream = fs;
-                    fileInfo.Url = uniqueFileName;
-                    fileInfo.Overwrite = true;
+                    FileCreationInformation fileInfo = new FileCreationInformation
+                    {
+                        ContentStream = fs,
+                        Url = uniqueFileName,
+                        Overwrite = true
+                    };
                     uploadFile = targetFolder.Files.Add(fileInfo);
                     m_clientContext.Load(uploadFile);
                     m_clientContext.ExecuteQueryRetry();
@@ -237,10 +239,12 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                                 using (MemoryStream contentStream = new MemoryStream())
                                 {
                                     // Add an empty file.
-                                    FileCreationInformation fileInfo = new FileCreationInformation();
-                                    fileInfo.ContentStream = contentStream;
-                                    fileInfo.Url = uniqueFileName;
-                                    fileInfo.Overwrite = true;
+                                    FileCreationInformation fileInfo = new FileCreationInformation
+                                    {
+                                        ContentStream = contentStream,
+                                        Url = uniqueFileName,
+                                        Overwrite = true
+                                    };
                                     uploadFile = targetFolder.Files.Add(fileInfo);
 
                                     // Start upload by uploading the first slice. 
@@ -248,7 +252,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                                     {
                                         // Call the start upload method on the first slice.
                                         bytesUploaded = uploadFile.StartUpload(uploadId, s);
-                                        m_clientContext.ExecuteQuery();
+                                        m_clientContext.ExecuteQueryRetry();
                                         // fileoffset is the pointer where the next slice will be added.
                                         fileoffset = bytesUploaded.Value;
                                     }
