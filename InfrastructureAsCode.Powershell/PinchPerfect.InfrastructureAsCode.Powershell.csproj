@@ -179,6 +179,7 @@
     <Compile Include="Commands\DisconnectSPIaC.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionData.cs" />
     <Compile Include="Commands\ETL\SetIaCProvisionViews.cs" />
+    <Compile Include="Commands\Files\AddIaCBufferFileUpload.cs" />
     <Compile Include="Commands\Lists\SetIaCListFieldIndex.cs" />
     <Compile Include="Commands\Lists\SetIaCListFieldJsLink.cs" />
     <Compile Include="Commands\Files\GetIaCDownloadFile.cs" />
