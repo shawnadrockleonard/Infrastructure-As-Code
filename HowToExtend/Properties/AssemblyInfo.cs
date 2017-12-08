@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("InfrastructureAsCode.Powershell.HowToExtend")]
+[assembly: AssemblyTitle("HowToExtend")]
 [assembly: AssemblyDescription("Demonstrates how to extend the powershell project")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft Corporation")]
-[assembly: AssemblyProduct("InfrastructureAsCode.Powershell.HowToExtend")]
+[assembly: AssemblyCompany("Shawn Leonard")]
+[assembly: AssemblyProduct("HowToExtend")]
 [assembly: AssemblyCopyright("Copyright © Microsoft Corporation 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

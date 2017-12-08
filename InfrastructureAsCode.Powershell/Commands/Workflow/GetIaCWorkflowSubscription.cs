@@ -27,7 +27,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflows
                 {
                     var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
                     var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
-                    var subscriptions = subscriptionService.EnumerateSubscriptionsByList(list.Id);
+                    WorkflowSubscriptionCollection subscriptions = subscriptionService.EnumerateSubscriptionsByList(list.Id);
 
                     ClientContext.Load(subscriptions);
                     ClientContext.ExecuteQueryRetry();

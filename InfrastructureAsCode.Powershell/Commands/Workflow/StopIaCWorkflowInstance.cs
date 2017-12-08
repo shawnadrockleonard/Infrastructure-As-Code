@@ -11,24 +11,33 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflows
     public class StopIaCWorkflowInstance : IaCCmdlet
     {
         [Parameter(Mandatory = true, HelpMessage = "The instance to stop", Position = 0)]
-        public WorkflowInstancePipeBind Identity;
+        public WorkflowInstancePipeBind Identity { get; set; }
+
+        [Parameter(Mandatory = false, HelpMessage = "A list to search the instances for", Position = 1)]
+        public ListPipeBind List { get; set; }
+
+        [Parameter(Mandatory = false)]
+        public int ListItemId { get; set; }
+
 
         public override void ExecuteCmdlet()
         {
-            if (Identity.Instance != null)
-            {
-                Identity.Instance.CancelWorkFlow();
-            }
-            else if (Identity.Id != Guid.Empty)
-            {
-                var SelectedWeb = this.ClientContext.Web;
 
-                var allinstances = SelectedWeb.GetWorkflowInstances();
-                foreach (var instance in allinstances.Where(instance => instance.Id == Identity.Id))
-                {
-                    instance.CancelWorkFlow();
-                    break;
-                }
+            var SelectedWeb = this.ClientContext.Web;
+
+
+            var list = List.GetList(SelectedWeb);
+            var item = list.GetItemById("" + ListItemId);
+            list.Context.Load(item, ictx => ictx.Id, ictx => ictx.ParentList.Id);
+            list.Context.ExecuteQueryRetry();
+
+
+
+            var allinstances = SelectedWeb.GetWorkflowInstances(item);
+            foreach (var instance in allinstances.Where(instance => instance.Id == Identity.Id))
+            {
+                instance.CancelWorkFlow();
+                break;
             }
         }
     }

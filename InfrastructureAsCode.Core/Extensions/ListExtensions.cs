@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -17,6 +18,8 @@ namespace InfrastructureAsCode.Core.Extensions
 {
     public static partial class ListExtensions
     {
+        const string REGEX_INVALID_FILE_NAME_CHARS = @"[<>:;*?/\\|""&%\t\r\n]";
+
         /// <summary>
         /// Adds a field to a list
         /// </summary>
@@ -309,6 +312,7 @@ namespace InfrastructureAsCode.Core.Extensions
             return folder;
         }
 
+
         /// <summary>
         /// Upload a file from disk to the specific <paramref name="onlineFolder"/>
         /// </summary>
@@ -413,6 +417,111 @@ namespace InfrastructureAsCode.Core.Extensions
             var currentFolder = GetOrCreateFolder(onlineLibrary, onlineLibrary.RootFolder, onlineLibraryFolder);
             var relativeUrl = onlineLibrary.UploadFile(currentFolder, fileNameWithPath, clobber);
             return relativeUrl;
+        }
+
+        /// <summary>
+        /// Upload a File via the REST API interface
+        /// </summary>
+        /// <param name="context">The context established by AppPrincipal</param>
+        /// <param name="relativeUrl">The folder structure, relative to the Web</param>
+        /// <param name="fileWithPath">The full file name with path on local disk</param>
+        /// <param name="ensureFolder">(OPTIONAL) true will ensure the relativeUrl path exists in SharePoint</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// The <paramref name="context"/> should be an AppPrincipal context which will contain the bearer token for OAuth interactions pulled from the SharePointContext
+        /// </remarks>
+        public static bool UploadFileViaREST(this ClientContext context, string relativeUrl, string fileWithPath, bool ensureFolder = false)
+        {
+            if (!System.IO.File.Exists(fileWithPath))
+            {
+                throw new ArgumentException(string.Format("The file {0} does not exist on disc.", fileWithPath));
+            }
+
+            if (context.Web.RootFolder.ServerObjectIsNull())
+            {
+                context.Load(context.Web, ctx => ctx.ServerRelativeUrl, ctx => ctx.RootFolder, ctx => ctx.RootFolder.ServerRelativeUrl);
+                context.ExecuteQueryRetry();
+            }
+
+            if (ensureFolder)
+            {
+                var folderPath = context.Web.RootFolder.ListEnsureFolder(relativeUrl);
+                if (folderPath == null || folderPath.ServerObjectIsNull())
+                {
+                    throw new Exception("Failed to ensure folder path directories.");
+                }
+            }
+
+            var accessToken = string.Empty;
+
+            try
+            {
+                accessToken = context.GetAccessToken();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to retreive Access Token", ex);
+            }
+
+            try
+            {
+                var fileName = System.IO.Path.GetFileName(fileWithPath);
+                var fileBuffer = System.IO.File.ReadAllBytes(fileWithPath);
+                var fileSize = fileBuffer.Length;
+
+                var strURL = string.Format("{0}/_api/web/GetFolderByServerRelativeUrl('{1}')/Files/add(url='{2}',overwrite=true)",
+                     context.Url,
+                     relativeUrl,
+                     fileName);
+
+                var wreq = System.Net.HttpWebRequest.Create(strURL) as System.Net.HttpWebRequest;
+                wreq.UseDefaultCredentials = true;
+
+                // Upload to SharePoiint
+                var authToken = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+                wreq.Headers.Add("Authorization", authToken.ToString());
+                wreq.Method = "POST";
+                wreq.Timeout = 1000000;
+                wreq.Accept = "application/json; odata=verbose";
+                wreq.ContentLength = fileSize;
+
+                using (var sRequest = wreq.GetRequestStream())
+                {
+                    sRequest.Write(fileBuffer, 0, fileSize);
+                }
+
+                using (var wresp = wreq.GetResponse())
+                {
+                    var response = (System.Net.HttpWebResponse)wresp;
+
+
+                    using (var sr = new System.IO.StreamReader(wresp.GetResponseStream()))
+                    {
+                        //var webmsg = sr.ReadToEnd();
+                        System.Diagnostics.Trace.TraceInformation("Server response {0} with description {1}", response.StatusCode, response.StatusDescription);
+
+                    }
+                }
+
+                return true;
+            }
+            catch (System.Net.WebException e)
+            {
+                if (e.Status == System.Net.WebExceptionStatus.ProtocolError)
+                {
+                    var response = (System.Net.HttpWebResponse)e.Response;
+                    throw new Exception(string.Format("Errorcode: {0}", (int)response.StatusCode), e);
+                }
+                else
+                {
+                    throw new Exception(string.Format("Error: {0}", e.Status), e);
+                }
+            }
+            catch (Exception exError)
+            {
+                //Log Error // Catch Folder Creation exceptions
+                throw (exError);
+            }
         }
 
         /// <summary>

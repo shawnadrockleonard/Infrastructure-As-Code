@@ -12,7 +12,7 @@
 		cd ("{0}\\{1}\\Documents" -f $env:HOMEDRIVE, $env:HOMEPATH)
 		$RelativeOrFullPath = Full Path to your Project Folder c:\[YOUR REPO FOLDER]\development-samples\Sample02\AppFiles\
 
-	.\WindowsPowerShell\Modules\InfrastructureAsCode.Powershell.HowToExtend\script-configure-provision.ps1 -RelativeOrFullPath $RelativeOrFullPath
+	.\WindowsPowerShell\Modules\HowToExtend\script-configure-provision.ps1 -RelativeOrFullPath $RelativeOrFullPath
 #>  
 [CmdletBinding(HelpURI='http://aka.ms/pinch-perfect')]
 Param(

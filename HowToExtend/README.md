@@ -1,8 +1,8 @@
-﻿# InfrastructureAsCode.PowerShell.HowToExtend
-InfrastructureAsCode.PowerShell.HowToExtend is a sample PowerShell project which attempt to assist you conceptually with how to extend PnP-Powershell or InfrastructureAsCode.  We will gladly accept your pull requests if and when you share common infrastructure capabilities.  If you want to leverage a solid base with yours; you can follow this project.    You should be able to sync this locally and follow the guidance found in https://github.com/pinch-perfect/Infrastructure-As-Code/tree/master/InfrastructureAsCode.Powershell to ensure you can debug or build the project.   
+﻿# HowToExtend
+HowToExtend is a sample PowerShell project which attempt to assist you conceptually with how to extend PnP-Powershell or InfrastructureAsCode.  We will gladly accept your pull requests if and when you share common infrastructure capabilities.  If you want to leverage a solid base with yours; you can follow this project.    You should be able to sync this locally and follow the guidance found in https://github.com/pinch-perfect/Infrastructure-As-Code/tree/master/InfrastructureAsCode.Powershell to ensure you can debug or build the project.   
 
 # Running the sample
-This project will compile as a Binary Powershell module and deploy to your [Users/Documents/WindowsPowershell/Module/InfrastructureAsCode.Powershell.HowToExtend] folder.  If you attempt to debug the project and it does not launch Powershell, navigate to the Project Debug tab and specify the external program powershell.exe with a -noexit argument.  
+This project will compile as a Binary Powershell module and deploy to your [Users/Documents/WindowsPowershell/Module/HowToExtend] folder.  If you attempt to debug the project and it does not launch Powershell, navigate to the Project Debug tab and specify the external program powershell.exe with a -noexit argument.  
 You can however, build the project and then open a powershell window and execute the Cmd-Lets as demonstrated:
 ```powershell
 Connect-SPIaC –Url https://[tenant].sharepoint.com –UserName "[user]@[tenant].onmicrosoft.com
