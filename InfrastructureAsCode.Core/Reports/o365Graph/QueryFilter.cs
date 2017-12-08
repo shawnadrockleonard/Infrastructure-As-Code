@@ -8,12 +8,54 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
 {
     public class QueryFilter
     {
+        #region Properties 
+
+        /// <summary>
+        /// Represents the Graph API endpoints
+        /// </summary>
+        /// <remarks>Of note this is a BETA inpoint as these APIs are in Preview</remarks>
+        public static string DefaultServiceEndpointUrl = "https://graph.microsoft.com/beta/reports/{0}({1})";
+
         public ReportUsageTypeEnum O365ReportType { get; set; }
 
         public Nullable<ReportUsagePeriodEnum> O365Period { get; set; }
 
+        /// <summary>
+        /// Formats the response
+        /// </summary>
+        /// <remarks>Default CSV</remarks>
+        public ReportUsageFormatEnum FormattedOutput { get; set; }
+
+        /// <summary>
+        /// A Date filter to be applied to the set of URI OData filters
+        /// </summary>
         public Nullable<DateTime> Date { get; set; }
 
+        /// <summary>
+        /// Represents the $top total number of records to return in the API call
+        /// </summary>
+        public int RecordBatchCount { get; set; }
+
+        #endregion
+
+        /// <summary>
+        /// Initialize the collection with defaults
+        /// </summary>
+        public QueryFilter()
+        {
+            RecordBatchCount = 100;
+        }
+
+        /// <summary>
+        /// #Build the request URL and invoke
+        ///     Sample: OneDriveActivity(view='Detail',period='D7')/content
+        /// </summary>
+        /// <returns></returns>
+        public Uri ToUrl()
+        {
+            var uri = ToUrl(DefaultServiceEndpointUrl);
+            return uri;
+        }
 
         /// <summary>
         /// #Build the request URL and invoke
@@ -62,6 +104,22 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             {
                 str = string.Format("date={0}", Date.Value.ToString("yyyy-MM-dd"));
                 parameterset += str;
+            }
+
+            if (FormattedOutput == ReportUsageFormatEnum.JSON)
+            {
+                var supportsTop = new ReportUsageTypeEnum[]
+                {
+                    ReportUsageTypeEnum.getOneDriveActivityUserDetail,
+                    ReportUsageTypeEnum.getOneDriveUsageAccountDetail
+                };
+                var topIsDirty = false;
+                if (supportsTop.Any(a => a == O365ReportType))
+                {
+                    topIsDirty = true;
+                    graphUrl += "?$top=" + RecordBatchCount;
+                }
+                graphUrl += (topIsDirty ? "&" : "?") + "$format=application/json";
             }
 
             // #Trim a trailing comma off the ParameterSet if needed

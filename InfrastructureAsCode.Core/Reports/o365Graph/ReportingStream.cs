@@ -1,11 +1,15 @@
 ﻿using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
+using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph
@@ -15,46 +19,32 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         #region Internals
 
         /// <summary>
-        /// Represents the Graph API endpoints
+        /// Collection of Azure AD settings required to claim tokens
         /// </summary>
-        /// <remarks>Of note this is a BETA inpoint as these APIs are in Preview</remarks>
-        public static string DefaultServiceEndpointUrl = "https://graph.microsoft.com/beta/reports/{0}({1})/content";
-
         public IAzureADConfig ADConfig { get; private set; }
 
+        /// <summary>
+        /// Diagnostic Logger for event listeners
+        /// </summary>
         public ITraceLogger Logger { get; private set; }
 
+        /// <summary>
+        /// OAuth cache class for retreiving tokens
+        /// </summary>
         public IOAuthTokenCache OAuthCache { get; private set; }
-
-        public QueryFilter ServiceQuery { get; private set; }
-
-        #endregion Privates
-
-        #region Properties
-
-        public ITraceLogger TraceLogger
-        {
-            get
-            {
-                return this.Logger;
-            }
-        }
-
-        public string GraphUrl { get; set; }
 
         #endregion
 
-        public ReportingStream(QueryFilter serviceQuery, IAzureADConfig config, ITraceLogger logger)
-            : this(DefaultServiceEndpointUrl, serviceQuery, config, logger)
-        {
-        }
 
-        public ReportingStream(string url, QueryFilter serviceQuery, IAzureADConfig config, ITraceLogger logger)
+        /// <summary>
+        /// Initialize the Graph API Executor with Azure AD Config settings and the Diagnostic Logger
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="logger"></param>
+        public ReportingStream(IAzureADConfig config, ITraceLogger logger)
         {
-            this.GraphUrl = url;
             this.ADConfig = config;
             this.Logger = logger;
-            this.ServiceQuery = serviceQuery;
             this.OAuthCache = new AzureADTokenCache(config);
         }
 
@@ -99,71 +89,163 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             return asyncFunction.Result;
         }
 
-        private Uri BuildServiceQuery()
-        {
-            var serviceFullUrl = ServiceQuery.ToUrl(GraphUrl);
-            Logger.LogInformation("Request URL : {0}", serviceFullUrl);
-            return serviceFullUrl;
-        }
-
-        public void RetrieveData()
-        {
-            ReportVisitor visitor = new DefaultReportVisitor(Logger);
-            RetrieveData(visitor);
-        }
-
         /// <summary>
         /// Builds the URI from the Reporting types and returns the streamer
         /// </summary>
-        /// <param name="visitor"></param>
+        /// <param name="serviceFullUrl">The full URL to the Graph API</param>
+        /// <param name="maxAttempts">total number of attempts before proceeding</param>
+        /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
         /// <returns></returns>
-        public void RetrieveData(ReportVisitor visitor)
+        internal string ExecuteResponse(Uri serviceFullUrl, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
         {
+            var resultResponse = string.Empty;
+            var retry = false;
+            var retryAttempts = 0;
+            // Reset the Default backoff in Seconds
+            var graphBackoffInterval = backoffIntervalInSeconds;
 
-            var Token = GetAsyncResult(GetAccessTokenResult());
-
-            var serviceFullUrl = BuildServiceQuery();
-            var webRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(serviceFullUrl);
-            webRequest.Method = "GET";
-            webRequest.ContentType = "application/json";
-            webRequest.Headers.Add(System.Net.HttpRequestHeader.Authorization, Token.CreateAuthorizationHeader());
-
-            try
+            do
             {
-                var webResponse = webRequest.GetResponse();
-                using (Stream webStream = webResponse.GetResponseStream())
+                try
                 {
-                    using (StreamReader responseReader = new StreamReader(webStream))
+                    retry = false;
+                    graphBackoffInterval = backoffIntervalInSeconds;
+
+                    // Retreive the Access Token
+                    var Token = GetAsyncResult(GetAccessTokenResult());
+
+                    // Establish the HTTP Request
+                    var webRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(serviceFullUrl);
+                    webRequest.Method = "GET";
+                    webRequest.ContentType = "application/json";
+                    webRequest.Headers.Add(System.Net.HttpRequestHeader.Authorization, Token.CreateAuthorizationHeader());
+                    this.Logger.LogInformation("Executing {0}", serviceFullUrl);
+                    using (var webResponse = (System.Net.HttpWebResponse)webRequest.GetResponse())
                     {
-                        try
+                        using (var webStream = webResponse.GetResponseStream())
                         {
-                            if (responseReader != null)
+                            if (webStream != null)
                             {
-                                visitor.ProcessReport(responseReader);
+                                using (var responseReader = new StreamReader(webStream))
+                                {
+                                    resultResponse = responseReader.ReadToEnd();
+                                }
                             }
                             else
                             {
                                 throw new Exception("Response content is Null");
                             }
                         }
-                        catch (HttpRequestException hex)
-                        {
-                            Logger.LogError(hex, "HTTP Failed to query URI {0}", serviceFullUrl);
-                            throw hex;
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Generic Failed to query URI {0}", serviceFullUrl);
-                            throw ex;
-                        }
                     }
                 }
+                catch (System.Net.WebException wex)
+                {
+                    // Check if request was throttled - http status code 429
+                    // Check is request failed due to server unavailable - http status code 503
+                    if (wex.Response is HttpWebResponse response &&
+                        (response.StatusCode == (HttpStatusCode)429 || response.StatusCode == (HttpStatusCode)503))
+                    {
+                        // Extract the Retry-After throttling suggestion
+                        var graphApiRetrySeconds = response.GetResponseHeader("Retry-After");
+                        if (!string.IsNullOrEmpty(graphApiRetrySeconds)
+                            && int.TryParse(graphApiRetrySeconds, out int headergraphBackoffInterval))
+                        {
+                            graphBackoffInterval = headergraphBackoffInterval * (headergraphBackoffInterval > 12 ? 1 : 60);
+                        }
+                        var backoffSpan = new TimeSpan(0, 0, 0, graphBackoffInterval, 0);
+
+                        Logger.LogWarning("Microsoft Graph API => exceeded usage limits. Iteration => {1} Sleeping for {0} seconds before retrying..", backoffSpan.Seconds, retryAttempts);
+                        
+                        //Add delay for retry
+                        Task.Delay(backoffSpan).Wait();
+
+                        //Add to retry count and check max attempts.
+                        retryAttempts++;
+                        retry = (retryAttempts < maxAttempts);
+                    }
+                    else
+                    {
+                        Logger.LogError(wex, "HTTP Failed to query URI {0} exception: {1}", serviceFullUrl, wex.ToString());
+                        throw;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning("Generic Failed to query URI {0} => {1}", serviceFullUrl, ex.Message);
+                    throw;
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.LogWarning("Generic Failed to query URI {0} => {1}", serviceFullUrl, ex.Message);
-                throw ex;
-            }
+            while (retry);
+
+
+            return resultResponse;
         }
+
+        /// <summary>
+        /// Builds the URI from the Reporting types and returns the string
+        /// </summary>
+        /// <param name="serviceQuery">The GraphAPI URI builder object with specific settings</param>
+        /// <param name="maxAttempts">total number of attempts before proceeding</param>
+        /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
+        /// <returns></returns>
+        public string RetrieveData(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
+        {
+            var serviceFullUrl = serviceQuery.ToUrl();
+
+            var result = ExecuteResponse(serviceFullUrl, maxAttempts, backoffIntervalInSeconds);
+            return result;
+        }
+
+        /// <summary>
+        /// Builds the URI from the Reporting types and returns the Deserialized Objects
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serviceQuery">The GraphAPI URI builder object with specific settings</param>
+        /// <param name="maxAttempts">total number of attempts before proceeding</param>
+        /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
+        /// <returns>A deserialized collection of objects</returns>
+        public JSONAuditCollection<T> RetrieveData<T>(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6) where T : class
+        {
+            JSONAuditCollection<T> objects = new JSONAuditCollection<T>();
+            var serviceFullUrl = serviceQuery.ToUrl();
+            var lastUri = serviceFullUrl;
+
+            while (true)
+            {
+                var result = ExecuteResponse(lastUri, maxAttempts, backoffIntervalInSeconds);
+                if (string.IsNullOrEmpty(result))
+                {
+                    break;
+                }
+
+                var items = JsonConvert.DeserializeObject<JSONAuditCollection<T>>(result);
+                objects.value.AddRange(items.value);
+                if (string.IsNullOrEmpty(items.NextLink))
+                {
+                    // last in the set
+                    break;
+                }
+                lastUri = new Uri(items.NextLink);
+            }
+            return objects;
+        }
+
+        /// <summary>
+        /// Builds the URI from the Reporting types and returns the streamer
+        /// </summary>
+        /// <param name="serviceQuery">The GraphAPI URI builder object with specific settings</param>
+        /// <param name="maxAttempts">total number of attempts before proceeding</param>
+        /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
+        /// <returns>An open Text reader which should be disposed</returns>
+        public TextReader RetrieveDataAsStream(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
+        {
+            var serviceFullUrl = serviceQuery.ToUrl();
+
+            var result = ExecuteResponse(serviceFullUrl, maxAttempts, backoffIntervalInSeconds);
+            TextReader textReader = new StringReader(result);
+            return textReader;
+        }
+
+
     }
 }

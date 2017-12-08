@@ -1,4 +1,6 @@
-﻿using System;
+﻿using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,9 +24,10 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             Logger = logger;
         }
 
-        public override void ProcessReport(StreamReader responseReader)
+
+        public override void ProcessReport(ReportingStream responseReader, QueryFilter serviceQuery)
         {
-            var response = responseReader.ReadToEnd();
+            var response = responseReader.RetrieveData(serviceQuery);
             Logger.LogInformation("WebResponse:{0}", response);
         }
 

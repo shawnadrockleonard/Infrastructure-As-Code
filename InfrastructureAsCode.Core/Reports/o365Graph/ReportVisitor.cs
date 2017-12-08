@@ -15,6 +15,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// Generic processor for the Stream Reader
         /// </summary>
         /// <param name="responseReader"></param>
-        public abstract void ProcessReport(StreamReader responseReader);
+        /// <param name="reportingFilters">Represents the Report Type and its associated filters</param>
+        public abstract void ProcessReport(ReportingStream responseReader, QueryFilter reportingFilters);
     }
 }

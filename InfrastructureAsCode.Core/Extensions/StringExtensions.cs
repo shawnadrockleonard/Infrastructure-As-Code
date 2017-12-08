@@ -167,7 +167,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
             return defaultValue;
         }
-
+        
         /// <summary>
         /// Converts bytes into MegaBytes
         /// </summary>

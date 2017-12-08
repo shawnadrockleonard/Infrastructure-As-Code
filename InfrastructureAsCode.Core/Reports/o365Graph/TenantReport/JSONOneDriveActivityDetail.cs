@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    public class OneDriveActivityUserCounts : JSONODataBase
+    public class JSONOneDriveActivityDetail : JSONODataBase
     {
 
         [JsonProperty("reportRefreshDate")]
@@ -29,7 +29,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
         public DateTime ReportDate { get; set; }
 
         [JsonProperty("reportPeriod")]
-        public int ReportPeriod { get; set; }
+        public Int32 ReportPeriod { get; set; }
 
     }
 }

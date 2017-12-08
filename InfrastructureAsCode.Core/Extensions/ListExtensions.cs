@@ -479,7 +479,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
                 // Upload to SharePoiint
                 var authToken = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-                wreq.Headers.Add("Authorization", authToken.ToString());
+                wreq.Headers.Add(System.Net.HttpRequestHeader.Authorization, authToken.ToString());
                 wreq.Method = "POST";
                 wreq.Timeout = 1000000;
                 wreq.Accept = "application/json; odata=verbose";
