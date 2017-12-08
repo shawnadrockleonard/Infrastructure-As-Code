@@ -388,6 +388,7 @@
     <ProjectReference Include="..\..\..\forked\PnP-Sites-Core\Core\OfficeDevPnP.Core\OfficeDevPnP.Core.csproj">
       <Project>{f2077977-8ebf-409d-bbf4-8efb328928a8}</Project>
       <Name>OfficeDevPnP.Core</Name>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
