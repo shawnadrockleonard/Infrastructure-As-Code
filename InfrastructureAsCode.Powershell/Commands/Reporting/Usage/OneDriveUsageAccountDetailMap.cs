@@ -33,8 +33,8 @@ Report Period
             Map(m => m.LastActivityDateUTC).Name("Last Activity Date").Index(4).Default(default(DateTime));
             Map(m => m.Files).Name("File Count").Index(5).Default(0);
             Map(m => m.FilesViewedModified).Name("Active File Count").Index(6).Default(0);
-            Map(m => m.StorageUsed_Bytes).Name("Storage Used (Byte)").Index(7).Default(0);
-            Map(m => m.StorageAllocated_Bytes).Name("Storage Allocated (Byte)").Index(8).Default(0);
+            Map(m => m.StorageUsedInBytes).Name("Storage Used (Byte)").Index(7).Default(0);
+            Map(m => m.StorageAllocatedInBytes).Name("Storage Allocated (Byte)").Index(8).Default(0);
             Map(m => m.ReportingPeriodDays).Name("Report Period").Index(9).Default(0);
         }
     }

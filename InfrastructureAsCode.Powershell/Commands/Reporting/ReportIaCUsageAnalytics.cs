@@ -75,10 +75,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
             ilogger.LogInformation("Report => Usage Type {0} Period {1}", ReportType, Period);
 
 
-            using (var reporter = new ExampleReportVisitor(csvconfig, filter, ilogger))
+            using (var reporter = new ExampleReportVisitor(csvconfig, ilogger))
             {
-                ReportingStream stream = new ReportingStream(filter, config, ilogger);
-                stream.RetrieveData(reporter);
+                ReportingStream stream = new ReportingStream(config, ilogger);
+                var resultsFromStream = stream.RetrieveData(filter);
+
             }
         }
     }

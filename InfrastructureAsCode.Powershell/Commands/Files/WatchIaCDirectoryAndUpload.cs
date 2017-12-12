@@ -147,7 +147,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                         }
                     }
                 }
-                catch (System.Management.Automation.TerminateException tex)
+                catch (Exception tex)
                 {
                     LogWarning("Terminating watch command {0}", tex.Message);
                 }
