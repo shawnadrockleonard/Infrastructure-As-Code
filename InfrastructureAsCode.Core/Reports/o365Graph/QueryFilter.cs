@@ -41,9 +41,10 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// <summary>
         /// Initialize the collection with defaults
         /// </summary>
-        public QueryFilter()
+        /// <param name="defaultRecordBatch">Defaults 100</param>
+        public QueryFilter(int defaultRecordBatch = 100)
         {
-            RecordBatchCount = 100;
+            RecordBatchCount = defaultRecordBatch;
         }
 
         /// <summary>

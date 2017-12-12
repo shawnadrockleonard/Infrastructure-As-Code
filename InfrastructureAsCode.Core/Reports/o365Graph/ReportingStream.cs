@@ -150,7 +150,14 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                         if (!string.IsNullOrEmpty(graphApiRetrySeconds)
                             && int.TryParse(graphApiRetrySeconds, out int headergraphBackoffInterval))
                         {
-                            graphBackoffInterval = headergraphBackoffInterval * (headergraphBackoffInterval > 12 ? 1 : 60);
+                            if(headergraphBackoffInterval <= 0)
+                            {
+                                graphBackoffInterval = backoffIntervalInSeconds;
+                            }
+                            else
+                            {
+                                graphBackoffInterval = headergraphBackoffInterval;
+                            }
                         }
                         var backoffSpan = new TimeSpan(0, 0, 0, graphBackoffInterval, 0);
 
