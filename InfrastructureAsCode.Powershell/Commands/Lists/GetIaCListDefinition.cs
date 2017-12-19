@@ -2,6 +2,7 @@
 using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Core.Models.Minimal;
 using InfrastructureAsCode.Core.Reports;
+using InfrastructureAsCode.Core.Utilities;
 using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;

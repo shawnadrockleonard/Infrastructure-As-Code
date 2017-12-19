@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using InfrastructureAsCode.Core.Utilities;
+using Microsoft.SharePoint.Client;
 using System.Linq;
 
 namespace InfrastructureAsCode.Core.Extensions

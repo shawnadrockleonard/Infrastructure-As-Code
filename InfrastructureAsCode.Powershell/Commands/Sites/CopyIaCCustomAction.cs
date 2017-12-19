@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Core.Utilities;
 using InfrastructureAsCode.Powershell.CmdLets;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;

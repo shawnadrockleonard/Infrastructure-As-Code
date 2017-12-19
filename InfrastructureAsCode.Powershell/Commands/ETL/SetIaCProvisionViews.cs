@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using InfrastructureAsCode.Powershell.PipeBinds;
+using InfrastructureAsCode.Core.Utilities;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {

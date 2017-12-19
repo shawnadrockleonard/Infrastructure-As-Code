@@ -45,36 +45,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         {
             this.ADConfig = config;
             this.Logger = logger;
-            this.OAuthCache = new AzureADTokenCache(config);
-        }
-
-        /// <summary>
-        /// Will request the token, if the cache has expired, will throw an exception and request a new auth cache token and attempt to return it
-        /// </summary>
-        /// <returns>Return an Authentication Result which contains the Token/Refresh Token</returns>
-        private async Task<AuthenticationResult> GetAccessTokenResult()
-        {
-            AuthenticationResult token = null; var cleanToken = false;
-
-            try
-            {
-                token = await OAuthCache.AccessTokenResult();
-                cleanToken = true;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "AdalCacheException: {0}", ex.Message);
-            }
-
-            if (!cleanToken)
-            {
-                // Failed to retrieve, reup the token
-                var redirectUri = OAuthCache.GetRedirectUri();
-                await OAuthCache.RedeemAuthCodeForAadGraph(string.Empty, redirectUri);
-                token = await OAuthCache.AccessTokenResult();
-            }
-
-            return token;
+            this.OAuthCache = new AzureADTokenCache(config, logger);
         }
 
         /// <summary>
@@ -112,7 +83,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                     graphBackoffInterval = backoffIntervalInSeconds;
 
                     // Retreive the Access Token
-                    var Token = GetAsyncResult(GetAccessTokenResult());
+                    var Token = GetAsyncResult(OAuthCache.TryGetAccessTokenResult(string.Empty));
 
                     // Establish the HTTP Request
                     var webRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(serviceFullUrl);

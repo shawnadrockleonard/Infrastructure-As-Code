@@ -1,32 +1,38 @@
-using Microsoft.IdentityModel;
-using Microsoft.IdentityModel.SecurityTokenService;
-using Microsoft.IdentityModel.S2S.Protocols.OAuth2;
-using Microsoft.IdentityModel.S2S.Tokens;
-using Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client.EventReceivers;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IdentityModel.Selectors;
-using System.IdentityModel.Tokens;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Principal;
-using System.ServiceModel;
 using System.Text;
-using System.Web;
-using System.Web.Configuration;
-using System.Web.Script.Serialization;
-using AudienceRestriction = Microsoft.IdentityModel.Tokens.AudienceRestriction;
-using AudienceUriValidationFailedException = Microsoft.IdentityModel.Tokens.AudienceUriValidationFailedException;
-using SecurityTokenHandlerConfiguration = Microsoft.IdentityModel.Tokens.SecurityTokenHandlerConfiguration;
-using X509SigningCredentials = Microsoft.IdentityModel.SecurityTokenService.X509SigningCredentials;
+using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core
+namespace InfrastructureAsCode.Core.Utilities
 {
+    using Microsoft.IdentityModel;
+    using SharePointPnP.IdentityModel.Extensions.S2S.Protocols.OAuth2;
+    using SharePointPnP.IdentityModel.Extensions.S2S.Tokens;
+    using Microsoft.SharePoint.Client;
+    using Microsoft.SharePoint.Client.EventReceivers;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Globalization;
+    using System.IdentityModel.Selectors;
+    using System.IdentityModel.Tokens;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Security.Principal;
+    using System.ServiceModel;
+    using System.Text;
+    using System.Web;
+    using System.Web.Configuration;
+    using System.Web.Script.Serialization;
+    using AudienceRestriction = Microsoft.IdentityModel.Tokens.AudienceRestriction;
+    using AudienceUriValidationFailedException = Microsoft.IdentityModel.Tokens.AudienceUriValidationFailedException;
+    using SecurityTokenHandlerConfiguration = Microsoft.IdentityModel.Tokens.SecurityTokenHandlerConfiguration;
+    using X509SigningCredentials = Microsoft.IdentityModel.SecurityTokenService.X509SigningCredentials;
+
+
     public static class TokenHelper
     {
         #region public fields
@@ -180,7 +186,7 @@ namespace InfrastructureAsCode.Core
         /// <param name="targetPrincipalName">Name of the target principal to retrieve an access token for</param>
         /// <param name="targetHost">Url authority of the target principal</param>
         /// <param name="targetRealm">Realm to use for the access token's nameid and audience</param>
-        /// <param name="redirectUri">Redirect URI registered for this add-in</param>
+        /// <param name="redirectUri">Redirect URI registered for this app</param>
         /// <returns>An access token with an audience of the target principal</returns>
         public static OAuth2AccessTokenResponse GetAccessToken(
             string authorizationCode,
@@ -213,26 +219,6 @@ namespace InfrastructureAsCode.Core
             {
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-            }
-            catch (RequestFailedException)
-            {
-                if (!string.IsNullOrEmpty(SecondaryClientSecret))
-                {
-                    oauth2Request =
-                    OAuth2MessageFactory.CreateAccessTokenRequestWithAuthorizationCode(
-                        clientId,
-                        SecondaryClientSecret,
-                        authorizationCode,
-                        redirectUri,
-                        resource);
-
-                    oauth2Response =
-                        client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-                }
-                else
-                {
-                    throw;
-                }
             }
             catch (WebException wex)
             {
@@ -279,19 +265,6 @@ namespace InfrastructureAsCode.Core
             {
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-            }
-            catch (RequestFailedException)
-            {
-                if (!string.IsNullOrEmpty(SecondaryClientSecret))
-                {
-                    oauth2Request = OAuth2MessageFactory.CreateAccessTokenRequestWithRefreshToken(clientId, SecondaryClientSecret, refreshToken, resource);
-                    oauth2Response =
-                        client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-                }
-                else
-                {
-                    throw;
-                }
             }
             catch (WebException wex)
             {
@@ -340,21 +313,6 @@ namespace InfrastructureAsCode.Core
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
             }
-            catch (RequestFailedException)
-            {
-                if (!string.IsNullOrEmpty(SecondaryClientSecret))
-                {
-                    oauth2Request = OAuth2MessageFactory.CreateAccessTokenRequestWithClientCredentials(clientId, SecondaryClientSecret, resource);
-                    oauth2Request.Resource = resource;
-
-                    oauth2Response =
-                        client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-                }
-                else
-                {
-                    throw;
-                }
-            }
             catch (WebException wex)
             {
                 using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
@@ -401,9 +359,9 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
-        /// Creates a client context based on the properties of an add-in event
+        /// Creates a client context based on the properties of an app event
         /// </summary>
-        /// <param name="properties">Properties of an add-in event</param>
+        /// <param name="properties">Properties of an app event</param>
         /// <param name="useAppWeb">True to target the app web, false to target the host web</param>
         /// <returns>A ClientContext ready to call the app web or the parent web</returns>
         public static ClientContext CreateAppEventClientContext(SPRemoteEventProperties properties, bool useAppWeb)
@@ -428,7 +386,7 @@ namespace InfrastructureAsCode.Core
         /// </summary>
         /// <param name="targetUrl">Url of the target SharePoint site</param>
         /// <param name="authorizationCode">Authorization code to use when retrieving the access token from ACS</param>
-        /// <param name="redirectUri">Redirect URI registered for this add-in</param>
+        /// <param name="redirectUri">Redirect URI registered for this app</param>
         /// <returns>A ClientContext ready to call targetUrl with a valid access token</returns>
         public static ClientContext GetClientContextWithAuthorizationCode(
             string targetUrl,
@@ -446,7 +404,7 @@ namespace InfrastructureAsCode.Core
         /// <param name="targetPrincipalName">Name of the target SharePoint principal</param>
         /// <param name="authorizationCode">Authorization code to use when retrieving the access token from ACS</param>
         /// <param name="targetRealm">Realm to use for the access token's nameid and audience</param>
-        /// <param name="redirectUri">Redirect URI registered for this add-in</param>
+        /// <param name="redirectUri">Redirect URI registered for this app</param>
         /// <returns>A ClientContext ready to call targetUrl with a valid access token</returns>
         public static ClientContext GetClientContextWithAuthorizationCode(
             string targetUrl,
@@ -476,7 +434,7 @@ namespace InfrastructureAsCode.Core
             clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
             clientContext.FormDigestHandlingEnabled = false;
             clientContext.ExecutingWebRequest +=
-                delegate(object oSender, WebRequestEventArgs webRequestEventArgs)
+                delegate (object oSender, WebRequestEventArgs webRequestEventArgs)
                 {
                     webRequestEventArgs.WebRequestExecutor.RequestHeaders["Authorization"] =
                         "Bearer " + accessToken;
@@ -491,7 +449,7 @@ namespace InfrastructureAsCode.Core
         /// </summary>
         /// <param name="targetUrl">Url of the target SharePoint site</param>
         /// <param name="contextTokenString">Context token received from the target SharePoint site</param>
-        /// <param name="appHostUrl">Url authority of the hosted add-in.  If this is null, the value in the HostedAppHostName
+        /// <param name="appHostUrl">Url authority of the hosted app.  If this is null, the value in the HostedAppHostName
         /// of web.config will be used instead</param>
         /// <returns>A ClientContext ready to call targetUrl with a valid access token</returns>
         public static ClientContext GetClientContextWithContextToken(
@@ -509,7 +467,7 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
-        /// Returns the SharePoint url to which the add-in should redirect the browser to request consent and get back
+        /// Returns the SharePoint url to which the app should redirect the browser to request consent and get back
         /// an authorization code.
         /// </summary>
         /// <param name="contextUrl">Absolute Url of the SharePoint site</param>
@@ -527,7 +485,7 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
-        /// Returns the SharePoint url to which the add-in should redirect the browser to request consent and get back
+        /// Returns the SharePoint url to which the app should redirect the browser to request consent and get back
         /// an authorization code.
         /// </summary>
         /// <param name="contextUrl">Absolute Url of the SharePoint site</param>
@@ -548,7 +506,7 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
-        /// Returns the SharePoint url to which the add-in should redirect the browser to request a new context token.
+        /// Returns the SharePoint url to which the app should redirect the browser to request a new context token.
         /// </summary>
         /// <param name="contextUrl">Absolute Url of the SharePoint site</param>
         /// <param name="redirectUri">Uri to which SharePoint should redirect the browser to with a context token</param>
@@ -605,13 +563,40 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
+        /// Retrieves an S2S client context with an access token signed by the application's private certificate on 
+        /// behalf of the specified ClaimsIdentity and intended for application at the targetApplicationUri using the 
+        /// targetRealm. If no Realm is specified in web.config, an auth challenge will be issued to the 
+        /// targetApplicationUri to discover it. Identity claim type and identity provider name (as registered in SharePoint) 
+        /// should be specified in configuration file e.g.:
+        ///   <appSettings>
+        ///	    <add key = "IdentityClaimType" value="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress" />
+        ///	    <add key = "TrustedIdentityTokenIssuerName" value="sso" />
+        ///	  </appSettings>
+        ///	 To discover trusted identity token issuer name use following cmdlet: 
+        ///	 Get-SPTrustedIdentityTokenIssuer | select name
+        /// </summary>
+        /// <param name="targetApplicationUri">Url of the target SharePoint site</param>
+        /// <param name="identity">Claims identity of the user on whose behalf to create the access token</param>
+        /// <returns>A ClientContext using an access token with an audience of the target application</returns>
+        public static ClientContext GetS2SClientContextWithClaimsIdentity(Uri targetApplicationUri, System.Security.Claims.ClaimsIdentity identity)
+        {
+            string realm = string.IsNullOrEmpty(Realm) ? GetRealmFromTargetUrl(targetApplicationUri) : Realm;
+
+            JsonWebTokenClaim[] claims = identity != null ? GetClaimsWithClaimsIdentity(identity, IdentityClaimType, TrustedIdentityTokenIssuerName) : null;
+
+            string accessToken = GetS2SAccessTokenWithClaims(targetApplicationUri.Authority, realm, claims);
+
+            return GetClientContextWithAccessToken(targetApplicationUri.ToString(), accessToken);
+        }
+
+        /// <summary>
         /// Get authentication realm from SharePoint
         /// </summary>
         /// <param name="targetApplicationUri">Url of the target SharePoint site</param>
         /// <returns>String representation of the realm GUID</returns>
         public static string GetRealmFromTargetUrl(Uri targetApplicationUri)
         {
-            WebRequest request = WebRequest.Create(targetApplicationUri + "/_vti_bin/client.svc");
+            WebRequest request = WebRequest.Create(targetApplicationUri.ToString().TrimEnd(new[] { '/' }) + "/_vti_bin/client.svc");
             request.Headers.Add("Authorization: Bearer ");
 
             try
@@ -658,9 +643,9 @@ namespace InfrastructureAsCode.Core
         }
 
         /// <summary>
-        /// Determines if this is a high trust add-in.
+        /// Determines if this is a high trust app.
         /// </summary>
-        /// <returns>True if this is a high trust add-in.</returns>
+        /// <returns>True if this is a high trust app.</returns>
         public static bool IsHighTrustApp()
         {
             return SigningCredentials != null;
@@ -700,28 +685,271 @@ namespace InfrastructureAsCode.Core
         private const string ActorTokenClaimType = JsonWebTokenConstants.ReservedClaims.ActorToken;
 
         //
+        // Hosted app configuration
+        //
+        private static string clientId = null;
+        private static string issuerId = null;
+        private static string hostedAppHostNameOverride = null;
+        private static string hostedAppHostName = null;
+        private static string clientSecret = null;
+        private static string secondaryClientSecret = null;
+        private static string realm = null;
+        private static string serviceNamespace = null;
+        private static string identityClaimType = null;
+        private static string trustedIdentityTokenIssuerName = null;
+        //
         // Environment Constants
         //
+        private static string acsHostUrl = "accesscontrol.windows.net";
+        private static string globalEndPointPrefix = "accounts";
 
-        private static string GlobalEndPointPrefix = "accounts";
-        private static string AcsHostUrl = "accesscontrol.windows.net";
+        public static string AcsHostUrl
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(acsHostUrl))
+                {
+                    return "accesscontrol.windows.net";
+                }
+                else
+                {
+                    return acsHostUrl;
+                }
+            }
+            set
+            {
+                acsHostUrl = value;
+            }
+        }
 
-        //
-        // Hosted add-in configuration
-        //
-        private static readonly string ClientId = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientId")) ? WebConfigurationManager.AppSettings.Get("HostedAppName") : WebConfigurationManager.AppSettings.Get("ClientId");
-        private static readonly string IssuerId = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("IssuerId")) ? ClientId : WebConfigurationManager.AppSettings.Get("IssuerId");
-        private static readonly string HostedAppHostNameOverride = WebConfigurationManager.AppSettings.Get("HostedAppHostNameOverride");
-        private static readonly string HostedAppHostName = WebConfigurationManager.AppSettings.Get("HostedAppHostName");
-        private static readonly string ClientSecret = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientSecret")) ? WebConfigurationManager.AppSettings.Get("HostedAppSigningKey") : WebConfigurationManager.AppSettings.Get("ClientSecret");
-        private static readonly string SecondaryClientSecret = WebConfigurationManager.AppSettings.Get("SecondaryClientSecret");
-        private static readonly string Realm = WebConfigurationManager.AppSettings.Get("Realm");
-        private static readonly string ServiceNamespace = WebConfigurationManager.AppSettings.Get("Realm");
+        public static string GlobalEndPointPrefix
+        {
+            get
+            {
+                if (globalEndPointPrefix == null)
+                {
+                    return "accounts";
+                }
+                else
+                {
+                    return globalEndPointPrefix;
+                }
+            }
+            set
+            {
+                globalEndPointPrefix = value;
+            }
+        }
+
+        public static string ClientId
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(clientId))
+                {
+                    return string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientId")) ? WebConfigurationManager.AppSettings.Get("HostedAppName") : WebConfigurationManager.AppSettings.Get("ClientId");
+                }
+                else
+                {
+                    return clientId;
+                }
+            }
+            set
+            {
+                clientId = value;
+            }
+        }
+
+        public static string IssuerId
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(issuerId))
+                {
+                    return string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("IssuerId")) ? ClientId : WebConfigurationManager.AppSettings.Get("IssuerId");
+                }
+                else
+                {
+                    return issuerId;
+                }
+            }
+            set
+            {
+                issuerId = value;
+            }
+        }
+
+        public static string HostedAppHostNameOverride
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(hostedAppHostNameOverride))
+                {
+                    return WebConfigurationManager.AppSettings.Get("HostedAppHostNameOverride");
+                }
+                else
+                {
+                    return hostedAppHostNameOverride;
+                }
+            }
+            set
+            {
+                hostedAppHostNameOverride = value;
+            }
+        }
+
+        public static string HostedAppHostName
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(hostedAppHostName))
+                {
+                    return WebConfigurationManager.AppSettings.Get("HostedAppHostName");
+                }
+                else
+                {
+                    return hostedAppHostName;
+                }
+            }
+            set
+            {
+                hostedAppHostName = value;
+            }
+        }
+
+        public static string ClientSecret
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(clientSecret))
+                {
+                    return string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientSecret")) ? WebConfigurationManager.AppSettings.Get("HostedAppSigningKey") : WebConfigurationManager.AppSettings.Get("ClientSecret");
+                }
+                else
+                {
+                    return clientSecret;
+                }
+            }
+            set
+            {
+                clientSecret = value;
+            }
+        }
+
+        public static string SecondaryClientSecret
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(secondaryClientSecret))
+                {
+                    return WebConfigurationManager.AppSettings.Get("SecondaryClientSecret");
+                }
+                else
+                {
+                    return secondaryClientSecret;
+                }
+            }
+            set
+            {
+                secondaryClientSecret = value;
+            }
+        }
+
+        public static string Realm
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(realm))
+                {
+                    return WebConfigurationManager.AppSettings.Get("Realm");
+                }
+                else
+                {
+                    return realm;
+                }
+            }
+            set
+            {
+                realm = value;
+            }
+        }
+
+        public static string ServiceNamespace
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(serviceNamespace))
+                {
+                    return WebConfigurationManager.AppSettings.Get("Realm");
+                }
+                else
+                {
+                    return serviceNamespace;
+                }
+            }
+            set
+            {
+                serviceNamespace = value;
+            }
+        }
+
+        public static string IdentityClaimType
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(identityClaimType))
+                {
+                    return WebConfigurationManager.AppSettings.Get("IdentityClaimType");
+                }
+                else
+                {
+                    return identityClaimType;
+                }
+            }
+            set
+            {
+                identityClaimType = value;
+            }
+        }
+
+        public static string TrustedIdentityTokenIssuerName
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(trustedIdentityTokenIssuerName))
+                {
+                    return WebConfigurationManager.AppSettings.Get("TrustedIdentityTokenIssuerName");
+                }
+                else
+                {
+                    return trustedIdentityTokenIssuerName;
+                }
+            }
+            set
+            {
+                trustedIdentityTokenIssuerName = value;
+            }
+        }
+
+        //private static readonly string ClientId = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientId")) ? WebConfigurationManager.AppSettings.Get("HostedAppName") : WebConfigurationManager.AppSettings.Get("ClientId");
+        //private static readonly string IssuerId = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("IssuerId")) ? ClientId : WebConfigurationManager.AppSettings.Get("IssuerId");
+        //private static readonly string HostedAppHostNameOverride = WebConfigurationManager.AppSettings.Get("HostedAppHostNameOverride");
+        //private static readonly string HostedAppHostName = WebConfigurationManager.AppSettings.Get("HostedAppHostName");
+        //private static readonly string ClientSecret = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("ClientSecret")) ? WebConfigurationManager.AppSettings.Get("HostedAppSigningKey") : WebConfigurationManager.AppSettings.Get("ClientSecret");
+        //private static readonly string SecondaryClientSecret = WebConfigurationManager.AppSettings.Get("SecondaryClientSecret");
+        //private static readonly string Realm = WebConfigurationManager.AppSettings.Get("Realm");
+        //private static readonly string ServiceNamespace = WebConfigurationManager.AppSettings.Get("Realm");
 
         private static readonly string ClientSigningCertificatePath = WebConfigurationManager.AppSettings.Get("ClientSigningCertificatePath");
         private static readonly string ClientSigningCertificatePassword = WebConfigurationManager.AppSettings.Get("ClientSigningCertificatePassword");
-        private static readonly X509Certificate2 ClientCertificate = (string.IsNullOrEmpty(ClientSigningCertificatePath) || string.IsNullOrEmpty(ClientSigningCertificatePassword)) ? null : new X509Certificate2(ClientSigningCertificatePath, ClientSigningCertificatePassword);
-        private static readonly X509SigningCredentials SigningCredentials = (ClientCertificate == null) ? null : new X509SigningCredentials(ClientCertificate, SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest);
+        public static X509Certificate2 ClientCertificate = (string.IsNullOrEmpty(ClientSigningCertificatePath) || string.IsNullOrEmpty(ClientSigningCertificatePassword)) ? null : new X509Certificate2(ClientSigningCertificatePath, ClientSigningCertificatePassword);
+        private static X509SigningCredentials SigningCredentials
+        {
+            get
+            {
+                return (ClientCertificate == null) ? null : new X509SigningCredentials(ClientCertificate, SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest);
+            }
+        }
 
         #endregion
 
@@ -764,10 +992,17 @@ namespace InfrastructureAsCode.Core
 
         private static string GetAcsGlobalEndpointUrl()
         {
-            return String.Format(CultureInfo.InvariantCulture, "https://{0}.{1}/", GlobalEndPointPrefix, AcsHostUrl);
+            if (GlobalEndPointPrefix.Length == 0)
+            {
+                return String.Format(CultureInfo.InvariantCulture, "https://{0}/", AcsHostUrl);
+            }
+            else
+            {
+                return String.Format(CultureInfo.InvariantCulture, "https://{0}.{1}/", GlobalEndPointPrefix, AcsHostUrl);
+            }
         }
 
-        private static JsonWebSecurityTokenHandler CreateJsonWebSecurityTokenHandler()
+        public static JsonWebSecurityTokenHandler CreateJsonWebSecurityTokenHandler()
         {
             JsonWebSecurityTokenHandler handler = new JsonWebSecurityTokenHandler();
             handler.Configuration = new SecurityTokenHandlerConfiguration();
@@ -820,6 +1055,17 @@ namespace InfrastructureAsCode.Core
             {
                 new JsonWebTokenClaim(NameIdentifierClaimType, identity.User.Value.ToLower()),
                 new JsonWebTokenClaim("nii", "urn:office:idp:activedirectory")
+            };
+            return claims;
+        }
+
+        private static JsonWebTokenClaim[] GetClaimsWithClaimsIdentity(System.Security.Claims.ClaimsIdentity identity, string identityClaimType, string trustedProviderName)
+        {
+            var identityClaim = identity.Claims.Where(c => string.Equals(c.Type, identityClaimType, StringComparison.InvariantCultureIgnoreCase)).First();
+            JsonWebTokenClaim[] claims = new JsonWebTokenClaim[]
+            {
+                new JsonWebTokenClaim(NameIdentifierClaimType, identityClaim.Value),
+                new JsonWebTokenClaim("nii", "trusted:" + trustedProviderName)
             };
             return claims;
         }
@@ -1002,26 +1248,61 @@ namespace InfrastructureAsCode.Core
     /// </summary>
     public class SharePointContextToken : JsonWebSecurityToken
     {
+        /// <summary>
+        /// Creates SharePoint ContextToken
+        /// </summary>
+        /// <param name="contextToken">JsonWebSecurityToken object</param>
+        /// <returns>Returns SharePoint ContextToken object</returns>
         public static SharePointContextToken Create(JsonWebSecurityToken contextToken)
         {
             return new SharePointContextToken(contextToken.Issuer, contextToken.Audience, contextToken.ValidFrom, contextToken.ValidTo, contextToken.Claims);
         }
 
+        /// <summary>
+        /// Constructor for SharePointContextToken class
+        /// </summary>
+        /// <param name="issuer">Token Issuer</param>
+        /// <param name="audience">Token Audience</param>
+        /// <param name="validFrom">Validity start date for token</param>
+        /// <param name="validTo">Validity end date for token</param>
+        /// <param name="claims">IEnumerable of JsonWebTokenClaim object</param>
         public SharePointContextToken(string issuer, string audience, DateTime validFrom, DateTime validTo, IEnumerable<JsonWebTokenClaim> claims)
             : base(issuer, audience, validFrom, validTo, claims)
         {
         }
 
+        /// <summary>
+        /// Constructor for SharePointContextToken class
+        /// </summary>
+        /// <param name="issuer">Token Issuer</param>
+        /// <param name="audience">Token Audience</param>
+        /// <param name="validFrom">Validity start date for token</param>
+        /// <param name="validTo">Validity end date for token</param>
+        /// <param name="claims">IEnumerable of JsonWebTokenClaim object</param>
+        /// <param name="issuerToken">SecurityToken object</param>
+        /// <param name="actorToken">JsonWebSecurityToken object</param>
         public SharePointContextToken(string issuer, string audience, DateTime validFrom, DateTime validTo, IEnumerable<JsonWebTokenClaim> claims, SecurityToken issuerToken, JsonWebSecurityToken actorToken)
             : base(issuer, audience, validFrom, validTo, claims, issuerToken, actorToken)
         {
         }
 
+        /// <summary>
+        /// Constructor for SharePointContextToken class
+        /// </summary>
+        /// <param name="issuer">Token Issuer</param>
+        /// <param name="audience">Token Audience</param>
+        /// <param name="validFrom">Validity start date for token</param>
+        /// <param name="validTo">Validity end date for token</param>
+        /// <param name="claims">IEnumerable of JsonWebTokenClaim object</param>
+        /// <param name="signingCredentials">SigningCredentials object</param>
         public SharePointContextToken(string issuer, string audience, DateTime validFrom, DateTime validTo, IEnumerable<JsonWebTokenClaim> claims, SigningCredentials signingCredentials)
             : base(issuer, audience, validFrom, validTo, claims, signingCredentials)
         {
         }
 
+        /// <summary>
+        /// The context token's "nameid" claim
+        /// </summary>
         public string NameId
         {
             get

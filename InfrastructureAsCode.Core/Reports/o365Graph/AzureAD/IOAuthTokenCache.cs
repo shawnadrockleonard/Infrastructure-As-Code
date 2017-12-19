@@ -24,6 +24,14 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.AzureAD
         Task<string> AccessToken();
 
         /// <summary>
+        /// Retreive the access token from the ClientCredentials
+        /// </summary>
+        /// <param name="redirectUri">(TOPIONAL) a redirect to the resource URI</param>
+        /// <returns></returns>
+        /// <remarks>Will handle automatic refresh of the tokens</remarks>
+        Task<AuthenticationResult> TryGetAccessTokenResult(string redirectUri);
+
+        /// <summary>
         /// If the token is no longer fresh it will claim a new token
         /// </summary>
         /// <returns>Authentication Result which contains a Token and ExpiresOn</returns>

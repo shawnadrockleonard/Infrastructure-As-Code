@@ -355,8 +355,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Services\FileUploadService.cs" />
-    <Compile Include="SharePointContext.cs" />
-    <Compile Include="TokenHelper.cs" />
     <Compile Include="Utilities\AzureDynamicLoggingEventEntity.cs" />
     <Compile Include="Utilities\AzureLayoutLoggingEventEntity.cs" />
     <Compile Include="Utilities\AzureLoggingEventEntity.cs" />
@@ -366,6 +364,7 @@
     <Compile Include="Utilities\ElasticTableEntity.cs" />
     <Compile Include="Utilities\LoggingEventExtensions.cs" />
     <Compile Include="Utilities\PartitionKeyTypeEnum.cs" />
+    <Compile Include="Utilities\TokenHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
