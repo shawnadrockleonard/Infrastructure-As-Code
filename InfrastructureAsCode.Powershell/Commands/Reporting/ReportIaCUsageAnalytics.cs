@@ -78,8 +78,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
             using (var reporter = new ExampleReportVisitor(csvconfig, ilogger))
             {
                 ReportingStream stream = new ReportingStream(config, ilogger);
-                var resultsFromStream = stream.RetrieveData(filter);
 
+                reporter.ProcessReport(stream, filter);
             }
         }
     }

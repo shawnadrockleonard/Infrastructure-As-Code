@@ -39,6 +39,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
         [JsonProperty("assignedProducts")]
         public IEnumerable<string> ProductsAssigned { get; set; }
 
+        [JsonIgnore()]
+        public string ProductsAssignedCsv { get; set; }
+
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }
 

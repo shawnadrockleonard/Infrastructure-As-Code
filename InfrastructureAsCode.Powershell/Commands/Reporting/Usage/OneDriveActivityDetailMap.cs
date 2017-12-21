@@ -36,7 +36,7 @@ Report Period
             Map(m => m.SyncedFileCount).Name("Synced File Count").Index(6).Default(0);
             Map(m => m.SharedInternallyFileCount).Name("Shared Internally File Count").Index(7).Default(0);
             Map(m => m.SharedExternallyFileCount).Name("Shared Externally File Count").Index(8).Default(0);
-            Map(m => m.ProductsAssigned).Name("Assigned Products").Index(9).Default(string.Empty);
+            Map(m => m.ProductsAssignedCsv).Name("Assigned Products").Index(9).Default(string.Empty);
             Map(m => m.ReportPeriod).Name("Report Period").Index(10).Default(0);
         }
     }

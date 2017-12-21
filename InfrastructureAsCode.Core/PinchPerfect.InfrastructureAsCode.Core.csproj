@@ -249,7 +249,6 @@
     <Compile Include="Reports\o365Graph\TenantReport\BaseActivity.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\JSONAuditCollection.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\JSONODataBase.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\JSONOneDriveActivityDetail.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\Office365ActiveUsersDetails.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\Office365ActiveUsersServices.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\Office365ActiveUsersUser.cs" />
