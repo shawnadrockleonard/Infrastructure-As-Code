@@ -12,7 +12,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 
         public string SiteType { get; set; }
 
-        public Int64 PageViewCount { get; set; }
+        public long PageViewCount { get; set; }
 
         public DateTime ReportDate { get; set; }
 

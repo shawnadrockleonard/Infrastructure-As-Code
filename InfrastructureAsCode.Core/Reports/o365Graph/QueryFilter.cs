@@ -14,7 +14,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// Represents the Graph API endpoints
         /// </summary>
         /// <remarks>Of note this is a BETA inpoint as these APIs are in Preview</remarks>
-        public static string DefaultServiceEndpointUrl = "https://graph.microsoft.com/beta/reports/{0}({1})";
+        public static string DefaultServiceEndpointUrl = "https://graph.microsoft.com/{0}/reports/{1}({2})";
 
         public ReportUsageTypeEnum O365ReportType { get; set; }
 
@@ -36,15 +36,19 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// </summary>
         public int RecordBatchCount { get; set; }
 
+        internal bool BetaEndPoint { get; private set; }
+
         #endregion
 
         /// <summary>
         /// Initialize the collection with defaults
         /// </summary>
         /// <param name="defaultRecordBatch">Defaults 100</param>
-        public QueryFilter(int defaultRecordBatch = 100)
+        /// <param name="betaEndpoint">(optional) should we consume the beta endpoint or v1.0</param>
+        public QueryFilter(int defaultRecordBatch = 100, bool betaEndpoint = false)
         {
             RecordBatchCount = defaultRecordBatch;
+            BetaEndPoint = betaEndpoint;
         }
 
         /// <summary>
@@ -126,7 +130,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             // #Trim a trailing comma off the ParameterSet if needed
             parameterset = parameterset.TrimEnd(new char[] { ',' });
 
-            var uri = new Uri(string.Format(graphUrl, O365ReportType, parameterset));
+            var uri = new Uri(string.Format(graphUrl, (BetaEndPoint ? "beta" : "v1.0"), O365ReportType, parameterset));
             return uri;
         }
     }

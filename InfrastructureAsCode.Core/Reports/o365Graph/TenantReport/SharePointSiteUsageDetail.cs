@@ -18,17 +18,17 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 
         public Nullable<DateTime> LastActivityDate { get; set; }
 
-        public Int64 FileCount { get; set; }
+        public long FileCount { get; set; }
 
-        public Int64 ActiveFileCount { get; set; }
+        public long ActiveFileCount { get; set; }
 
-        public Int64 PageViewCount { get; set; }
+        public long PageViewCount { get; set; }
 
-        public Int64 VisitedPageCount { get; set; }
+        public long VisitedPageCount { get; set; }
 
-        public Int64 StorageUsed_Byte { get; set; }
+        public long StorageUsed_Byte { get; set; }
 
-        public Int64 StorageAllocated_Byte { get; set; }
+        public long StorageAllocated_Byte { get; set; }
 
         public string RootWebTemplate { get; set; }
 

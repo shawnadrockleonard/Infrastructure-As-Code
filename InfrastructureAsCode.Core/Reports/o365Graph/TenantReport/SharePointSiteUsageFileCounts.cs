@@ -12,9 +12,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 
         public string SiteType { get; set; }
 
-        public Int64 Total { get; set; }
+        public long Total { get; set; }
 
-        public Int64 Active { get; set; }
+        public long Active { get; set; }
 
         public DateTime ReportDate { get; set; }
 

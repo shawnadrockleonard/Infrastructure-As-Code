@@ -12,7 +12,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 
         public string SiteType { get; set; }
 
-        public Int64 StorageUsed_Byte { get; set; }
+        public long StorageUsed_Byte { get; set; }
 
         public DateTime ReportDate { get; set; }
 
