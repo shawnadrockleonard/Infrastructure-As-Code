@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !NETSTANDARD2_0
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,7 +36,7 @@ namespace InfrastructureAsCode.Core.Utilities
 
     public static class TokenHelper
     {
-        #region public fields
+#region public fields
 
         /// <summary>
         /// SharePoint principal.
@@ -47,9 +48,9 @@ namespace InfrastructureAsCode.Core.Utilities
         /// </summary>
         public static readonly TimeSpan HighTrustAccessTokenLifetime = TimeSpan.FromHours(12.0);
 
-        #endregion public fields
+#endregion public fields
 
-        #region public methods
+#region public methods
 
         /// <summary>
         /// Retrieves the context token string from the specified request by looking for well-known parameter names in the 
@@ -666,9 +667,9 @@ namespace InfrastructureAsCode.Core.Utilities
             return url;
         }
 
-        #endregion
+#endregion
 
-        #region private fields
+#region private fields
 
         //
         // Configuration Constants
@@ -951,9 +952,9 @@ namespace InfrastructureAsCode.Core.Utilities
             }
         }
 
-        #endregion
+#endregion
 
-        #region private methods
+#region private methods
 
         private static ClientContext CreateAcsClientContextForUrl(SPRemoteEventProperties properties, Uri sharepointUrl)
         {
@@ -1086,7 +1087,7 @@ namespace InfrastructureAsCode.Core.Utilities
                 throw new InvalidOperationException("SigningCredentials was not initialized");
             }
 
-            #region Actor token
+#region Actor token
 
             string issuer = string.IsNullOrEmpty(sourceRealm) ? issuerApplication : string.Format("{0}@{1}", issuerApplication, sourceRealm);
             string nameid = string.IsNullOrEmpty(sourceRealm) ? sourceApplication : string.Format("{0}@{1}", sourceApplication, sourceRealm);
@@ -1116,9 +1117,9 @@ namespace InfrastructureAsCode.Core.Utilities
                 return actorTokenString;
             }
 
-            #endregion Actor token
+#endregion Actor token
 
-            #region Outer token
+#region Outer token
 
             List<JsonWebTokenClaim> outerClaims = null == claims ? new List<JsonWebTokenClaim>() : new List<JsonWebTokenClaim>(claims);
             outerClaims.Add(new JsonWebTokenClaim(ActorTokenClaimType, actorTokenString));
@@ -1132,14 +1133,14 @@ namespace InfrastructureAsCode.Core.Utilities
 
             string accessToken = new JsonWebSecurityTokenHandler().WriteTokenAsString(jsonToken);
 
-            #endregion Outer token
+#endregion Outer token
 
             return accessToken;
         }
 
-        #endregion
+#endregion
 
-        #region AcsMetadataParser
+#region AcsMetadataParser
 
         // This class is used to get MetaData document from the global STS endpoint. It contains
         // methods to parse the MetaData document and get endpoints and STS certificate.
@@ -1240,7 +1241,7 @@ namespace InfrastructureAsCode.Core.Utilities
             }
         }
 
-        #endregion
+#endregion
     }
 
     /// <summary>
@@ -1532,7 +1533,7 @@ namespace InfrastructureAsCode.Core.Utilities
             return base.MatchesKeyIdentifierClause(keyIdentifierClause);
         }
 
-        #region private members
+#region private members
 
         private List<SecurityKey> CreateSymmetricSecurityKeys(IEnumerable<byte[]> keys)
         {
@@ -1548,6 +1549,7 @@ namespace InfrastructureAsCode.Core.Utilities
         private DateTime effectiveTime;
         private List<SecurityKey> securityKeys;
 
-        #endregion
+#endregion
     }
 }
+#endif

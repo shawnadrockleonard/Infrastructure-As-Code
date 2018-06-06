@@ -114,14 +114,17 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                     // Check if request was throttled - http status code 429
                     // Check is request failed due to server unavailable - http status code 503
                     if (wex.Response is HttpWebResponse response &&
-                        (response.StatusCode == (HttpStatusCode)429 || response.StatusCode == (HttpStatusCode)503))
+                        (response.StatusCode == (HttpStatusCode)429 // Service throttling [use retry logic]
+                            || response.StatusCode == (HttpStatusCode)503 // Service unavailable [Azure API - unavailable || use retry logic]
+                            || response.StatusCode == (HttpStatusCode)504 // Gateway Timeout [Azure API - timeout on response || use retry logic]
+                            ))
                     {
                         // Extract the Retry-After throttling suggestion
                         var graphApiRetrySeconds = response.GetResponseHeader("Retry-After");
                         if (!string.IsNullOrEmpty(graphApiRetrySeconds)
                             && int.TryParse(graphApiRetrySeconds, out int headergraphBackoffInterval))
                         {
-                            if(headergraphBackoffInterval <= 0)
+                            if (headergraphBackoffInterval <= 0)
                             {
                                 graphBackoffInterval = backoffIntervalInSeconds;
                             }
@@ -133,7 +136,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                         var backoffSpan = new TimeSpan(0, 0, 0, graphBackoffInterval, 0);
 
                         Logger.LogWarning("Microsoft Graph API => exceeded usage limits. Iteration => {1} Sleeping for {0} seconds before retrying..", backoffSpan.Seconds, retryAttempts);
-                        
+
                         //Add delay for retry
                         Task.Delay(backoffSpan).Wait();
 
@@ -166,7 +169,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// <param name="maxAttempts">total number of attempts before proceeding</param>
         /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
         /// <returns></returns>
-        public string RetrieveData(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
+        internal string RetrieveData(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
         {
             var serviceFullUrl = serviceQuery.ToUrl();
 
@@ -182,11 +185,12 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// <param name="maxAttempts">total number of attempts before proceeding</param>
         /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
         /// <returns>A deserialized collection of objects</returns>
-        public JSONAuditCollection<T> RetrieveData<T>(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6) where T : class
+        internal ICollection<T> RetrieveData<T>(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6) where T : class
         {
-            JSONAuditCollection<T> objects = new JSONAuditCollection<T>();
+            var objects = new List<T>();
             var serviceFullUrl = serviceQuery.ToUrl();
             var lastUri = serviceFullUrl;
+            var lastUris = new List<string>();
 
             while (true)
             {
@@ -197,13 +201,22 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                 }
 
                 var items = JsonConvert.DeserializeObject<JSONAuditCollection<T>>(result);
-                objects.value.AddRange(items.value);
+                objects.AddRange(items.Results);
+
                 if (string.IsNullOrEmpty(items.NextLink))
                 {
                     // last in the set
                     break;
                 }
                 lastUri = new Uri(items.NextLink);
+
+                // TODO: Bug in Beta EndPoint cycled through endlessly, adding additional check to skip
+                if (lastUris.Contains(items.NextLink))
+                {
+                    Logger.LogWarning($"Write log entry for next URI {items.NextLink} and jump out");
+                    break;
+                }
+                lastUris.Add(items.NextLink);
             }
             return objects;
         }
@@ -215,7 +228,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// <param name="maxAttempts">total number of attempts before proceeding</param>
         /// <param name="backoffIntervalInSeconds">wait interval (in seconds) before retry</param>
         /// <returns>An open Text reader which should be disposed</returns>
-        public TextReader RetrieveDataAsStream(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
+        internal TextReader RetrieveDataAsStream(QueryFilter serviceQuery, int maxAttempts = 3, int backoffIntervalInSeconds = 6)
         {
             var serviceFullUrl = serviceQuery.ToUrl();
 

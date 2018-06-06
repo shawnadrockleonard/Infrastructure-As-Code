@@ -20,16 +20,17 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
     {
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string SiteUrl;
+        public string SiteUrl { get; set; }
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
-        public string UserName;
+        public string UserName { get; set; }
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 2)]
-        public string GroupName;
+        public string GroupName { get; set; }
 
         [Parameter(Mandatory = false)]
-        public SwitchParameter RemoveUser;
+        public SwitchParameter RemoveUser { get; set; }
+
 
 
         public override void ExecuteCmdlet()
@@ -80,7 +81,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
 
             var filterQuery = string.Format("InvitedAs -eq '{0}'", profileName);
             LogVerbose(string.Format("Removing External User with {0} at start {1} and page size {2}", profileName, startIndex, pageSize));
-            var externalusers = this.OfficeTenant.GetExternalUsers(startIndex, pageSize, invitedAs, Microsoft.Online.SharePoint.TenantManagement.SortOrder.Ascending);
+            var externalusers = this.OfficeTenantContext.GetExternalUsers(startIndex, pageSize, invitedAs, Microsoft.Online.SharePoint.TenantManagement.SortOrder.Ascending);
             var extCol = externalusers.ExternalUserCollection;
             clientContext.Load(externalusers);
             clientContext.Load(extCol);
@@ -92,7 +93,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 //10030000928913CB
                 var externalUserId = extCol.FirstOrDefault(w => w.InvitedAs == invitedAs).UniqueId;
                 var externalArray = new string[] { externalUserId };
-                var externalResult = this.OfficeTenant.RemoveExternalUsers(externalArray);
+                var externalResult = this.OfficeTenantContext.RemoveExternalUsers(externalArray);
                 clientContext.ExecuteQuery();
             }
 

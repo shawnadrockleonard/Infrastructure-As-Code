@@ -9,7 +9,7 @@ namespace InfrastructureAsCode.Powershell.Commands
     /*
     Example:
     Returns the credential associated with the specified identifier
-    Get-SPOnlineStoredCredential -Name O365
+    Get-IaCStoredCredential -Name O365
     */
     [Cmdlet("Get", "IaCStoredCredential")]
     [CmdletHelp("Returns a stored credential from the Windows Credential Manager", Category = "Base Cmdlets")]

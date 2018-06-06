@@ -36,7 +36,9 @@ namespace InfrastructureAsCode.Core.Extensions
             var surl = url;
             if (!string.IsNullOrEmpty(surl))
             {
+#if !NETSTANDARD2_0
                 surl = TokenHelper.EnsureTrailingSlash(url.Trim().ToLower());
+#endif
             }
             return surl;
         }

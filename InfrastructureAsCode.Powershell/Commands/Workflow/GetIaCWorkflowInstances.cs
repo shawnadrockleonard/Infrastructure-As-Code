@@ -5,7 +5,7 @@ using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Powershell.CmdLets;
 using System;
 
-namespace InfrastructureAsCode.Powershell.Commands.Workflows
+namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
     /// <summary>
     /// https://msdn.microsoft.com/en-us/library/office/dn481315.aspx

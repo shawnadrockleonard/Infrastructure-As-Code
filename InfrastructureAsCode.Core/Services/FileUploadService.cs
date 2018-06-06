@@ -66,7 +66,7 @@ namespace InfrastructureAsCode.Core.Services
                 // Folder Not Found
                 // Enumerate the Folder structure creating the desired destination 
                 targetFolder = library.RootFolder;
-                var relativeUri = TokenHelper.EnsureTrailingSlash(targetFolder.ServerRelativeUrl);
+                var relativeUri = targetFolder.ServerRelativeUrl.EnsureTrailingSlashLowered();
                 var targetFolderPath = webListFolderUrl.Replace(relativeUri, string.Empty).Split(new char[] { '/' });
                 if (targetFolderPath.Length > 0)
                 {

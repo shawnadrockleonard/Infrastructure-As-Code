@@ -8,9 +8,9 @@ namespace InfrastructureAsCode.Core.Reports
 {
     public class DefaultUsageLogger : ITraceLogger
     {
-        private Action<Exception, string, object[]> actionError;
-        private Action<string, object[]> actionWarning;
-        private Action<string, object[]> actionInformation;
+        private readonly Action<Exception, string, object[]> actionError;
+        private readonly Action<string, object[]> actionWarning;
+        private readonly Action<string, object[]> actionInformation;
 
         public DefaultUsageLogger()
         {

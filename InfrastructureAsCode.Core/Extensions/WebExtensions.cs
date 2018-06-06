@@ -294,7 +294,7 @@ namespace InfrastructureAsCode.Core.Extensions
                     lctx => lctx.ListExperienceOptions,
                     lctx => lctx.TemplateFeatureId);
 
-            var weburl = TokenHelper.EnsureTrailingSlash(hostWeb.ServerRelativeUrl);
+            var weburl = hostWeb.ServerRelativeUrl.EnsureTrailingSlashLowered();
             var listTemplateType = list.GetListTemplateType();
 
             var listdefinition = new SPListDefinition()

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph
 {
-    public class QueryFilter
+    internal class QueryFilter
     {
         #region Properties 
 
@@ -14,29 +14,38 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// Represents the Graph API endpoints
         /// </summary>
         /// <remarks>Of note this is a BETA inpoint as these APIs are in Preview</remarks>
-        public static string DefaultServiceEndpointUrl = "https://graph.microsoft.com/{0}/reports/{1}({2})";
+        private static readonly string DefaultServiceEndpointUrl = "https://graph.microsoft.com/{0}/reports/{1}{2}";
 
-        public ReportUsageTypeEnum O365ReportType { get; set; }
+        /// <summary>
+        /// Represents Static URI endpoints for reports
+        /// </summary>
+        internal ReportUsageTypeEnum O365ReportType { get; set; }
 
-        public Nullable<ReportUsagePeriodEnum> O365Period { get; set; }
+        /// <summary>
+        /// Period associated with the endpoint D7, D30, D90
+        /// </summary>
+        internal Nullable<ReportUsagePeriodEnum> O365Period { get; set; }
 
         /// <summary>
         /// Formats the response
         /// </summary>
         /// <remarks>Default CSV</remarks>
-        public ReportUsageFormatEnum FormattedOutput { get; set; }
+        internal ReportUsageFormatEnum FormattedOutput { get; set; }
 
         /// <summary>
         /// A Date filter to be applied to the set of URI OData filters
         /// </summary>
-        public Nullable<DateTime> Date { get; set; }
+        internal Nullable<DateTime> Date { get; set; }
 
         /// <summary>
         /// Represents the $top total number of records to return in the API call
         /// </summary>
-        public int RecordBatchCount { get; set; }
+        internal int RecordBatchCount { get; set; }
 
-        internal bool BetaEndPoint { get; private set; }
+        /// <summary>
+        /// Should we default to the v1.0 endpoint or use the beta endpoint
+        /// </summary>
+        internal bool BetaEndPoint { get; set; }
 
         #endregion
 
@@ -45,7 +54,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// </summary>
         /// <param name="defaultRecordBatch">Defaults 100</param>
         /// <param name="betaEndpoint">(optional) should we consume the beta endpoint or v1.0</param>
-        public QueryFilter(int defaultRecordBatch = 100, bool betaEndpoint = false)
+        internal QueryFilter(int defaultRecordBatch = 100, bool betaEndpoint = false)
         {
             RecordBatchCount = defaultRecordBatch;
             BetaEndPoint = betaEndpoint;
@@ -56,7 +65,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         ///     Sample: OneDriveActivity(view='Detail',period='D7')/content
         /// </summary>
         /// <returns></returns>
-        public Uri ToUrl()
+        internal Uri ToUrl()
         {
             var uri = ToUrl(DefaultServiceEndpointUrl);
             return uri;
@@ -68,55 +77,51 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// </summary>
         /// <param name="graphUrl">Represents the Graph URL for Usage Reporting which should have two parameters {0}{1}</param>
         /// <returns></returns>
-        public Uri ToUrl(string graphUrl)
+        internal Uri ToUrl(string graphUrl)
         {
-            var str = string.Empty;
-
-            // We always have a view to start with that
             var parameterset = string.Empty;
 
-            // If period is specified then add that to the parameters unless it is not supported
-            var activations = new ReportUsageTypeEnum[]
+            // If period is specified then add that to the parameters except when not is supported
+            var doesNotSupportPeriod = new ReportUsageTypeEnum[]
             {
                 ReportUsageTypeEnum.getOffice365ActivationsUserDetail,
                 ReportUsageTypeEnum.getOffice365ActivationCounts,
                 ReportUsageTypeEnum.getOffice365ActivationsUserCounts
             };
-            if (!Date.HasValue && O365Period.HasValue && !activations.Any(a => a == O365ReportType))
+            if (O365Period.HasValue && !doesNotSupportPeriod.Any(a => a == O365ReportType))
             {
-                str = string.Format("period='{0}',", O365Period.Value.ToString("f"));
-                parameterset += str;
+                parameterset = string.Format("period='{0}'", O365Period.Value.ToString("f"));
             }
 
-            // If the date is specified then add that to the parameters unless it is not supported
-            var mailboxes = new ReportUsageTypeEnum[]
+            // If the date is specified then add that to the parameters if it is supported
+            var doesSupportDate = new ReportUsageTypeEnum[]
             {
-                ReportUsageTypeEnum.getMailboxUsageDetail,
-                ReportUsageTypeEnum.getMailboxUsageMailboxCounts,
-                ReportUsageTypeEnum.getMailboxUsageQuotaMailboxStatusCounts,
-                ReportUsageTypeEnum.getMailboxUsageStorage
+                ReportUsageTypeEnum.getOffice365ActiveUserDetail,
+                ReportUsageTypeEnum.getOffice365GroupsActivityDetail,
+                ReportUsageTypeEnum.getOneDriveActivityUserDetail,
+                ReportUsageTypeEnum.getOneDriveUsageAccountDetail,
+                ReportUsageTypeEnum.getSharePointActivityUserDetail,
+                ReportUsageTypeEnum.getSharePointSiteUsageDetail,
+                ReportUsageTypeEnum.getSkypeForBusinessActivityUserDetail,
+                ReportUsageTypeEnum.getSkypeForBusinessDeviceUsageUserDetail
             };
-            var skypeactivities = new ReportUsageTypeEnum[]
+            if (Date.HasValue && doesSupportDate.Any(a => a == O365ReportType))
             {
-                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityCounts,
-                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityUserCounts,
-                ReportUsageTypeEnum.getSkypeForBusinessOrganizerActivityMinuteCounts
-            };
-            if (Date.HasValue
-                && !(mailboxes.Any(a => a == O365ReportType)
-                  || activations.Any(a => a == O365ReportType)
-                  || skypeactivities.Any(a => a == O365ReportType)))
-            {
-                str = string.Format("date={0}", Date.Value.ToString("yyyy-MM-dd"));
-                parameterset += str;
+                parameterset = string.Format("date={0}", Date.Value.ToString("yyyy-MM-dd"));
             }
+
 
             if (FormattedOutput == ReportUsageFormatEnum.JSON)
             {
                 var supportsTop = new ReportUsageTypeEnum[]
                 {
+                    ReportUsageTypeEnum.getOffice365ActiveUserDetail,
+                    ReportUsageTypeEnum.getOffice365GroupsActivityDetail,
                     ReportUsageTypeEnum.getOneDriveActivityUserDetail,
-                    ReportUsageTypeEnum.getOneDriveUsageAccountDetail
+                    ReportUsageTypeEnum.getOneDriveUsageAccountDetail,
+                    ReportUsageTypeEnum.getSharePointSiteUsageDetail,
+                    ReportUsageTypeEnum.getSkypeForBusinessActivityUserDetail,
+                    ReportUsageTypeEnum.getSkypeForBusinessDeviceUsageUserDetail
                 };
                 var topIsDirty = false;
                 if (supportsTop.Any(a => a == O365ReportType))
@@ -127,10 +132,16 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                 graphUrl += (topIsDirty ? "&" : "?") + "$format=application/json";
             }
 
-            // #Trim a trailing comma off the ParameterSet if needed
-            parameterset = parameterset.TrimEnd(new char[] { ',' });
 
-            var uri = new Uri(string.Format(graphUrl, (BetaEndPoint ? "beta" : "v1.0"), O365ReportType, parameterset));
+            // JSON Format not supported by V1.0 endpoint
+            var versionuri = (BetaEndPoint || (FormattedOutput == ReportUsageFormatEnum.JSON) ? "beta" : "v1.0");
+            // If parameter is specified enable parenthesis
+            if (!string.IsNullOrEmpty(parameterset))
+            {
+                parameterset = $"({parameterset})";
+            }
+
+            var uri = new Uri(string.Format(graphUrl, versionuri, O365ReportType, parameterset));
             return uri;
         }
     }

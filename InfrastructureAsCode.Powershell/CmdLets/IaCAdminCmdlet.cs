@@ -22,7 +22,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <summary>
         /// Create client context to tenant admin
         /// </summary>
-        public Tenant Tenant
+        public Tenant TenantContext
         {
             get
             {
@@ -39,7 +39,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <summary>
         /// Initializes a Office365 Tenant Context
         /// </summary>
-        public Office365Tenant OfficeTenant
+        public Office365Tenant OfficeTenantContext
         {
             get
             {
@@ -70,9 +70,9 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             }
 
 
-            if (Tenant.Context == null)
+            if (TenantContext.Context == null)
             {
-                this.ClientContext.Load(Tenant);
+                this.ClientContext.Load(TenantContext);
                 this.ClientContext.ExecuteQueryRetry();
             }
         }
@@ -80,9 +80,9 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         protected override void EndProcessing()
         {
             SPIaCConnection.CurrentConnection.RestoreCachedContext();
-            if (Tenant.Context == null)
+            if (TenantContext.Context == null)
             {
-                Tenant.Context.Dispose();
+                TenantContext.Context.Dispose();
             }
 
             base.EndProcessing();
@@ -109,13 +109,13 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 
             try
             {
-                if (Tenant.Context == null)
+                if (TenantContext.Context == null)
                 {
-                    this.ClientContext.Load(Tenant);
+                    this.ClientContext.Load(TenantContext);
                     this.ClientContext.ExecuteQueryRetry();
                 }
-                Tenant.SetSiteAdmin(_siteUrl, claimProviderUserName, isSiteAdmin);
-                Tenant.Context.ExecuteQueryRetry();
+                TenantContext.SetSiteAdmin(_siteUrl, claimProviderUserName, isSiteAdmin);
+                TenantContext.Context.ExecuteQueryRetry();
             }
             catch (Exception e)
             {
@@ -130,7 +130,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// <returns></returns>
         public List<SPOSiteCollectionModel> GetSiteCollections(bool includeProperties = false)
         {
-            var urls = Tenant.GetSPOSiteCollections(includeProperties);
+            var urls = TenantContext.GetSPOSiteCollections(includeProperties);
             LogVerbose("Found URLs {0}", urls.Count);
             return urls;
         }

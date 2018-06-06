@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
 {
-    public class JSONODataBase
+    public class JSONODataBase : JSONResult
     {
         /// <summary>
         /// Represents the OData API data type

@@ -5,7 +5,7 @@ using Microsoft.SharePoint.Client;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Powershell.CmdLets;
 
-namespace InfrastructureAsCode.Powershell.Commands.Workflows
+namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
     [Cmdlet(VerbsLifecycle.Stop, "IaCWorkflowInstance")]
     public class StopIaCWorkflowInstance : IaCCmdlet

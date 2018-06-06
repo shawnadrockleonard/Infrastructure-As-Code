@@ -64,17 +64,17 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
         /// <summary>
         /// Holds the SharePoint groups in the site or created in the site
         /// </summary>
-        private List<SPGroupDefinitionModel> siteGroups { get; set; }
+        private List<SPGroupDefinitionModel> SiteGroups { get; set; }
 
         /// <summary>
         /// Holds the [Site] columns
         /// </summary>
-        private List<SPFieldDefinitionModel> siteColumns { get; set; }
+        private List<SPFieldDefinitionModel> SiteColumns { get; set; }
 
         /// <summary>
         /// Holds the [List] columns
         /// </summary>
-        private List<SPFieldDefinitionModel> listColumns { get; set; }
+        private List<SPFieldDefinitionModel> ListColumns { get; set; }
 
         #endregion
 
@@ -89,9 +89,9 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 throw new System.IO.FileNotFoundException("The provisioner file was not found", fileinfo.Name);
             }
 
-            siteGroups = new List<SPGroupDefinitionModel>();
-            siteColumns = new List<SPFieldDefinitionModel>();
-            listColumns = new List<SPFieldDefinitionModel>();
+            SiteGroups = new List<SPGroupDefinitionModel>();
+            SiteColumns = new List<SPFieldDefinitionModel>();
+            ListColumns = new List<SPFieldDefinitionModel>();
         }
 
         /// <summary>
@@ -237,13 +237,13 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         if (groupQuery.Any(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase)))
                         {
                             var group = groupQuery.FirstOrDefault(g => g.Title.Equals(groupDef.Title, StringComparison.CurrentCultureIgnoreCase));
-                            siteGroups.Add(new SPGroupDefinitionModel() { Id = group.Id, Title = group.Title });
+                            SiteGroups.Add(new SPGroupDefinitionModel() { Id = group.Id, Title = group.Title });
                         }
                         else
                         {
 
                             var newgroup = contextWeb.GetOrCreateSiteGroups(groupDef);
-                            siteGroups.Add(new SPGroupDefinitionModel() { Id = newgroup.Id, Title = newgroup.Title });
+                            SiteGroups.Add(new SPGroupDefinitionModel() { Id = newgroup.Id, Title = newgroup.Title });
                         }
                     }
                 }
@@ -251,7 +251,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
             else
             {
                 // we aren't going to examine the JSON to provision groups, pull from current SharePoint instance
-                siteGroups.AddRange(groupQuery.Select(gq => new SPGroupDefinitionModel() { Id = gq.Id, Title = gq.Title }));
+                SiteGroups.AddRange(groupQuery.Select(gq => new SPGroupDefinitionModel() { Id = gq.Id, Title = gq.Title }));
             }
 
             // provision columns
@@ -261,14 +261,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                 logger.LogInformation("Field definitions will be provisioned for {0} fields", siteDefinition.FieldDefinitions.Count());
                 foreach (var fieldDef in siteDefinition.FieldDefinitions)
                 {
-                    var column = contextWeb.CreateColumn(fieldDef, logger, siteGroups, siteDefinition.FieldChoices);
+                    var column = contextWeb.CreateColumn(fieldDef, logger, SiteGroups, siteDefinition.FieldChoices);
                     if (column == null)
                     {
                         logger.LogWarning("Failed to create column {0}.", fieldDef.InternalName);
                     }
                     else
                     {
-                        siteColumns.Add(new SPFieldDefinitionModel()
+                        SiteColumns.Add(new SPFieldDefinitionModel()
                         {
                             InternalName = column.InternalName,
                             Title = column.Title,
@@ -310,7 +310,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                     var siteColumn = siteDefinition.FieldDefinitions.FirstOrDefault(f => f.InternalName == fieldDef.Name);
                                     if (siteColumn != null && !contextWeb.FieldExistsByNameInContentType(contentTypeName, siteColumn.DisplayNameMasked))
                                     {
-                                        var column = this.siteColumns.FirstOrDefault(f => f.InternalName == fieldDef.Name);
+                                        var column = this.SiteColumns.FirstOrDefault(f => f.InternalName == fieldDef.Name);
                                         if (column == null)
                                         {
                                             logger.LogWarning("Column {0} was not added to the collection", fieldDef.Name);
@@ -368,7 +368,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
 
                                 if (contentDef.DefaultContentType)
                                 {
-                                    siteList.SetDefaultContentTypeToList(accessContentType);
+                                    siteList.SetDefaultContentType(accessContentType.Id);
                                 }
                             }
                         }
@@ -383,7 +383,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     var existingListColumns = siteList.GetFields(internalNamesForList);
                     foreach (var column in existingListColumns)
                     {
-                        listColumns.Add(new SPFieldDefinitionModel()
+                        ListColumns.Add(new SPFieldDefinitionModel()
                         {
                             InternalName = column.InternalName,
                             Title = column.Title,
@@ -416,7 +416,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         var sourceListColumns = siteList.GetFields(fieldDef.InternalName);
                         foreach (var column in sourceListColumns)
                         {
-                            listColumns.Add(new SPFieldDefinitionModel()
+                            ListColumns.Add(new SPFieldDefinitionModel()
                             {
                                 InternalName = column.InternalName,
                                 Title = column.Title,
@@ -440,7 +440,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                         var sourceListColumns = siteList.GetFields(fieldDef.InternalName);
                         foreach (var column in sourceListColumns)
                         {
-                            listColumns.Add(new SPFieldDefinitionModel()
+                            ListColumns.Add(new SPFieldDefinitionModel()
                             {
                                 InternalName = column.InternalName,
                                 Title = column.Title,
@@ -450,14 +450,14 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                     }
                     else
                     {
-                        var column = siteList.CreateListColumn(fieldDef, logger, siteGroups, provisionerChoices);
+                        var column = siteList.CreateListColumn(fieldDef, logger, SiteGroups, provisionerChoices);
                         if (column == null)
                         {
                             logger.LogWarning("Failed to create column {0}.", fieldDef.InternalName);
                         }
                         else
                         {
-                            listColumns.Add(new SPFieldDefinitionModel()
+                            ListColumns.Add(new SPFieldDefinitionModel()
                             {
                                 InternalName = column.InternalName,
                                 Title = column.Title,
@@ -483,7 +483,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                             var accessContentType = allContentTypes.FirstOrDefault();
                             foreach (var fieldInternalName in contentDef.FieldLinks)
                             {
-                                var column = listColumns.FirstOrDefault(f => f.InternalName == fieldInternalName.Name);
+                                var column = ListColumns.FirstOrDefault(f => f.InternalName == fieldInternalName.Name);
                                 if (column == null)
                                 {
                                     logger.LogWarning("List {0} => Failed to associate field link {1}.", listDef.ListName, fieldInternalName.Name);
@@ -501,8 +501,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ETL
                                     var siteColumn = siteList.GetFieldById<Field>(column.FieldGuid);
                                     contextWeb.Context.ExecuteQueryRetry();
 
-                                    var flink = new FieldLinkCreationInformation();
-                                    flink.Field = siteColumn;
+                                    var flink = new FieldLinkCreationInformation
+                                    {
+                                        Field = siteColumn
+                                    };
                                     var flinkstub = accessContentType.FieldLinks.Add(flink);
                                     //if(fieldDef.Required) flinkstub.Required = fieldDef.Required;
                                     accessContentType.Update(false);

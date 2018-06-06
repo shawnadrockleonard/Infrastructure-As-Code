@@ -63,7 +63,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
         public static Int32 ToInt32(this string numberValue, Nullable<Int32> defaultValue = null)
         {
-            var model = (defaultValue.HasValue ? defaultValue.Value : 0);
+            var model = (defaultValue ?? 0);
             try
             {
                 if (!string.IsNullOrEmpty(numberValue))
@@ -80,7 +80,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
         public static Int64 ToInt64(this double value, Nullable<Int64> defaultValue = null)
         {
-            var model = (defaultValue.HasValue ? defaultValue.Value : 0);
+            var model = (defaultValue ?? 0);
             try
             {
                 model = (Int64)value;
@@ -233,8 +233,7 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <returns></returns>
         public static Guid TryParseGuid(this string value, Guid defaultValue)
         {
-            Guid result;
-            if (Guid.TryParse(value, out result))
+            if (Guid.TryParse(value, out Guid result))
             {
                 return result;
             }

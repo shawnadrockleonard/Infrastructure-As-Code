@@ -5,13 +5,15 @@ using System;
 using System.Linq;
 using System.Management.Automation;
 
-namespace InfrastructureAsCode.Powershell.Commands.Workflows
+namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
     [Cmdlet(VerbsLifecycle.Resume, "IaCWorkflowInstance")]
     public class ResumeIaCWorkflowInstance : IaCCmdlet
     {
         [Parameter(Mandatory = true, HelpMessage = "The instance to resume", Position = 0)]
-        public WorkflowInstancePipeBind Identity;
+        public WorkflowInstancePipeBind Identity { get; set; }
+
+
 
         public override void ExecuteCmdlet()
         {

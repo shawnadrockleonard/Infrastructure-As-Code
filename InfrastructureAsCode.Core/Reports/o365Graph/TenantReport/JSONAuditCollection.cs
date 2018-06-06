@@ -14,7 +14,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
         /// </summary>
         public JSONAuditCollection()
         {
-            this.value = new List<T>();
+            this.Results = new List<T>();
         }
 
         /// <summary>
@@ -32,6 +32,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport
         /// <summary>
         /// Serializable collection of auditiable events
         /// </summary>
-        public List<T> value { get; set; }
+        [JsonProperty("value")]
+        public List<T> Results { get; set; }
     }
 }

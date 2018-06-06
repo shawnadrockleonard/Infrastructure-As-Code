@@ -4,16 +4,17 @@ using Microsoft.SharePoint.Client.WorkflowServices;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Powershell.CmdLets;
 
-namespace InfrastructureAsCode.Powershell.Commands.Workflows
+namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
     [Cmdlet(VerbsCommon.Get, "IaCWorkflowSubscription")]
     public class GetIaCWorkflowSubscription : IaCCmdlet
     {
         [Parameter(Mandatory = false, HelpMessage = "The name of the workflow", Position = 0)]
-        public string Name;
+        public string Name { get; set;  }
 
         [Parameter(Mandatory = false, HelpMessage = "A list to search the association for", Position = 1)]
-        public ListPipeBind List;
+        public ListPipeBind List { get; set; }
+
 
         public override void ExecuteCmdlet()
         {

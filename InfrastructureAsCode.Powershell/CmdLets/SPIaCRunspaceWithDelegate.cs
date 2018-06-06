@@ -35,6 +35,24 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 
         }
 
+        public SPIaCRunspaceWithDelegate(SPIaCConnection connection)
+        {
+            // Create Initial Session State for runspace.
+            InitialSessionState initialSession = InitialSessionState.CreateDefault();
+            initialSession.ImportPSModule(new[] { "MSOnline" });
+
+            // Create credential object.
+            var credential = connection.GetActiveCredentials();
+
+            // Create command to connect office 365.
+            connectCommand = new PCommand.Command("Connect-MsolService");
+            connectCommand.Parameters.Add((new CommandParameter("Credential", credential)));
+
+            psRunSpace = RunspaceFactory.CreateRunspace(initialSession);
+            // Open runspace.
+            psRunSpace.Open();
+        }
+
         /// <summary>
         /// Initializes the run space for the <paramref name="moduleName"/>
         ///     This module connection property must require Credentials
