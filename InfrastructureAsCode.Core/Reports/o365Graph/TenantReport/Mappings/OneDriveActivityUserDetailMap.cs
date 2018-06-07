@@ -37,7 +37,7 @@ Report Period
             Map(m => m.SyncedFileCount).Name("Synced File Count").Index(6).Default(0);
             Map(m => m.SharedInternallyFileCount).Name("Shared Internally File Count").Index(7).Default(0);
             Map(m => m.SharedExternallyFileCount).Name("Shared Externally File Count").Index(8).Default(0);
-            Map(m => m.ProductsAssignedCsv).Name("Assigned Products").Index(9).Default(string.Empty);
+            Map(m => m.ProductsAssignedCSV).Name("Assigned Products").Index(9).Default(string.Empty);
             Map(m => m.ReportPeriod).Name("Report Period").Index(10).Default(0);
         }
     }
@@ -76,7 +76,30 @@ Report Period
         public IEnumerable<string> ProductsAssigned { get; set; }
 
         [JsonIgnore()]
-        public string ProductsAssignedCsv { get; set; }
+        public string ProductsAssignedCSV { get; set; }
+
+        /// <summary>
+        /// Process the CSV or Array into a Delimited string
+        /// </summary>
+        [JsonIgnore()]
+        public string RealizedProductsAssigned
+        {
+            get
+            {
+                var _productsAssigned = string.Empty;
+                if (ProductsAssigned != null)
+                {
+                    _productsAssigned = string.Join(",", ProductsAssigned);
+                }
+                else if (!string.IsNullOrEmpty(ProductsAssignedCSV))
+                {
+                    _productsAssigned = ProductsAssignedCSV.Replace("+", ",");
+                }
+
+                return _productsAssigned;
+            }
+        }
+
 
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }

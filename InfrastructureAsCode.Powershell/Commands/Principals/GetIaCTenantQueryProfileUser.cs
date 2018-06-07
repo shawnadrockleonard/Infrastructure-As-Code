@@ -13,15 +13,14 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
     /// <summary>
     /// Query for a user in the tenant
     /// </summary>
-    [Cmdlet(VerbsCommon.Get, "IaCQueryProfileUser")]
-    public class GetIaCQueryProfileUser : IaCCmdlet
+    [Cmdlet(VerbsCommon.Get, "IaCTenantQueryProfileUser")]
+    public class GetIaCTenantQueryProfileUser : IaCAdminCmdlet
     {
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
         public string UserName { get; set; }
 
-        [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 2)]
-        public string SiteUrl { get; set; }
+
 
         protected override void BeginProcessing()
         {
@@ -32,6 +31,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 throw new InvalidOperationException("UserName is not valid.");
             }
         }
+
 
         public override void ExecuteCmdlet()
         {
@@ -45,14 +45,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 GetUserProfileInformation(userPrincipalName);
 
 
-                //load the tenant object
-                var officeTenantContext = new Microsoft.Online.SharePoint.TenantManagement.Office365Tenant(this.ClientContext);
-                var tenantContext = new Tenant(this.ClientContext);
 
-                this.ClientContext.Load(officeTenantContext);
-                this.ClientContext.Load(tenantContext);
-                this.ClientContext.ExecuteQuery();
-
+            
                 LogVerbose("Querying UserProfiles.PeopleManager");
                 GetUserInformation(userPrincipalName);
 
@@ -147,7 +141,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         {
             using (var ups = new UserProfileService(this.ClientContext, this.ClientContext.Url))
             {
-                var personProperties = ups.ows.GetUserProfileByName(userPrincipalName);
+                var personProperties = ups.OWService.GetUserProfileByName(userPrincipalName);
                 if (personProperties != null)
                 {
                     LogVerbose("User Profile Web Service");

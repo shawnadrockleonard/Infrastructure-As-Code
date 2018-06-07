@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using InfrastructureAsCode.Core.Extensions;
+using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace InfrastructureAsCode.Core.HttpServices
     {
         private bool _disposed;
 
-        public OfficeDevPnP.Core.UPAWebService.UserProfileService ows { get; private set; }
+        public OfficeDevPnP.Core.UPAWebService.UserProfileService OWService { get; private set; }
 
         public UserProfileService()
         {
@@ -29,9 +30,11 @@ namespace InfrastructureAsCode.Core.HttpServices
                 }
             }
 
-            ows = new OfficeDevPnP.Core.UPAWebService.UserProfileService
+            var trailingSiteUrl = siteUrl.EnsureTrailingSlashLowered();
+
+            OWService = new OfficeDevPnP.Core.UPAWebService.UserProfileService
             {
-                Url = string.Format("{0}/_vti_bin/userprofileservice.asmx", siteUrl),
+                Url = $"{trailingSiteUrl}_vti_bin/userprofileservice.asmx",
                 Credentials = context.Credentials,
                 UseDefaultCredentials = false
             };
@@ -45,7 +48,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                 var cookieContainer = new System.Net.CookieContainer();
                 cookieContainer.SetCookies(spourl, spocookies);
-                ows.CookieContainer = cookieContainer;
+                OWService.CookieContainer = cookieContainer;
             }
         }
 
@@ -62,7 +65,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         {
             if (disposing && !_disposed)
             {
-                ows.Dispose();
+                OWService.Dispose();
             }
             _disposed = true;
         }

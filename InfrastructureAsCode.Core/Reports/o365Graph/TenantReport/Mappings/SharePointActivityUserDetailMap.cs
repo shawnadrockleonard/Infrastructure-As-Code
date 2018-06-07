@@ -91,6 +91,29 @@ Report Period
         public string ProductsAssignedCSV { get; set; }
 
 
+        /// <summary>
+        /// Process the CSV or Array into a Delimited string
+        /// </summary>
+        [JsonIgnore()]
+        public string RealizedProductsAssigned
+        {
+            get
+            {
+                var _productsAssigned = string.Empty;
+                if (ProductsAssigned != null)
+                {
+                    _productsAssigned = string.Join(",", ProductsAssigned);
+                }
+                else if (!string.IsNullOrEmpty(ProductsAssignedCSV))
+                {
+                    _productsAssigned = ProductsAssignedCSV.Replace("+", ",");
+                }
+
+                return _productsAssigned;
+            }
+        }
+
+
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }
     }

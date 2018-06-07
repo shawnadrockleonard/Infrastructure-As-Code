@@ -1,15 +1,17 @@
-﻿using CsvHelper;
-using InfrastructureAsCode.Core.Constants;
-using InfrastructureAsCode.Core.Models;
-using InfrastructureAsCode.Powershell.CmdLets;
-using Microsoft.SharePoint.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 
 namespace InfrastructureAsCode.Powershell.Commands.Files
 {
+    using CsvHelper;
+    using InfrastructureAsCode.Core.Constants;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using Microsoft.SharePoint.Client;
+
     /// <summary>
     /// Uploads a document or file to a library specified 
     ///     Metadatalist is a CSV file containing metadata associated with the Filename
@@ -21,7 +23,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
         /// Represents the display title for the document library
         /// </summary>
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string LibraryName { get; set; }
+        public ListPipeBind Library { get; set; }
 
         /// <summary>
         /// Directory where the documents to be uploaded exist
@@ -96,10 +98,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
 
             try
             {
-                var onlineLibrary = this.ClientContext.Web.Lists.GetByTitle(this.LibraryName);
-                this.ClientContext.Load(onlineLibrary, ol => ol.RootFolder, ol => ol.Title, ol => ol.EnableVersioning);
-                this.ClientContext.ExecuteQuery();
-
+                var onlineLibrary = Library.GetList(this.ClientContext.Web, ol => ol.RootFolder, ol => ol.Title, ol => ol.EnableVersioning);
                 if (onlineLibrary.EnableVersioning)
                 {
                     onlineLibrary.UpdateListVersioning(false, false, true);

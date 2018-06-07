@@ -49,7 +49,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
             Map(m => m.ParticipatedConferenceAppSharingCount).Name("Participated Conference App Sharing Count").Index(30).Default(0);
             Map(m => m.ParticipatedConferenceWebCount).Name("Participated Conference Web Count").Index(31).Default(0);
             Map(m => m.ParticipatedConferenceDialInOut3rdPartyCount).Name("Participated Conference Dial-in/out 3rd Party Count").Index(32).Default(0);
-            Map(m => m.AssignedProductsCSV).Name("Assigned Products").Index(33).Default(string.Empty);
+            Map(m => m.ProductsAssignedCSV).Name("Assigned Products").Index(33).Default(string.Empty);
             Map(m => m.ReportPeriod).Name("Report Period").Index(34).Default(0);
         }
     }
@@ -161,10 +161,32 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public Int64 ParticipatedConferenceDialInOut3rdPartyCount { get; set; }
 
         [JsonProperty("assignedProducts")]
-        public IEnumerable<string> AssignedProducts { get; set; }
+        public IEnumerable<string> ProductsAssigned { get; set; }
 
         [JsonIgnore()]
-        public string AssignedProductsCSV { get; set; }
+        public string ProductsAssignedCSV { get; set; }
+
+        /// <summary>
+        /// Process the CSV or Array into a Delimited string
+        /// </summary>
+        [JsonIgnore()]
+        public string RealizedProductsAssigned
+        {
+            get
+            {
+                var _productsAssigned = string.Empty;
+                if (ProductsAssigned != null)
+                {
+                    _productsAssigned = string.Join(",", ProductsAssigned);
+                }
+                else if (!string.IsNullOrEmpty(ProductsAssignedCSV))
+                {
+                    _productsAssigned = ProductsAssignedCSV.Replace("+", ",");
+                }
+
+                return _productsAssigned;
+            }
+        }
 
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }

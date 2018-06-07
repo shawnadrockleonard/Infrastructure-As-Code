@@ -16,6 +16,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
         public string UserName { get; set; }
 
+
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 2)]
         public string GroupName { get; set; }
 

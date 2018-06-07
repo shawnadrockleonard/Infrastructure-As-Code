@@ -1,5 +1,4 @@
-﻿using OfficeDevPnP.Core.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -12,6 +11,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
     using Microsoft.SharePoint.Client;
     using InfrastructureAsCode.Powershell.PipeBinds;
     using InfrastructureAsCode.Powershell.CmdLets;
+    using OfficeDevPnP.Core.Utilities;
 
     /// <summary>
     /// Query the sharepoint list, returning the list item ID/Title and export to memory stream
@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
     public class GetIaCExportListItems : IaCCmdlet
     {
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string LibraryName { get; set; }
+        public ListPipeBind LibraryName { get; set; }
 
 
         /// <summary>
@@ -32,9 +32,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 
             Collection<PSObject> results = new Collection<PSObject>();
 
-            var _listSites = this.ClientContext.Web.Lists.GetByTitle(LibraryName);
-            this.ClientContext.Load(_listSites);
-            this.ClientContext.ExecuteQuery();
+            var _listSites = LibraryName.GetList( this.ClientContext.Web);
 
             ListItemCollectionPosition itemPosition = null;
 

@@ -1,22 +1,22 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Powershell.PipeBinds;
-using InfrastructureAsCode.Core.Extensions;
-using Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client.Utilities;
-using OfficeDevPnP.Core.Utilities;
-using System;
+﻿using System;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Xml.Linq;
-using Microsoft.SharePoint.Client.DocumentSet;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using InfrastructureAsCode.Core.Constants;
-using InfrastructureAsCode.Core.Models;
 
 namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using Microsoft.SharePoint.Client.Utilities;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Core.Extensions;
+    using InfrastructureAsCode.Core.Constants;
+    using OfficeDevPnP.Core.Utilities;
+
     /// <summary>
     /// CmdLet will provide a sample query to build HTML based on the view
     /// </summary>

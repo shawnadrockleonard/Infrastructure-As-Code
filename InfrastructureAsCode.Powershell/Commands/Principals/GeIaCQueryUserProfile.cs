@@ -35,8 +35,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 using (var ups = new UserProfileService(this.ClientContext, this.ClientContext.Url))
                 {
                     
-                    var UserProfileResult = ups.ows.GetUserProfileByIndex(-1);
-                    var NumProfiles = ups.ows.GetUserProfileCount();
+                    var UserProfileResult = ups.OWService.GetUserProfileByIndex(-1);
+                    var NumProfiles = ups.OWService.GetUserProfileCount();
                     var i = 1;
                     var tmpCount = 0;
                     var nextValue = UserProfileResult.NextValue;
@@ -78,7 +78,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                         WriteObject(userObject);
 
                         // And now we check the next profile the same way...
-                        UserProfileResult = ups.ows.GetUserProfileByIndex(nextValueIndex);
+                        UserProfileResult = ups.OWService.GetUserProfileByIndex(nextValueIndex);
                         nextValue = UserProfileResult.NextValue;
                         nextValueIndex = int.Parse(nextValue);
                         i++;

@@ -1,19 +1,28 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
-using Microsoft.SharePoint.Client;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell;
+    using OfficeDevPnP.Core.Utilities;
+
     /// <summary>
-    /// Queries list for items with versions and removes previous versions
+    /// This command will find versions for list items and remove those versions
     /// </summary>
     [Cmdlet(VerbsCommon.Remove, "IaCListItemVersions", SupportsShouldProcess = true)]
+    [CmdletHelp("Queries list for items with versions and removes previous versions", Category = "ListItems")]
     public class RemoveIaCListItemVersions : IaCCmdlet
     {
-        [Parameter(Mandatory = true)]
-        public string LibraryName { get; set; }
+        [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
+        public ListPipeBind ListTitle { get; set; }
 
         /// <summary>
         /// Execute the cmdlet
@@ -26,13 +35,22 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
                 var ctx = this.ClientContext;
 
                 var ctxWeb = ctx.Web;
-                var ctxList = ctxWeb.Lists.GetByTitle(LibraryName);
                 ctx.Load(ctxWeb, w => w.ServerRelativeUrl);
-                ctx.Load(ctxList, l => l.EnableVersioning, l => l.ItemCount, l => l.Id, l => l.BaseTemplate, l => l.BaseType, l => l.OnQuickLaunch, l => l.DefaultViewUrl, l => l.Title, l => l.Hidden);
                 this.ClientContext.ExecuteQueryRetry();
 
+                var ctxList = ListTitle.GetList(ctxWeb,
+                    l => l.EnableVersioning,
+                    l => l.ItemCount,
+                    l => l.Id,
+                    l => l.BaseTemplate,
+                    l => l.BaseType,
+                    l => l.OnQuickLaunch,
+                    l => l.DefaultViewUrl,
+                    l => l.Title, l => l.Hidden);
+
+
                 var itemCount = ctxList.ItemCount;
-                LogVerbose(string.Format("The library {0} has {1} items", LibraryName, itemCount));
+                LogVerbose(string.Format("The library {0} has {1} items", ListTitle, itemCount));
 
                 if (itemCount > 0)
                 {
@@ -66,7 +84,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
                                         LogVerbose("Version: {0} Is Current:{2} with size:{1}", version.VersionLabel, version.Size, version.IsCurrentVersion);
                                     }
 
-                                    if (this.ShouldProcess(string.Format("Deleting version history for {0}", fileRef)))
+                                    if (this.ShouldProcess(string.Format("---------------- Now deleting {0} versions", ctxRelativeUrl.Versions.Count())))
                                     {
                                         // Delete Versions
                                         ctxRelativeUrl.Versions.DeleteAll();
@@ -75,6 +93,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
                                 }
                             }
                         }
+
                         if (itemPosition == null)
                         {
                             break;
@@ -84,7 +103,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed in GetListItemCount for Library {0}", LibraryName);
+                LogError(ex, "Failed in RemoveIaCListItemVersions for Library {0}", ListTitle);
             }
         }
     }

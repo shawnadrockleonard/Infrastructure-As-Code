@@ -1,16 +1,19 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Powershell.Extensions;
-using InfrastructureAsCode.Powershell.PipeBinds;
-using Microsoft.SharePoint.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.Commands.Lists
+namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell;
+
+
     [Cmdlet(VerbsCommon.Get, "IaCListsItemCount")]
     [CmdletHelp("Returns all lists for the web and its related item count", Category = "ListItems")]
     public class GetIaCListsItemCount : IaCCmdlet

@@ -1,8 +1,4 @@
-﻿using InfrastructureAsCode.Powershell;
-using InfrastructureAsCode.Powershell.CmdLets;
-using Microsoft.SharePoint.Client;
-using OfficeDevPnP.Core.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -11,14 +7,23 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell;
+    using OfficeDevPnP.Core.Utilities;
+
     /// <summary>
-    /// Query the specific list and delete items, if begin/end is specified filter the query
+    /// Demonstrates how to delete specific items based on the query specified. 
+    ///     You can't modified an collection that is being enumerated so this presents a pattern to load up and process.
     /// </summary>
     [Cmdlet(VerbsCommon.Remove, "IaCListItems", SupportsShouldProcess = true)]
+    [CmdletHelp("Query the specific list and delete items, if begin/end is specified filter the query.", Category = "ListItems")]
     public class RemoveIaCListItems : IaCCmdlet
     {
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public string LibraryName { get; set; }
+        public ListPipeBind ListTitle { get; set; }
 
         /// <summary>
         /// Represents the start with ID to filter results based on ID specified
@@ -38,8 +43,11 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 3)]
         public string OverrideCamlQuery { get; set; }
 
+        /// <summary>
+        /// Override the ViewFields to be returned in the Query
+        /// </summary>
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 4)]
-        public object[] ViewFields { get; set; }
+        public string[] ViewFields { get; set; }
 
         /// <summary>
         /// Process the internals of the CmdLet
@@ -48,19 +56,18 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
         {
             base.ExecuteCmdlet();
 
-            //Load email notification list
-            var listInSite = this.ClientContext.Web.Lists.GetByTitle(this.LibraryName);
-            this.ClientContext.Load(listInSite);
-            this.ClientContext.ExecuteQuery();
+            // Load email notification list
+            var listInSite = this.ListTitle.GetList( this.ClientContext.Web);
+            
 
-            // get ezforms site and query the list for pending requests
+            // get site and query the list for pending requests
             var fieldNames = new List<string>() { "ID" };
-            if (ViewFields.Length > 0)
+            if (ViewFields != null && ViewFields.Length > 0)
             {
-                fieldNames.AddRange(ViewFields.Select(s => s.ToString()));
+                fieldNames.AddRange(ViewFields);
             };
 
-            var fieldsXml = fieldNames.Select(s => CAML.FieldRef(s)).ToArray();
+            var fieldsXml = CAML.ViewFields(fieldNames.Select(s => CAML.FieldRef(s)).ToArray());
             var camlWhereClause = string.Empty;
             var camlWhereConcat = false;
 
@@ -72,11 +79,11 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 
             if (StartsWithId > 0)
             {
-                var camlWhereSubClause = CAML.Gt(CAML.FieldValue("ID", "Number",  StartsWithId.ToString()));
+                var camlWhereSubClause = CAML.Geq(CAML.FieldValue("ID", FieldType.Number.ToString("f"), StartsWithId.ToString()));
                 if (camlWhereConcat)
                 {
                     // Wrap in an And Clause
-                    camlWhereClause = CAML.And( camlWhereClause, camlWhereSubClause);
+                    camlWhereClause = CAML.And(camlWhereClause, camlWhereSubClause);
                 }
                 else
                 {
@@ -87,7 +94,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 
             if (EndsWithId > 0)
             {
-                var camlWhereSubClause = CAML.Lt(CAML.FieldValue("ID", "Number", EndsWithId.ToString()));
+                var camlWhereSubClause = CAML.Leq(CAML.FieldValue("ID", FieldType.Number.ToString("f"), EndsWithId.ToString()));
                 if (camlWhereConcat)
                 {
                     // Wrap in an And Clause
@@ -109,9 +116,9 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
             try
             {
                 ListItemCollectionPosition ListItemCollectionPosition = null;
-                var camlQuery = new CamlQuery
+                var camlQuery = new CamlQuery()
                 {
-                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, CAML.Where(camlWhereClause), string.Empty, CAML.ViewFields(fieldsXml), 50)
+                    ViewXml = CAML.ViewQuery(ViewScope.RecursiveAll, CAML.Where(camlWhereClause), string.Empty, fieldsXml, 50)
                 };
 
                 var ids = new List<int>();
@@ -120,7 +127,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
                     camlQuery.ListItemCollectionPosition = ListItemCollectionPosition;
                     var spListItems = listInSite.GetItems(camlQuery);
                     this.ClientContext.Load(spListItems);
-                    this.ClientContext.ExecuteQuery();
+                    this.ClientContext.ExecuteQueryRetry();
                     ListItemCollectionPosition = spListItems.ListItemCollectionPosition;
 
                     foreach (var spListItem in spListItems)
@@ -142,21 +149,21 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 
                 }
 
-                if (this.ShouldProcess(string.Format("This will delete {0} list items.", ids.Count())))
+                // enumerate the ids to be deleted and process if -WhatIf (not passed)
+                foreach (var id in ids)
                 {
-                    foreach (var id in ids)
+                    if (this.ShouldProcess(string.Format("ListItem [{0}] now being deleted.", id)))
                     {
-                        LogWarning("ListItem [{0}] now being deleted.", id);
                         var spListItem = listInSite.GetItemById(id);
                         spListItem.DeleteObject();
                         listInSite.Update();
-                        this.ClientContext.ExecuteQuery();
+                        this.ClientContext.ExecuteQueryRetry();
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed to query list {0} with message {1}", this.LibraryName, ex.Message);
+                LogError(ex, "Failed to query list {0} with message {1}", this.ListTitle, ex.Message);
             }
         }
     }

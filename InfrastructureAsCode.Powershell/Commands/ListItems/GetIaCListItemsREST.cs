@@ -1,8 +1,4 @@
-﻿using InfrastructureAsCode.Core.Models;
-using InfrastructureAsCode.Powershell;
-using InfrastructureAsCode.Powershell.CmdLets;
-using Microsoft.SharePoint.Client;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,8 +8,15 @@ using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.Commands.Lists
+namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell;
+
+
     [Cmdlet(VerbsCommon.Get, "IaCListItemsREST")]
     [CmdletHelp("Opens a web request and queries the specified list via REST", Category = "ListItems")]
     public class GetIaCListItemsREST : IaCCmdlet
@@ -22,7 +25,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Lists
         /// The display name for the list or library to query
         /// </summary>
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
-        public string ListTitle { get; set; }
+        public ListPipeBind ListTitle { get; set; }
 
         /// <summary>
         /// A collection of internal names to retreive and dump to a txt file

@@ -49,10 +49,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Gist\externalusers.md" />
+    <None Include="Gist\Find-IaCSitePermissions.md" />
+    <None Include="Gist\Get-IaCListDocumentSet.md" />
+    <None Include="Gist\set-IaCListViewMinimal.md" />
     <None Include="Gist\sample-calloutlinks.md" />
     <None Include="Gist\sample-add-iac-buffer-fileupload.md" />
     <None Include="Gist\sample-provisionermodel.md" />
     <None Include="Gist\set-iac-viewdefinition.md" />
+    <None Include="Gist\Set-IaCSyncDirectory.md" />
+    <None Include="Gist\watch-upload-directory.md" />
     <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.1.nupkg" />
     <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.2.nupkg" />
     <None Include="nupkg\PinchPerfect.InfrastructureAsCode.Core.1.0.3.nupkg" />
@@ -75,7 +81,7 @@
     </None>
     <None Include="Samples\script-set-customaction-commandui.ps1" />
     <None Include="Samples\script-set-customaction.ps1" />
-    <None Include="Samples\script-set-jslink.ps1" />
+    <None Include="Gist\set-IaCListFieldJsLink.md" />
     <None Include="Samples\script-set-modernui.ps1" />
   </ItemGroup>
   <ItemGroup>

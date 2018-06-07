@@ -1,22 +1,26 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Powershell.Extensions;
-using InfrastructureAsCode.Powershell.PipeBinds;
-using Microsoft.SharePoint.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.Commands.Lists
+namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
+    using Microsoft.SharePoint.Client;
+    using InfrastructureAsCode.Powershell.PipeBinds;
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Models;
+    using InfrastructureAsCode.Powershell;
+    using OfficeDevPnP.Core.Utilities;
+
     [Cmdlet(VerbsCommon.Get, "IaCListItemCount")]
     [CmdletHelp("Returns the library item count", Category = "ListItems")]
     public class GetIaCListItemCount : IaCCmdlet
     {
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
-        public ListPipeBind Identity;
+        public ListPipeBind Identity { get; set; }
+
 
         public override void ExecuteCmdlet()
         {

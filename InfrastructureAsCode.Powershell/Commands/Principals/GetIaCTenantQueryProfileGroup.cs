@@ -1,8 +1,4 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Core.Utilities;
-using Microsoft.Online.SharePoint.TenantAdministration;
-using Microsoft.SharePoint.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -10,11 +6,16 @@ using PCommand = System.Management.Automation.Runspaces;
 
 namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
+    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Core.Utilities;
+    using Microsoft.Online.SharePoint.TenantAdministration;
+    using Microsoft.SharePoint.Client;
+
     /// <summary>
     /// Query for a group in the tenant
     /// </summary>
-    [Cmdlet(VerbsCommon.Get, "IaCQueryProfileGroup")]
-    public class GetIaCQueryProfileGroup : IaCAdminCmdlet
+    [Cmdlet(VerbsCommon.Get, "IaCTenantQueryProfileGroup")]
+    public class GetIaCTenantQueryProfileGroup : IaCAdminCmdlet
     {
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 1)]
         public string GroupId { get; set; }
@@ -28,6 +29,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 4)]
         public string SiteUrl { get; set; }
 
+
+
         protected override void BeginProcessing()
         {
             base.BeginProcessing();
@@ -37,6 +40,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 throw new InvalidOperationException("GroupName is not valid.");
             }
         }
+
 
         public override void ExecuteCmdlet()
         {
