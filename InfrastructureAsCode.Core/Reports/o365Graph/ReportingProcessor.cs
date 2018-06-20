@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
+﻿using InfrastructureAsCode.Core.oAuth;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
 using Newtonsoft.Json;
@@ -356,7 +356,6 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             };
 
             var response = ResponseReader.RetrieveData(serviceQuery);
-            Logger.LogInformation("WebResponse:{0}", response);
             return response;
         }
 

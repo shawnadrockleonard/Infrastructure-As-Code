@@ -14,7 +14,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
     /// Query for a user in the tenant
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "IaCTenantQueryProfileUser")]
-    public class GetIaCTenantQueryProfileUser : IaCAdminCmdlet
+    public class GetIaCMSOLQueryProfileUser : IaCAdminCmdlet
     {
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]

@@ -61,16 +61,16 @@ Report Period
         public Nullable<DateTime> DeletedDate { get; set; }
 
         [JsonProperty("viewedOrEditedFileCount")]
-        public Int32 FilesViewedModified { get; set; }
+        public Nullable<Int64> FilesViewedModified { get; set; }
 
         [JsonProperty("syncedFileCount")]
-        public Int32 SyncedFileCount { get; set; }
+        public Nullable<Int64> SyncedFileCount { get; set; }
 
         [JsonProperty("sharedInternallyFileCount")]
-        public Int64 SharedInternallyFileCount { get; set; }
+        public Nullable<Int64> SharedInternallyFileCount { get; set; }
 
         [JsonProperty("sharedExternallyFileCount")]
-        public Int64 SharedExternallyFileCount { get; set; }
+        public Nullable<Int64> SharedExternallyFileCount { get; set; }
 
         [JsonProperty("assignedProducts")]
         public IEnumerable<string> ProductsAssigned { get; set; }

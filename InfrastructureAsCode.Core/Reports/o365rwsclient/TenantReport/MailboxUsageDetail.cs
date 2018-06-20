@@ -23,21 +23,21 @@ namespace InfrastructureAsCode.Core.Reports.o365rwsclient.TenantReport
         }
 
         [XmlElement]
-        public Int64 MailboxSize
+        public Nullable<Int64> MailboxSize
         {
             get;
             set;
         }
 
         [XmlElement]
-        public Int64 CurrentMailboxSize
+        public Nullable<Int64> CurrentMailboxSize
         {
             get;
             set;
         }
 
         [XmlElement]
-        public Int64 PercentUsed
+        public Nullable<Int64> PercentUsed
         {
             get;
             set;
@@ -58,7 +58,7 @@ namespace InfrastructureAsCode.Core.Reports.o365rwsclient.TenantReport
         }
 
         [XmlElement]
-        public Int64 IssueWarningQuota
+        public Nullable<Int64> IssueWarningQuota
         {
             get;
             set;

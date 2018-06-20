@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core.Reports.o365Graph.AzureAD
+namespace InfrastructureAsCode.Core.oAuth
 {
     /// <summary>
     /// Azure AD Config settings for claiming tokens

@@ -1,5 +1,4 @@
-﻿using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
-using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
+﻿using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -35,7 +35,7 @@ Report Period
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("visitedPageCount")]
-        public Int64 VisitedPageCount { get; set; }
+        public Nullable<Int64> VisitedPageCount { get; set; }
 
         [JsonProperty("reportDate")]
         public DateTime ReportDate { get; set; }

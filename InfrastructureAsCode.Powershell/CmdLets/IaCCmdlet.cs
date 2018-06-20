@@ -1,4 +1,5 @@
-﻿using InfrastructureAsCode.Core.Utilities;
+﻿using InfrastructureAsCode.Core.oAuth;
+using InfrastructureAsCode.Core.Utilities;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Utilities;
 using System;
@@ -21,6 +22,12 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         {
             get { return SPIaCConnection.CurrentConnection.Context; }
         }
+
+        public IAzureADConfig AzureADConfig
+        {
+            get { return SPIaCConnection.CurrentConnection.AzureConfig; }
+        }
+
 
         /// <summary>
         /// The base URI for the SP Site or Tenant

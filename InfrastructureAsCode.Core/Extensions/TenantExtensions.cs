@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
+using Microsoft.Online.SharePoint.TenantManagement;
+using InfrastructureAsCode.Core.Reports;
 
 namespace InfrastructureAsCode.Core.Extensions
 {
@@ -74,6 +76,106 @@ namespace InfrastructureAsCode.Core.Extensions
             }
 
             return urls;
+        }
+
+        /// <summary>
+        /// Query the Tenant UPS based on Site Collection
+        /// </summary>
+        /// <param name="siteUrl"></param>
+        /// <param name="invitedAs"></param>
+        /// <returns></returns>
+        public static List<SPExternalUserEntity> CheckExternalUserForSite(this ClientContext adminContext, ITraceLogger logger, string siteUrl, string invitedAs = "")
+        {
+            if (siteUrl == null)
+                throw new ArgumentNullException("siteUrl");
+
+
+            var externalUsers = new List<SPExternalUserEntity>();
+            int pageSize = 50;
+            int position = 0;
+            GetExternalUsersResults results = null;
+
+            var officeTenantContext = new Office365Tenant(adminContext);
+
+            while (true)
+            {
+                logger.LogInformation($"Checking External User with {invitedAs} at start {position} and page size {pageSize}");
+
+                results = officeTenantContext.GetExternalUsersForSite(siteUrl, position, pageSize, invitedAs, SortOrder.Ascending);
+                adminContext.Load(results, r => r.UserCollectionPosition, r => r.TotalUserCount, r => r.ExternalUserCollection);
+                adminContext.ExecuteQueryRetry();
+
+                foreach (ExternalUser externalUser in results.ExternalUserCollection)
+                {
+                    externalUsers.Add(new SPExternalUserEntity()
+                    {
+                        AcceptedAs = externalUser.AcceptedAs,
+                        DisplayName = externalUser.DisplayName,
+                        InvitedAs = externalUser.InvitedAs,
+                        InvitedBy = externalUser.InvitedBy,
+                        UniqueId = externalUser.UniqueId,
+                        UserId = externalUser.UserId,
+                        WhenCreated = externalUser.WhenCreated
+                    });
+                }
+
+                position = results.UserCollectionPosition;
+
+                if (position == -1 || position == results.TotalUserCount)
+                {
+                    break;
+                }
+            }
+
+            return externalUsers;
+        }
+
+        /// <summary>
+        /// Query the Tenant UPS
+        /// </summary>
+        /// <param name="invitedAs"></param>
+        /// <returns></returns>
+        public static List<SPExternalUserEntity> CheckExternalUser(this ClientContext adminContext, ITraceLogger logger, string invitedAs = "")
+        {
+            var externalUsers = new List<SPExternalUserEntity>();
+            int pageSize = 50;
+            int position = 0;
+            GetExternalUsersResults results = null;
+
+            var officeTenantContext = new Office365Tenant(adminContext);
+
+
+            while (true)
+            {
+                logger.LogInformation($"Checking External User with {invitedAs} at start {position} and page size {pageSize}");
+
+                results = officeTenantContext.GetExternalUsers(position, pageSize, invitedAs, Microsoft.Online.SharePoint.TenantManagement.SortOrder.Ascending);
+                adminContext.Load(results, r => r.UserCollectionPosition, r => r.TotalUserCount, r => r.ExternalUserCollection);
+                adminContext.ExecuteQueryRetry();
+
+                foreach (ExternalUser externalUser in results.ExternalUserCollection)
+                {
+                    externalUsers.Add(new SPExternalUserEntity()
+                    {
+                        DisplayName = externalUser.DisplayName,
+                        AcceptedAs = externalUser.AcceptedAs,
+                        InvitedAs = externalUser.InvitedAs,
+                        InvitedBy = externalUser.InvitedBy,
+                        UniqueId = externalUser.UniqueId,
+                        UserId = externalUser.UserId,
+                        WhenCreated = externalUser.WhenCreated
+                    });
+                }
+
+                position = results.UserCollectionPosition;
+
+                if (position == -1 || position == results.TotalUserCount)
+                {
+                    break;
+                }
+            }
+
+            return externalUsers;
         }
     }
 }

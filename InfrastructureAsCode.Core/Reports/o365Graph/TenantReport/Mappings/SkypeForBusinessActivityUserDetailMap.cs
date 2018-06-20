@@ -76,13 +76,13 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public Nullable<DateTime> LastActivityDate { get; set; }
 
         [JsonProperty("totalPeerToPeerSessionCount")]
-        public Int64 TotalPeerToPeerSessionCount { get; set; }
+        public Nullable<Int64> TotalPeerToPeerSessionCount { get; set; }
 
         [JsonProperty("totalOrganizedConferenceCount")]
-        public Int64 TotalOrganizedConferenceCount { get; set; }
+        public Nullable<Int64> TotalOrganizedConferenceCount { get; set; }
 
         [JsonProperty("totalParticipatedConferenceCount")]
-        public Int64 TotalParticipatedConferenceCount { get; set; }
+        public Nullable<Int64> TotalParticipatedConferenceCount { get; set; }
 
         [JsonProperty("peerToPeerLastActivityDate")]
         public Nullable<DateTime> PeerToPeerLastActivityDate { get; set; }
@@ -94,71 +94,71 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public Nullable<DateTime> ParticipatedConferenceLastActivityDate { get; set; }
 
         [JsonProperty("peerToPeerIMCount")]
-        public Int64 PeerToPeerIMCount { get; set; }
+        public Nullable<Int64> PeerToPeerIMCount { get; set; }
 
         [JsonProperty("peerToPeerAudioCount")]
-        public Int64 PeerToPeerAudioCount { get; set; }
+        public Nullable<Int64> PeerToPeerAudioCount { get; set; }
 
         [JsonProperty("peerToPeerAudioMinutes")]
-        public Int64 PeerToPeerAudioMinutes { get; set; }
+        public Nullable<Int64> PeerToPeerAudioMinutes { get; set; }
 
         [JsonProperty("peerToPeerVideoCount")]
-        public Int64 PeerToPeerVideoCount { get; set; }
+        public Nullable<Int64> PeerToPeerVideoCount { get; set; }
 
         [JsonProperty("peerToPeerVideoMinutes")]
-        public Int64 PeerToPeerVideoMinutes { get; set; }
+        public Nullable<Int64> PeerToPeerVideoMinutes { get; set; }
 
         [JsonProperty("peerToPeerAppSharingCount")]
-        public Int64 PeerToPeerAppSharingCount { get; set; }
+        public Nullable<Int64> PeerToPeerAppSharingCount { get; set; }
 
         [JsonProperty("peerToPeerFileTransferCount")]
-        public Int64 PeerToPeerFileTransferCount { get; set; }
+        public Nullable<Int64> PeerToPeerFileTransferCount { get; set; }
 
         [JsonProperty("organizedConferenceIMCount")]
-        public Int64 OrganizedConferenceIMCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceIMCount { get; set; }
 
         [JsonProperty("organizedConferenceAudioVideoCount")]
-        public Int64 OrganizedConferenceAudioVideoCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceAudioVideoCount { get; set; }
 
         [JsonProperty("organizedConferenceAudioVideoMinutes")]
-        public Int64 OrganizedConferenceAudioVideoMinutes { get; set; }
+        public Nullable<Int64> OrganizedConferenceAudioVideoMinutes { get; set; }
 
         [JsonProperty("organizedConferenceAppSharingCount")]
-        public Int64 OrganizedConferenceAppSharingCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceAppSharingCount { get; set; }
 
         [JsonProperty("organizedConferenceWebCount")]
-        public Int64 OrganizedConferenceWebCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceWebCount { get; set; }
 
         [JsonProperty("organizedConferenceDialInOut3rdPartyCount")]
-        public Int64 OrganizedConferenceDialInOut3rdPartyCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceDialInOut3rdPartyCount { get; set; }
 
         [JsonProperty("organizedConferenceCloudDialInOutMicrosoftCount")]
-        public Int64 OrganizedConferenceCloudDialInOutMicrosoftCount { get; set; }
+        public Nullable<Int64> OrganizedConferenceCloudDialInOutMicrosoftCount { get; set; }
 
         [JsonProperty("organizedConferenceCloudDialInMicrosoftMinutes")]
-        public Int64 OrganizedConferenceCloudDialInMicrosoftMinutes { get; set; }
+        public Nullable<Int64> OrganizedConferenceCloudDialInMicrosoftMinutes { get; set; }
 
         [JsonProperty("organizedConferenceCloudDialOutMicrosoftMinutes")]
-        public Int64 OrganizedConferenceCloudDialOutMicrosoftMinutes { get; set; }
+        public Nullable<Int64> OrganizedConferenceCloudDialOutMicrosoftMinutes { get; set; }
 
         [JsonProperty("participatedConferenceIMCount")]
-        public Int64 ParticipatedConferenceIMCount { get; set; }
+        public Nullable<Int64> ParticipatedConferenceIMCount { get; set; }
 
         [JsonProperty("participatedConferenceAudioVideoCount")]
-        public Int64 ParticipatedConferenceAudioVideoCount { get; set; }
+        public Nullable<Int64> ParticipatedConferenceAudioVideoCount { get; set; }
 
         [JsonProperty("participatedConferenceAudioVideoMinutes")]
-        public Int64 ParticipatedConferenceAudioVideoMinutes { get; set; }
+        public Nullable<Int64> ParticipatedConferenceAudioVideoMinutes { get; set; }
 
         [JsonProperty("participatedConferenceAppSharingCount")]
-        public Int64 ParticipatedConferenceAppSharingCount { get; set; }
+        public Nullable<Int64> ParticipatedConferenceAppSharingCount { get; set; }
 
         [JsonProperty("participatedConferenceWebCount")]
-        public Int64 ParticipatedConferenceWebCount { get; set; }
+        public Nullable<Int64> ParticipatedConferenceWebCount { get; set; }
 
 
         [JsonProperty("participatedConferenceDialInOut3rdPartyCount")]
-        public Int64 ParticipatedConferenceDialInOut3rdPartyCount { get; set; }
+        public Nullable<Int64> ParticipatedConferenceDialInOut3rdPartyCount { get; set; }
 
         [JsonProperty("assignedProducts")]
         public IEnumerable<string> ProductsAssigned { get; set; }

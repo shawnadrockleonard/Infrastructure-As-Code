@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Extensions;
-using Microsoft.SharePoint.Client;
-using System.Management.Automation;
 using InfrastructureAsCode.Core.Models;
-using OfficeDevPnP.Core.Utilities;
-using Microsoft.SharePoint.Client.WorkflowServices;
 using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
-using InfrastructureAsCode.Core.Reports;
+using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.WorkflowServices;
+using OfficeDevPnP.Core.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Management.Automation;
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
@@ -43,6 +41,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
 
         #region Private Variables
 
+        internal const string FieldBoolean_RestartWorkflow = "RestartWorkflow";
+
+        private ITraceLogger ilogger { get; set; }
+
         #endregion
 
 
@@ -52,7 +54,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
 
             var SelectedWeb = this.ClientContext.Web;
 
-            var ilogger = new DefaultUsageLogger(
+            ilogger = new DefaultUsageLogger(
                 (string msg, object[] margs) =>
                 {
                     LogDebugging(msg, margs);
@@ -76,15 +78,32 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                 var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
                 var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
                 var subscriptions = subscriptionService.EnumerateSubscriptionsByList(list.Id);
-                ClientContext.Load(subscriptions, subs => subs.Where(sub => sub.Name == WorkflowName));
+                //foreach (WorkflowSubscription subs1 in subscriptions)
+                //{
+                //    if (subs1.Name == WorkflowName) { ClientContext.Load(subs1); }
+                //}
+                ClientContext.Load(subscriptions);
                 ClientContext.ExecuteQueryRetry();
-                if (subscriptions.Any())
+                if (subscriptions.Any(subs => subs.Name == WorkflowName))
                 {
-                    var subscription = subscriptions.FirstOrDefault();
+                    var subscription = subscriptions.FirstOrDefault(subs => subs.Name == WorkflowName);
                     workflowSubscriptionId = subscription.Id;
                 }
             }
 
+
+            var FieldDefinitions = new List<SPFieldDefinitionModel>
+            {
+                new SPFieldDefinitionModel(FieldType.Boolean)
+                {
+                    FieldGuid = new Guid("da2872c4-e9b6-4804-9837-6e9dd85ecd7e"),
+                    InternalName = FieldBoolean_RestartWorkflow,
+                    Description = "RestartWorkflow provides a way to identify items that should be restarted.",
+                    Title = FieldBoolean_RestartWorkflow,
+                    MaxLength = 255,
+                    DefaultValue = "No"
+                }
+            };
 
             var workflowStati = new List<Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus>()
             {
@@ -97,11 +116,27 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
             // Check if the field exists
             var viewFields = new string[] { "Id", "Title", WorkflowColumnName };
             var viewFieldXml = CAML.ViewFields(viewFields.Select(s => CAML.FieldRef(s)).ToArray());
-            var internalFields = new List<string>
-            {
-                WorkflowColumnName
-            };
+            var internalFields = new List<string>();
+            internalFields.AddRange(FieldDefinitions.Select(s => s.InternalName));
 
+            try
+            {
+                var checkFields = list.GetFields(internalFields.ToArray());
+            }
+            catch (Exception ex)
+            {
+                LogError(ex, "Failed to retreive the fields {0}", ex.Message);
+
+                foreach (var field in FieldDefinitions)
+                {
+                    // provision the column
+                    var provisionedColumn = list.CreateListColumn(field, ilogger, null);
+                    if (provisionedColumn != null)
+                    {
+                        internalFields.Add(provisionedColumn.InternalName);
+                    }
+                }
+            }
 
             var itemIds = new List<int>();
             var viewCaml = new CamlQuery()

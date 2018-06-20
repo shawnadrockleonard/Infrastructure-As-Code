@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core.Reports
+namespace InfrastructureAsCode.Core.Extensions
 {
     /// <summary>
     /// Provides a mechanism to parse various data values into a specific type
     /// </summary>
-    public static class ReportDataExtensions
+    public static class NumericExtensions
     {
         /// <summary>
         /// Parse Large Int the value into a the specific power (i.e. convert Bytes into Mb, Gb, Tb, Pb)

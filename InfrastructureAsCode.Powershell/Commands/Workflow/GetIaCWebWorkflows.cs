@@ -1,17 +1,11 @@
-﻿using System;
+﻿using InfrastructureAsCode.Core;
+using InfrastructureAsCode.Powershell.CmdLets;
+using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.WorkflowServices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using InfrastructureAsCode.Core.Extensions;
-using Microsoft.SharePoint.Client;
 using System.Management.Automation;
-using InfrastructureAsCode.Core.Models;
-using OfficeDevPnP.Core.Utilities;
-using Microsoft.SharePoint.Client.WorkflowServices;
-using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Powershell.PipeBinds;
-using InfrastructureAsCode.Core.Reports;
 
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflow
@@ -57,30 +51,30 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                     LogError(ex, msg, margs);
                 });
 
-            WorkflowSubscriptionCollection subscriptions = null;
+            IEnumerable<WorkflowSubscription> subscriptionCollection = null;
 
             if (!string.IsNullOrEmpty(WorkflowName))
             {
+                var name = WorkflowName;
                 var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
                 var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
-                subscriptions = subscriptionService.EnumerateSubscriptions();
-                ClientContext.Load(subscriptions, subs => subs.Where(sub => sub.Name == WorkflowName));
+                var subscriptions = subscriptionService.EnumerateSubscriptions();
+                subscriptionCollection = ClientContext.LoadQuery(from sub in subscriptions where sub.Name == name select sub);
                 ClientContext.ExecuteQueryRetry();
-
-
             }
             else
             {
                 var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
                 var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
-                subscriptions = subscriptionService.EnumerateSubscriptions();
+                var subscriptions = subscriptionService.EnumerateSubscriptions();
                 ClientContext.Load(subscriptions);
                 ClientContext.ExecuteQueryRetry();
 
+                subscriptionCollection = subscriptions.ToArray();
             }
 
             // Log the workflow subscription
-            foreach (var itemId in subscriptions)
+            foreach (var itemId in subscriptionCollection)
             {
                 var msg = $"Workflow Subscription {itemId.Id} => Name {itemId.Name}";
                 LogWarning(msg);

@@ -45,10 +45,10 @@ Report Period
         public string SiteType { get; set; }
 
         [JsonProperty("total")]
-        public Int64 Total_Accounts { get; set; }
+        public Nullable<Int64> Total_Accounts { get; set; }
 
         [JsonProperty("active")]
-        public Int64 Active_Accounts { get; set; }
+        public Nullable<Int64> Active_Accounts { get; set; }
 
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }

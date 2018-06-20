@@ -48,16 +48,23 @@ namespace InfrastructureAsCode.Powershell.Commands
         public int RequestTimeout = 1800000;
 
         [Parameter(Mandatory = false, ParameterSetName = "Token")]
-        public string Realm;
+        public string Realm { get; set; }
 
         [Parameter(Mandatory = true, ParameterSetName = "Token")]
-        public string AppId;
+        public string AppId { get; set; }
 
         [Parameter(Mandatory = true, ParameterSetName = "Token")]
-        public string AppSecret;
+        public string AppSecret { get; set; }
+
+        [Parameter(Mandatory = true, HelpMessage = "The AAD where the O365 app is registered. Eg.: contoso.com, or contoso.onmicrosoft.com.", ParameterSetName = "Token")]
+        public string AppDomain { get; set; }
+
+        [Parameter(Mandatory = true, HelpMessage = "The URI of the resource to query", ParameterSetName = "Token")]
+        public string ResourceUri { get; set; }
+
 
         [Parameter(Mandatory = true, ParameterSetName = "UserCache")]
-        public string UserName;
+        public string UserName { get; set; }
 
         /// <summary>
         /// Represents a parameter to pull from the stored credentials
@@ -84,7 +91,7 @@ namespace InfrastructureAsCode.Powershell.Commands
 
             if (ParameterSetName == "Token")
             {
-                SPIaCConnection.CurrentConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), Realm, AppId, AppSecret, Host, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
+                SPIaCConnection.CurrentConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), Realm, AppId, AppSecret, AppDomain, ResourceUri, Host, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
             }
             else if (ParameterSetName == "CredentialCache")
             {

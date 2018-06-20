@@ -55,40 +55,40 @@ Report Period
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("exchangeActive")]
-        public Int64 ExchangeActive { get; set; }
+        public Nullable<Int64> ExchangeActive { get; set; }
 
         [JsonProperty("exchangeInactive")]
-        public Int64 ExchangeInActive { get; set; }
+        public Nullable<Int64> ExchangeInActive { get; set; }
 
         [JsonProperty("oneDriveActive")]
-        public Int64 OneDriveActive { get; set; }
+        public Nullable<Int64> OneDriveActive { get; set; }
 
         [JsonProperty("oneDriveInactive")]
-        public Int64 OneDriveInActive { get; set; }
+        public Nullable<Int64> OneDriveInActive { get; set; }
 
         [JsonProperty("sharePointActive")]
-        public Int64 SharePointActive { get; set; }
+        public Nullable<Int64> SharePointActive { get; set; }
 
         [JsonProperty("sharePointInactive")]
-        public Int64 SharePointInActive { get; set; }
+        public Nullable<Int64> SharePointInActive { get; set; }
 
         [JsonProperty("skypeForBusinessActive")]
-        public Int64 SkypeActive { get; set; }
+        public Nullable<Int64> SkypeActive { get; set; }
 
         [JsonProperty("skypeForBusinessInactive")]
-        public Int64 SkypeInActive { get; set; }
+        public Nullable<Int64> SkypeInActive { get; set; }
 
         [JsonProperty("yammerActive")]
-        public Int64 YammerActive { get; set; }
+        public Nullable<Int64> YammerActive { get; set; }
 
         [JsonProperty("yammerInactive")]
-        public Int64 YammerInActive { get; set; }
+        public Nullable<Int64> YammerInActive { get; set; }
 
         [JsonProperty("teamsActive")]
-        public Int64 MSTeamActive { get; set; }
+        public Nullable<Int64> MSTeamActive { get; set; }
 
         [JsonProperty("teamsInactive")]
-        public Int64 MSTeamInActive { get; set; }
+        public Nullable<Int64> MSTeamInActive { get; set; }
 
         [JsonProperty("reportPeriod")]
         public int ReportingPeriodDays { get; set; }

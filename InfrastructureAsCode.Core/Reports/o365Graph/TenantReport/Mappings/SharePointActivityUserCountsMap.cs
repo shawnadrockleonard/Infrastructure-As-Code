@@ -43,19 +43,19 @@ Report Period
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("visitedPage")]
-        public Int64 VisitedPage { get; set; }
+        public Nullable<Int64> VisitedPage { get; set; }
 
         [JsonProperty("viewedOrEdited")]
-        public Int64 ViewedOrEdited { get; set; }
+        public Nullable<Int64> ViewedOrEdited { get; set; }
 
         [JsonProperty("synced")]
-        public Int64 Synced { get; set; }
+        public Nullable<Int64> Synced { get; set; }
 
         [JsonProperty("sharedInternally")]
-        public Int64 SharedInternally { get; set; }
+        public Nullable<Int64> SharedInternally { get; set; }
 
         [JsonProperty("sharedExternally")]
-        public Int64 SharedExternally { get; set; }
+        public Nullable<Int64> SharedExternally { get; set; }
 
         [JsonProperty("reportDate")]
         public DateTime ReportDate { get; set; }

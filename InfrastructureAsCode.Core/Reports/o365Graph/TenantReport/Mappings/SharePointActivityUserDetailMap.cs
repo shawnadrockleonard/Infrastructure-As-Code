@@ -67,19 +67,19 @@ Report Period
         public DateTime LastActivityDate { get; set; }
 
         [JsonProperty("viewedOrEditedFileCount")]
-        public Int64 ViewedOrEditedFileCount { get; set; }
+        public Nullable<Int64> ViewedOrEditedFileCount { get; set; }
 
         [JsonProperty("syncedFileCount")]
-        public Int64 SyncedFileCount { get; set; }
+        public Nullable<Int64> SyncedFileCount { get; set; }
 
         [JsonProperty("sharedInternallyFileCount")]
-        public Int64 SharedInternallyFileCount { get; set; }
+        public Nullable<Int64> SharedInternallyFileCount { get; set; }
 
         [JsonProperty("sharedExternallyFileCount")]
-        public Int64 SharedExternallyFileCount { get; set; }
+        public Nullable<Int64> SharedExternallyFileCount { get; set; }
 
         [JsonProperty("visitedPageCount")]
-        public Int64 VisitedPageCount { get; set; }
+        public Nullable<Int64> VisitedPageCount { get; set; }
 
         [JsonProperty("assignedProducts")]
         public IEnumerable<string> ProductsAssigned { get; set; }

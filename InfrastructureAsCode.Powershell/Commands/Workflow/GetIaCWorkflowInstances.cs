@@ -4,6 +4,9 @@ using Microsoft.SharePoint.Client.WorkflowServices;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Powershell.CmdLets;
 using System;
+using System.Collections;
+using InfrastructureAsCode.Core.Models;
+using System.Collections.Generic;
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
@@ -13,24 +16,35 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
     [Cmdlet(VerbsCommon.Get, "IaCWorkflowInstances")]
     public class GetIaCWorkflowInstances : IaCCmdlet
     {
-        [Parameter(Mandatory = false, HelpMessage = "The name of the workflow", Position = 0)]
-        public string Name { get; set; }
 
-        [Parameter(Mandatory = false, HelpMessage = "A list to search the instances for", Position = 1)]
+        #region Public Parameters 
+
+        [Parameter(Mandatory = false, HelpMessage = "A list to search the instances for", Position = 0)]
         public ListPipeBind List { get; set; }
+
+
+        [Parameter(Mandatory = false, HelpMessage = "The name of the workflow", Position = 1)]
+        public string WorkflowName { get; set; }
+
 
         [Parameter(Mandatory = false)]
         public Nullable<int> ListItemId { get; set; }
 
+
         [Parameter(Mandatory = false)]
-        public SwitchParameter PublishedOnly = true;
+        public SwitchParameter DeepScan { get; set; }
+
+        #endregion
+
+
+        internal IList<SPWorkflowInstance> Instances { get; private set; }
+
 
         public override void ExecuteCmdlet()
         {
             var SelectedWeb = this.ClientContext.Web;
 
-            if (List != null)
-            {
+
                 var list = List.GetList(SelectedWeb);
 
                 if (ListItemId.HasValue)
@@ -42,18 +56,18 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                     var instances = SelectedWeb.GetWorkflowInstances(item);
                     foreach (var instance in instances)
                     {
-                        LogVerbose("Instance {0} => Status {1} => WF Status {2} => Created {3} => LastUpdated {4} => Subscription {5}", instance.Id, instance.Status, instance.UserStatus, instance.InstanceCreated, instance.LastUpdated, instance.WorkflowSubscriptionId);
+                        WriteInstanceLog(instance);
                     }
                     
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(Name))
+                    if (!string.IsNullOrEmpty(WorkflowName))
                     {
                         var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
                         var deploymentService = servicesManager.GetWorkflowInstanceService();
 
-                        WorkflowSubscription workflowSubscription = list.GetWorkflowSubscription(Name);
+                        WorkflowSubscription workflowSubscription = list.GetWorkflowSubscription(WorkflowName);
                         WriteSubscriptionInstances(deploymentService, workflowSubscription);
 
                     }
@@ -73,11 +87,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                         }
                     }
                 }
-            }
-            else
-            {
+  
                 WriteObject(SelectedWeb.GetWorkflowInstances());
-            }
         }
 
         private void WriteSubscriptionInstances(WorkflowInstanceService deploymentService, WorkflowSubscription workflowSubscription)
@@ -113,10 +124,15 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
 
                 foreach (var instance in instances)
                 {
-                    LogVerbose("Instance {0} => Status {1} => WF Status {2} => Created {3} => LastUpdated {4} => Subscription {5}", instance.Id, instance.Status, instance.UserStatus, instance.InstanceCreated, instance.LastUpdated, instance.WorkflowSubscriptionId);
+                    WriteInstanceLog(instance);
                 }
 
             }
+        }
+
+        private void WriteInstanceLog(WorkflowInstance instance)
+        {
+            LogVerbose("Instance {0} => Status {1} => WF Status {2} => Created {3} => LastUpdated {4} => Subscription {5}", instance.Id, instance.Status, instance.UserStatus, instance.InstanceCreated, instance.LastUpdated, instance.WorkflowSubscriptionId);
         }
     }
 

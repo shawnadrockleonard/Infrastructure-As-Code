@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InfrastructureAsCode.Core.Reports
+namespace InfrastructureAsCode.Core
 {
     public interface ITraceLogger
     {

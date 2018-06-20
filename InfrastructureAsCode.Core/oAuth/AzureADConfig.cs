@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core.Reports.o365Graph.AzureAD
+namespace InfrastructureAsCode.Core.oAuth
 {
     /// <summary>
     /// Represents the config for claiming and refreshing tokens

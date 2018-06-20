@@ -15,7 +15,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
     /// Query for a group in the tenant
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "IaCTenantQueryProfileGroup")]
-    public class GetIaCTenantQueryProfileGroup : IaCAdminCmdlet
+    public class GetIaCMSOLQueryProfileGroup : IaCAdminCmdlet
     {
         [Parameter(Mandatory = false, ValueFromPipeline = true, Position = 1)]
         public string GroupId { get; set; }

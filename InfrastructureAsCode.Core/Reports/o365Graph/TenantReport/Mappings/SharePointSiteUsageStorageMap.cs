@@ -40,7 +40,7 @@ Report Period
         public string SiteType { get; set; }
 
         [JsonProperty("storageUsedInBytes")]
-        public Int64 StorageUsed_Byte { get; set; }
+        public Nullable<Int64> StorageUsed_Byte { get; set; }
 
         [JsonProperty("reportDate")]
         public DateTime ReportDate { get; set; }

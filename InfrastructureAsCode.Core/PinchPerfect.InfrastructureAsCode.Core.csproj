@@ -211,6 +211,7 @@
     <Compile Include="Models\SiteProvisionerFieldChoiceModel.cs" />
     <Compile Include="Models\SPChoiceModelComparer.cs" />
     <Compile Include="Models\SPCustomAction.cs" />
+    <Compile Include="Models\SPExternalUserEntity.cs" />
     <Compile Include="Models\SPFieldLinkDefinitionModel.cs" />
     <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
     <Compile Include="Models\SPGroupPrincipalModel.cs" />
@@ -243,19 +244,21 @@
     <Compile Include="Models\SPUserDefinitionModel.cs" />
     <Compile Include="Models\SPViewDefinitionModel.cs" />
     <Compile Include="Models\SPWebDefinitionModel.cs" />
-    <Compile Include="Reports\o365Graph\AzureAD\AzureADConfig.cs" />
-    <Compile Include="Reports\o365Graph\AzureAD\AzureADConstants.cs" />
-    <Compile Include="Reports\o365Graph\AzureAD\IAzureADConfig.cs" />
-    <Compile Include="Reports\o365Graph\AzureAD\IOAuthTokenCache.cs" />
-    <Compile Include="Reports\o365Graph\AzureAD\AzureADTokenCache.cs" />
+    <Compile Include="Models\SPWorkflowInstance.cs" />
+    <Compile Include="oAuth\AzureADConfig.cs" />
+    <Compile Include="oAuth\AzureADConstants.cs" />
+    <Compile Include="oAuth\IAzureADConfig.cs" />
+    <Compile Include="oAuth\IOAuthTokenCache.cs" />
+    <Compile Include="oAuth\AzureADTokenCache.cs" />
     <Compile Include="Reports\o365Graph\ReportingProcessor.cs" />
-    <Compile Include="Reports\DefaultUsageLogger.cs" />
+    <Compile Include="DefaultUsageLogger.cs" />
     <Compile Include="Reports\o365Graph\QueryFilter.cs" />
     <Compile Include="Reports\o365Graph\ReportingStream.cs" />
     <Compile Include="Reports\o365Graph\ReportUsageFormatEnum.cs" />
     <Compile Include="Reports\o365Graph\ReportUsagePeriodEnum.cs" />
     <Compile Include="Reports\o365Graph\ReportUsageTypeEnum.cs" />
     <Compile Include="Reports\o365Graph\IReportVisitor.cs" />
+    <Compile Include="Reports\o365Graph\SampleReportingProcessor.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\JSONResult.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\JSONAuditCollection.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\JSONODataBase.cs" />
@@ -295,11 +298,10 @@
     <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityMinuteCountsMap.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityUserCountsMap.cs" />
     <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityCountsMap.cs" />
-    <Compile Include="Reports\o365rwsclient\Common\Constants.cs" />
-    <Compile Include="Reports\DefaultLogger.cs" />
+    <Compile Include="DefaultLogger.cs" />
     <Compile Include="Reports\o365rwsclient\DefaultReportVisitor.cs" />
     <Compile Include="Reports\o365rwsclient\ReportVisitor.cs" />
-    <Compile Include="Reports\ITraceLogger.cs" />
+    <Compile Include="ITraceLogger.cs" />
     <Compile Include="Reports\o365rwsclient\QueryFilter.cs" />
     <Compile Include="Reports\o365rwsclient\QueryRange.cs" />
     <Compile Include="Reports\o365rwsclient\ReportingContext.cs" />
@@ -369,7 +371,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Reports\ReportDataExtensions.cs" />
+    <Compile Include="Extensions\NumericExtensions.cs" />
+    <Compile Include="Reports\ReportDirectoryHandler.cs" />
     <Compile Include="Services\FileUploadService.cs" />
     <Compile Include="Utilities\AzureDynamicLoggingEventEntity.cs" />
     <Compile Include="Utilities\AzureLayoutLoggingEventEntity.cs" />

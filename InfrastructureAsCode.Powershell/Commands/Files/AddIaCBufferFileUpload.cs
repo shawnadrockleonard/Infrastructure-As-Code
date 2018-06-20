@@ -1,17 +1,11 @@
-﻿using InfrastructureAsCode.Powershell;
+﻿using InfrastructureAsCode.Core;
+using InfrastructureAsCode.Core.Services;
 using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Powershell.PipeBinds;
-using InfrastructureAsCode.Core.Reports;
 using Microsoft.SharePoint.Client;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
-using InfrastructureAsCode.Core.Services;
 
 namespace InfrastructureAsCode.Powershell.Commands.Files
 {

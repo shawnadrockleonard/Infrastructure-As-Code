@@ -34,13 +34,13 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("peerToPeer")]
-        public Int64 PeerToPeer { get; set; }
+        public Nullable<Int64> PeerToPeer { get; set; }
 
         [JsonProperty("organized")]
-        public Int64 Organized { get; set; }
+        public Nullable<Int64> Organized { get; set; }
 
         [JsonProperty("participated")]
-        public Int64 Participated { get; set; }
+        public Nullable<Int64> Participated { get; set; }
 
         [JsonProperty("reportDate")]
         public DateTime ReportDate { get; set; }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Core.Reports
+namespace InfrastructureAsCode.Core
 {
     public class DefaultUsageLogger : ITraceLogger
     {

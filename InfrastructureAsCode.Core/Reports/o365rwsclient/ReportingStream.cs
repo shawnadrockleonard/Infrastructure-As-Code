@@ -15,8 +15,14 @@ namespace InfrastructureAsCode.Core.Reports.o365rwsclient
         private Type reportType;
         private string streamIdentifier = string.Empty;
         private string progressFilePath = string.Empty;
-        
+
         #endregion Privates
+
+        #region Constants 
+
+        public static readonly int ResultPageSize = 1000;
+
+        #endregion
 
         #region Constructors
 
@@ -57,11 +63,11 @@ namespace InfrastructureAsCode.Core.Reports.o365rwsclient
 
             //If the TopCount is 0, then it was not specified, hence we take the constant value
             if (filter.TopCount == 0)
-                filter.TopCount = Constants.ResultPageSize;
+                filter.TopCount = ResultPageSize;
 
             List<XmlNode> resultNodes = reportProvider.GetResponseXml(this.reportType, filter);
 
-            if (resultNodes.Count >= Constants.ResultPageSize && filter.SkipCount == 0)
+            if (resultNodes.Count >= ResultPageSize && filter.SkipCount == 0)
             {
                 reportingContext.TraceLogger.LogInformation("Result is exceeding limit, dividing the range.");
                 List<QueryRange> subRangeList = filter.QueryRange.GetDividedRanges();
@@ -85,10 +91,10 @@ namespace InfrastructureAsCode.Core.Reports.o365rwsclient
                     filter.SkipCount = 0;
                     do
                     {
-                        filter.SkipCount += Constants.ResultPageSize;
+                        filter.SkipCount += ResultPageSize;
                         subResult = RetrieveData(visitor, filter);
                         totalResultCount += subResult;
-                    } while (subResult >= Constants.ResultPageSize);
+                    } while (subResult >= ResultPageSize);
 
                     filter.SkipCount = 0;
                 }

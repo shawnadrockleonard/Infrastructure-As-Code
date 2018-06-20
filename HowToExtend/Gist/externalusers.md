@@ -30,6 +30,13 @@ Connect-SPIaC -CredentialName "spiqonline" -Url "https://[tenant]-admin.sharepoi
 $siteurl = "https://[tenant].sharepoint.com/sites/SiteA"
 $username = "userB@domain.com"
 
+# Will query the specific Site and return external users registered with site
+Get-IaCExternalUserFromSite -UserName $username -SiteUrl $siteurl -Verbose
+
+# Will query the tenant looking for the specifie username
+Get-IaCExternalUserFromSite -UserName $username -Verbose
+
+
 Remove-SPOUserFromSite -UserName $username -Verbose -WhatIf
 
 Remove-SPOExternalUser -SiteUrl $siteurl -UserName $username -Verbose

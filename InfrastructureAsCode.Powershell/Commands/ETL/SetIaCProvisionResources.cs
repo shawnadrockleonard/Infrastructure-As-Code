@@ -1,20 +1,14 @@
-﻿using InfrastructureAsCode.Powershell;
-using InfrastructureAsCode.Powershell.CmdLets;
-using InfrastructureAsCode.Core.Models;
+﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Extensions;
-using InfrastructureAsCode.Powershell.Extensions;
+using InfrastructureAsCode.Core.Models;
+using InfrastructureAsCode.Powershell.CmdLets;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
-using OfficeDevPnP.Core.Entities;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
-using InfrastructureAsCode.Core.Reports;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {

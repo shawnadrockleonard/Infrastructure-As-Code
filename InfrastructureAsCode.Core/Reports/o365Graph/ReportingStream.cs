@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
+﻿using InfrastructureAsCode.Core.oAuth;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;

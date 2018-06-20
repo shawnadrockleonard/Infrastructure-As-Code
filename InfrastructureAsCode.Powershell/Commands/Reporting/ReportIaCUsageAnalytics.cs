@@ -1,17 +1,11 @@
-﻿using InfrastructureAsCode.Core.Reports;
+﻿using InfrastructureAsCode.Core;
+using InfrastructureAsCode.Core.oAuth;
+using InfrastructureAsCode.Core.Reports;
 using InfrastructureAsCode.Core.Reports.o365Graph;
-using InfrastructureAsCode.Core.Reports.o365Graph.AzureAD;
+using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
 using InfrastructureAsCode.Powershell.CmdLets;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
-using CsvHelper;
-using CsvHelper.Configuration;
-using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
-using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
 
 namespace InfrastructureAsCode.Powershell.Commands.Reporting
 {
@@ -19,135 +13,100 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
     [CmdletHelp("Connects to a Azure AD to claim a token and process a usage report",
         DetailedDescription = "This is a sample for querying the preview MS Graph APIs.",
         Category = "Preview Reporting Cmdlets")]
-    public class ReportIaCUsageAnalytics : ExtendedPSCmdlet
+    public class ReportIaCUsageAnalytics : IaCAdminCmdlet
     {
-        private const string RedirectUri = "urn:ietf:wg:oauth:2.0:oob";
-
-        [Parameter(Mandatory = true, HelpMessage = "The client id of the app which gives you access to the Microsoft Graph API.", ParameterSetName = "AAD")]
-        public string AppId { get; set; }
-
-        [Parameter(Mandatory = true, HelpMessage = "The app key of the app which gives you access to the Microsoft Graph API.", ParameterSetName = "AAD")]
-        public string AppSecret { get; set; }
-
-        [Parameter(Mandatory = true, HelpMessage = "The AAD where the O365 app is registred. Eg.: contoso.com, or contoso.onmicrosoft.com.", ParameterSetName = "AAD")]
-        public string AADDomain { get; set; }
-
-        [Parameter(Mandatory = true, HelpMessage = "The URI of the resource to query", ParameterSetName = "AAD")]
-        public string ResourceUri { get; set; }
-
-        [Parameter(Mandatory = false, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 4)]
+        [Parameter(Mandatory = true, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 4)]
         public ReportUsageTypeEnum ReportType { get; set; }
 
-        [Parameter(Mandatory = false, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 5)]
+        [Parameter(Mandatory = true, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 5)]
         public ReportUsagePeriodEnum Period { get; set; }
 
-        [Parameter(Mandatory = false, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 6)]
+        [Parameter(Mandatory = true, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Position = 6)]
         public Nullable<DateTime> Date { get; set; }
 
-        [Parameter(Mandatory = false)]
+
+        [Parameter(Mandatory = false, ValueFromPipeline = false)]
         public SwitchParameter BetaEndPoint { get; set; }
 
+        [Parameter(Mandatory = false, ValueFromPipeline = false)]
+        public string DataDirectory { get; set; }
 
 
         public override void ExecuteCmdlet()
         {
             base.ExecuteCmdlet();
 
-            var config = new AzureADConfig()
+            var defaultRows = 500;
+            var _dateLog = DateTime.UtcNow;
+            var _fileName = ReportType.ToString("f");
+            var _logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
+            _logger.LogInformation("Report => Usage Type {0} Period {1}", ReportType, Period);
+
+
+            if (!string.IsNullOrEmpty(DataDirectory))
             {
-                ClientId = this.AppId,
-                ClientSecret = this.AppSecret,
-                RedirectUri = AzureADConstants.GraphResourceId,
-                TenantDomain = this.AADDomain,
-                TenantId = ""
-            };
+                var logFileModel = new ReportDirectoryHandler(DataDirectory, _fileName, _dateLog, _logger);
 
+                // Deleting log file;
+                logFileModel.ResetCSVFile();
 
-            var ilogger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
-            ilogger.LogInformation("Report => Usage Type {0} Period {1}", ReportType, Period);
+                var _reportingProcessor = new ReportingProcessor(this.AzureADConfig, _logger);
+                var response = _reportingProcessor.ProcessReport(ReportType, Period, Date, defaultRows, BetaEndPoint);
+                logFileModel.WriteToCSVFile(response);
+            }
+            else
+            {
 
-            var reporter = new ReportingProcessor(config, ilogger);
-
-            var overrideDate = new DateTime(2018, 5, 30);
-
-
-            var varOffice365GroupsActivityCounts = reporter.ProcessReport<Office365GroupsActivityCounts>(Period, Date, 500, BetaEndPoint);
-            var varOffice365GroupsActivityCountscsv = reporter.ProcessReport<Office365GroupsActivityCounts>(Period, Date, 500, false);
-            var varOffice365GroupsActivityDetail = reporter.ProcessReport<Office365GroupsActivityDetail>(Period, Date, 500, BetaEndPoint);
-
-
-            var varSkypeForBusinessPeerToPeerActivityCounts = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessPeerToPeerActivityMinuteCounts = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityMinuteCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessPeerToPeerActivityUserCounts = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityUserCounts>(Period, Date, 500, BetaEndPoint);
-
-            var varSkypeForBusinessPeerToPeerActivityCountscsv = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessPeerToPeerActivityMinuteCountscsv = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityMinuteCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessPeerToPeerActivityUserCountscsv = reporter.ProcessReport<SkypeForBusinessPeerToPeerActivityUserCounts>(Period, Date, 500, false);
+                var _reportingProcessor = new ReportingProcessor(this.AzureADConfig, _logger);
 
 
 
-            var varSkypeForBusinessParticipantActivityCounts = reporter.ProcessReport<SkypeForBusinessParticipantActivityCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessParticipantActivityMinuteCounts = reporter.ProcessReport<SkypeForBusinessParticipantActivityMinuteCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessParticipantActivityUserCounts = reporter.ProcessReport<SkypeForBusinessParticipantActivityUserCounts>(Period, Date, 500, BetaEndPoint);
+                var office365ActiveUsersUserDetail = _reportingProcessor.ProcessReport<Office365ActiveUsersUserDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var office365ActiveUsersServicesUserCounts = _reportingProcessor.ProcessReport<Office365ActiveUsersServicesUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var office365ActiveUsersUserCounts = _reportingProcessor.ProcessReport<Office365ActiveUsersUserCounts>(Period, Date, defaultRows, BetaEndPoint);
 
-            var varSkypeForBusinessParticipantActivityCountscsv = reporter.ProcessReport<SkypeForBusinessParticipantActivityCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessParticipantActivityMinuteCountscsv = reporter.ProcessReport<SkypeForBusinessParticipantActivityMinuteCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessParticipantActivityUserCountscsv = reporter.ProcessReport<SkypeForBusinessParticipantActivityUserCounts>(Period, Date, 500, false);
+                var varOffice365GroupsActivityCounts = _reportingProcessor.ProcessReport<Office365GroupsActivityCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varOffice365GroupsActivityDetail = _reportingProcessor.ProcessReport<Office365GroupsActivityDetail>(Period, Date, defaultRows, BetaEndPoint);
 
-
-            var varSkypeForBusinessOrganizerActivityCounts = reporter.ProcessReport<SkypeForBusinessOrganizerActivityCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessOrganizerActivityMinuteCounts = reporter.ProcessReport<SkypeForBusinessOrganizerActivityMinuteCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessOrganizerActivityUserCounts = reporter.ProcessReport<SkypeForBusinessOrganizerActivityUserCounts>(Period, Date, 500, BetaEndPoint);
-
-            var varSkypeForBusinessOrganizerActivityCountscsv = reporter.ProcessReport<SkypeForBusinessOrganizerActivityCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessOrganizerActivityMinuteCountscsv = reporter.ProcessReport<SkypeForBusinessOrganizerActivityMinuteCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessOrganizerActivityUserCountscsv = reporter.ProcessReport<SkypeForBusinessOrganizerActivityUserCounts>(Period, Date, 500, false);
-
-            var varSkypeForBusinessDeviceUsageDistributionUserCounts = reporter.ProcessReport<SkypeForBusinessDeviceUsageDistributionUserCounts>(Period, Date, 500, BetaEndPoint);
-            var varSkypeForBusinessDeviceUsageDistributionUserCountscsv = reporter.ProcessReport<SkypeForBusinessDeviceUsageDistributionUserCounts>(Period, Date, 500, false);
-            var varSkypeForBusinessDeviceUsageUserDetail = reporter.ProcessReport<SkypeForBusinessDeviceUsageUserDetail>(Period, overrideDate, 500, BetaEndPoint);
-            var varSkypeForBusinessDeviceUsageUserDetailcsv = reporter.ProcessReport<SkypeForBusinessDeviceUsageUserDetail>(Period, overrideDate, 500, false);
-            var varSkypeForBusinessDeviceUsageUserCounts = reporter.ProcessReport<SkypeForBusinessDeviceUsageUserCounts>(Period, overrideDate, 500, BetaEndPoint);
-            var varSkypeForBusinessDeviceUsageUserCountscsv = reporter.ProcessReport<SkypeForBusinessDeviceUsageUserCounts>(Period, overrideDate, 500, false);
-
-
-            var skypeForBusinessActivityUserDetail = reporter.ProcessReport<SkypeForBusinessActivityUserDetail>(Period, overrideDate, 500, BetaEndPoint);
-            var skypeForBusinessActivityCounts = reporter.ProcessReport<SkypeForBusinessActivityActivityCounts>(Period, Date, 500, BetaEndPoint);
-            var skypeForBusinessActivityUserCounts = reporter.ProcessReport<SkypeForBusinessActivityUserCounts>(Period, overrideDate, 500, BetaEndPoint);
+                var varSkypeForBusinessPeerToPeerActivityCounts = _reportingProcessor.ProcessReport<SkypeForBusinessPeerToPeerActivityCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessPeerToPeerActivityMinuteCounts = _reportingProcessor.ProcessReport<SkypeForBusinessPeerToPeerActivityMinuteCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessPeerToPeerActivityUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessPeerToPeerActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessParticipantActivityCounts = _reportingProcessor.ProcessReport<SkypeForBusinessParticipantActivityCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessParticipantActivityMinuteCounts = _reportingProcessor.ProcessReport<SkypeForBusinessParticipantActivityMinuteCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessParticipantActivityUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessParticipantActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessOrganizerActivityCounts = _reportingProcessor.ProcessReport<SkypeForBusinessOrganizerActivityCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessOrganizerActivityMinuteCounts = _reportingProcessor.ProcessReport<SkypeForBusinessOrganizerActivityMinuteCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessOrganizerActivityUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessOrganizerActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessDeviceUsageDistributionUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessDeviceUsageDistributionUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessDeviceUsageUserDetail = _reportingProcessor.ProcessReport<SkypeForBusinessDeviceUsageUserDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var varSkypeForBusinessDeviceUsageUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessDeviceUsageUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var skypeForBusinessActivityUserDetail = _reportingProcessor.ProcessReport<SkypeForBusinessActivityUserDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var skypeForBusinessActivityCounts = _reportingProcessor.ProcessReport<SkypeForBusinessActivityActivityCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var skypeForBusinessActivityUserCounts = _reportingProcessor.ProcessReport<SkypeForBusinessActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
 
 
-            var onedriveactivityuserdetail = reporter.ProcessReport<OneDriveActivityUserDetail>(Period, overrideDate, 500, BetaEndPoint);
-            var onedriveactivityusercounts = reporter.ProcessReport<OneDriveActivityUserCounts>(Period, Date, 500, BetaEndPoint);
-            var onedriveactivityfilecounts = reporter.ProcessReport<OneDriveActivityFileCounts>(Period, Date, 500, BetaEndPoint);
+                var onedriveactivityuserdetail = _reportingProcessor.ProcessReport<OneDriveActivityUserDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var onedriveactivityusercounts = _reportingProcessor.ProcessReport<OneDriveActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var onedriveactivityfilecounts = _reportingProcessor.ProcessReport<OneDriveActivityFileCounts>(Period, Date, defaultRows, BetaEndPoint);
 
-            var onedriveausageaccountdetail = reporter.ProcessReport<OneDriveUsageAccountDetail>(Period, Date, 500, BetaEndPoint);
-            var onedriveusageaccountcounts = reporter.ProcessReport<OneDriveUsageAccountCounts>(Period, Date, 500, BetaEndPoint);
-            var onedriveusagefilecounts = reporter.ProcessReport<OneDriveUsageFileCounts>(Period, Date, 500, BetaEndPoint);
-            var onedriveusagestorage = reporter.ProcessReport<OneDriveUsageStorage>(Period, Date, 500, BetaEndPoint);
-
-
-
-            var office365ActiveUsersUserDetail = reporter.ProcessReport<Office365ActiveUsersUserDetail>(Period, Date, 500, BetaEndPoint);
-            var office365ActiveUsersServicesUserCounts = reporter.ProcessReport<Office365ActiveUsersServicesUserCounts>(Period, Date, 500, BetaEndPoint);
-            var office365ActiveUsersUserCounts = reporter.ProcessReport<Office365ActiveUsersUserCounts>(Period, Date, 500, BetaEndPoint);
+                var onedriveausageaccountdetail = _reportingProcessor.ProcessReport<OneDriveUsageAccountDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var onedriveusageaccountcounts = _reportingProcessor.ProcessReport<OneDriveUsageAccountCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var onedriveusagefilecounts = _reportingProcessor.ProcessReport<OneDriveUsageFileCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var onedriveusagestorage = _reportingProcessor.ProcessReport<OneDriveUsageStorage>(Period, Date, defaultRows, BetaEndPoint);
 
 
+                var sharePointActivityUserDetail = _reportingProcessor.ProcessReport<SharePointActivityUserDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointActivityFileCounts = _reportingProcessor.ProcessReport<SharePointActivityFileCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointActivityUserCounts = _reportingProcessor.ProcessReport<SharePointActivityUserCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointActivityPages = _reportingProcessor.ProcessReport<SharePointActivityPages>(Period, Date, defaultRows, BetaEndPoint);
 
-            var sharePointActivityUserDetail = reporter.ProcessReport<SharePointActivityUserDetail>(Period, Date, 500, BetaEndPoint);
-            var sharePointActivityFileCounts = reporter.ProcessReport<SharePointActivityFileCounts>(Period, Date, 500, BetaEndPoint);
-            var sharePointActivityUserCounts = reporter.ProcessReport<SharePointActivityUserCounts>(Period, Date, 500, BetaEndPoint);
-            var sharePointActivityPages = reporter.ProcessReport<SharePointActivityPages>(Period, Date, 500, BetaEndPoint);
+                var sharePointSiteUsageSiteDetail = _reportingProcessor.ProcessReport<SharePointSiteUsageSiteDetail>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointSiteUsageFileCounts = _reportingProcessor.ProcessReport<SharePointSiteUsageFileCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointSiteUsageSiteCounts = _reportingProcessor.ProcessReport<SharePointSiteUsageSiteCounts>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointSiteUsageStorage = _reportingProcessor.ProcessReport<SharePointSiteUsageStorage>(Period, Date, defaultRows, BetaEndPoint);
+                var sharePointSiteUsagePages = _reportingProcessor.ProcessReport<SharePointSiteUsagePages>(Period, Date, defaultRows, BetaEndPoint);
 
-            var sharePointSiteUsageSiteDetail = reporter.ProcessReport<SharePointSiteUsageSiteDetail>(Period, Date, 500, BetaEndPoint);
-            var sharePointSiteUsageFileCounts = reporter.ProcessReport<SharePointSiteUsageFileCounts>(Period, Date, 500, BetaEndPoint);
-            var sharePointSiteUsageSiteCounts = reporter.ProcessReport<SharePointSiteUsageSiteCounts>(Period, Date, 500, BetaEndPoint);
-            var sharePointSiteUsageStorage = reporter.ProcessReport<SharePointSiteUsageStorage>(Period, Date, 500, BetaEndPoint);
-            var sharePointSiteUsagePages = reporter.ProcessReport<SharePointSiteUsagePages>(Period, Date, 500, BetaEndPoint);
-
-
-
-
-
+            }
         }
     }
 }

@@ -1,19 +1,14 @@
-﻿using InfrastructureAsCode.Core.Constants;
+﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.Models;
-using InfrastructureAsCode.Core.Reports;
 using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace InfrastructureAsCode.Powershell.Commands.ETL
 {

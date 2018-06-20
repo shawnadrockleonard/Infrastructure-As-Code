@@ -200,10 +200,11 @@
     <Compile Include="Commands\Lists\AddIaCListFolders.cs" />
     <Compile Include="Commands\Principals\FindIaCSitePermissions.cs" />
     <Compile Include="Commands\Principals\GetIaCFieldColumnAndData.cs" />
-    <Compile Include="Commands\Principals\GetIaCTenantQueryProfileGroup.cs" />
-    <Compile Include="Commands\Principals\GetIaCTenantQueryProfileUser.cs" />
+    <Compile Include="Commands\Principals\GetIaCMSOLQueryProfileGroup.cs" />
+    <Compile Include="Commands\Principals\GetIaCMSOLQueryProfileUser.cs" />
     <Compile Include="Commands\Principals\GeIaCQueryUserProfile.cs" />
     <Compile Include="Commands\Principals\RemoveIaCExternalUser.cs" />
+    <Compile Include="Commands\Principals\GetIaCExternalUserFromSite.cs" />
     <Compile Include="Commands\Principals\RemoveIaCUserFromSite.cs" />
     <Compile Include="Commands\Reporting\ReportIaCUsageAnalytics.cs" />
     <Compile Include="Commands\Workflow\GetIaCWebWorkflows.cs" />

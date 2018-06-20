@@ -40,10 +40,10 @@ Report Period
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("viewedOrEdited")]
-        public Nullable<Int32> FilesViewedModified { get; set; }
+        public Nullable<Int64> FilesViewedModified { get; set; }
 
         [JsonProperty("synced")]
-        public Nullable<Int32> FilesSynced { get; set; }
+        public Nullable<Int64> FilesSynced { get; set; }
 
         [JsonProperty("sharedInternally")]
         public Nullable<Int64> FilesSharedINT { get; set; }

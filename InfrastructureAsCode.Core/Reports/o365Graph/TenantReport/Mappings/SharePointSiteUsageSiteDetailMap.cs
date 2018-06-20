@@ -68,22 +68,22 @@ Report Period
         public Nullable<DateTime> LastActivityDate { get; set; }
 
         [JsonProperty("fileCount")]
-        public Int64 FileCount { get; set; }
+        public Nullable<Int64> FileCount { get; set; }
 
         [JsonProperty("activeFileCount")]
-        public Int64 ActiveFileCount { get; set; }
+        public Nullable<Int64> ActiveFileCount { get; set; }
 
         [JsonProperty("pageViewCount")]
-        public Int64 PageViewCount { get; set; }
+        public Nullable<Int64> PageViewCount { get; set; }
 
         [JsonProperty("visitedPageCount")]
-        public Int64 VisitedPageCount { get; set; }
+        public Nullable<Int64> VisitedPageCount { get; set; }
 
         [JsonProperty("storageUsedInBytes")]
-        public Int64 StorageUsed_Byte { get; set; }
+        public Nullable<Int64> StorageUsed_Byte { get; set; }
 
         [JsonProperty("storageAllocatedInBytes")]
-        public Int64 StorageAllocated_Byte { get; set; }
+        public Nullable<Int64> StorageAllocated_Byte { get; set; }
 
         [JsonProperty("rootWebTemplate")]
         public string RootWebTemplate { get; set; }

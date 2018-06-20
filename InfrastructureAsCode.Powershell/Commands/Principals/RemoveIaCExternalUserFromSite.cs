@@ -1,20 +1,16 @@
-﻿using InfrastructureAsCode.Powershell;
+﻿using InfrastructureAsCode.Core;
+using InfrastructureAsCode.Core.Extensions;
+using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Powershell.CmdLets;
-using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client.Utilities;
-using OfficeDevPnP.Core.Entities;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
-    [Cmdlet(VerbsCommon.Remove, "IaCExternalUserFromSite")]
+    [Cmdlet(VerbsCommon.Remove, "IaCExternalUserFromSite", SupportsShouldProcess = true)]
     [CmdletHelp("Removes external user from the sharepoint site and tenant collection", Category = "External")]
     public class RemoveIaCExternalUserFromSite : IaCAdminCmdlet
     {
@@ -28,14 +24,38 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 2)]
         public string GroupName { get; set; }
 
-        [Parameter(Mandatory = false)]
-        public SwitchParameter RemoveUser { get; set; }
 
+
+        protected override void OnBeginInitialize()
+        {
+            base.OnBeginInitialize();
+
+            if (string.IsNullOrEmpty(this.SiteUrl))
+            {
+                throw new InvalidOperationException("Site is not valid.");
+            }
+        }
 
 
         public override void ExecuteCmdlet()
         {
             base.ExecuteCmdlet();
+
+            var ilogger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
+            var invitedAs = string.Empty;
+
+            if (!string.IsNullOrEmpty(this.UserName))
+            {
+                invitedAs = this.UserName.Replace($"{ClaimIdentifier}|", string.Empty).Trim();
+                if (invitedAs.IndexOf("#") > 0)
+                {
+                    var loginIdentity = invitedAs.IndexOf("#");
+                    invitedAs = invitedAs.Substring(0, loginIdentity);
+                }
+                invitedAs = invitedAs.Replace("_", "@");
+            }
+
+
             try
             {
                 using (var thisContext = this.ClientContext.Clone(this.SiteUrl))
@@ -59,7 +79,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                         thisContext.ExecuteQuery();
                     }
 
-                    RemoveExternalUser( this.ClientContext, this.SiteUrl, this.UserName);
+
+
+                    var externalUsers = this.ClientContext.CheckExternalUser(ilogger, invitedAs);
+
+                    RemoveExternalUser(externalUsers, invitedAs);
 
                 }
             }
@@ -70,38 +94,22 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
         }
 
 
-        private void RemoveExternalUser(ClientContext clientContext, string siteUrl, string profileName = null, int startIndex = 0, int pageSize = 50)
+        private void RemoveExternalUser(IList<SPExternalUserEntity> users, string invitedAs)
         {
-            var invitedAs = profileName;
-            if (profileName.IndexOf("#") > 0)
-            {
-                invitedAs = profileName.Substring(0, profileName.IndexOf("#"));
-            }
-            invitedAs = invitedAs.Replace("_", "@");
+            LogVerbose($"Removing External User with {invitedAs}");
 
-            var filterQuery = string.Format("InvitedAs -eq '{0}'", profileName);
-            LogVerbose(string.Format("Removing External User with {0} at start {1} and page size {2}", profileName, startIndex, pageSize));
-            var externalusers = this.OfficeTenantContext.GetExternalUsers(startIndex, pageSize, invitedAs, Microsoft.Online.SharePoint.TenantManagement.SortOrder.Ascending);
-            var extCol = externalusers.ExternalUserCollection;
-            clientContext.Load(externalusers);
-            clientContext.Load(extCol);
-            clientContext.ExecuteQuery();
-
-            var userFound = extCol.Any(w => w.InvitedAs == invitedAs || w.InvitedAs.Contains(invitedAs));
-            if (RemoveUser && userFound)
+            foreach (var user in users.Where(w => w.InvitedAs == invitedAs || w.InvitedAs.Contains(invitedAs)))
             {
-                //10030000928913CB
-                var externalUserId = extCol.FirstOrDefault(w => w.InvitedAs == invitedAs).UniqueId;
-                var externalArray = new string[] { externalUserId };
-                var externalResult = this.OfficeTenantContext.RemoveExternalUsers(externalArray);
-                clientContext.ExecuteQuery();
-            }
+                LogVerbose("User {0} invited by {1} accepted as {2}", invitedAs, user.InvitedBy, user.AcceptedAs);
 
-            if (externalusers.TotalUserCount > pageSize && extCol.Count == pageSize)
-            {
-                //# do some paging 
-                startIndex += pageSize;
-                RemoveExternalUser( clientContext, siteUrl, profileName, startIndex, pageSize);
+                if (this.ShouldProcess(string.Format("User {0} will be removed from the tenant {1}", invitedAs, OfficeTenantContext.Context.Url)))
+                {
+                    //10030000928913CB
+                    var externalUserId = user.UniqueId;
+                    var externalArray = new string[] { externalUserId };
+                    var externalResult = this.OfficeTenantContext.RemoveExternalUsers(externalArray);
+                    this.ClientContext.ExecuteQuery();
+                }
             }
         }
     }

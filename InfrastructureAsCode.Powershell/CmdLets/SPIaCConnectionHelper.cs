@@ -1,6 +1,7 @@
-﻿using Microsoft.Online.SharePoint.TenantAdministration;
+﻿using InfrastructureAsCode.Core.Enums;
+using InfrastructureAsCode.Core.oAuth;
+using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
-using InfrastructureAsCode.Core.Enums;
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Host;
@@ -18,7 +19,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         {
         }
 
-        internal static SPIaCConnection InstantiateSPOnlineConnection(Uri url, string realm, string clientId, string clientSecret, PSHost host, int minimalHealthScore, int retryCount, int retryWait, int requestTimeout, bool skipAdminCheck = false)
+        internal static SPIaCConnection InstantiateSPOnlineConnection(Uri url, string realm, string clientId, string clientSecret, string appDomain, string resourceUri, PSHost host, int minimalHealthScore, int retryCount, int retryWait, int requestTimeout, bool skipAdminCheck = false)
         {
             var authManager = new OfficeDevPnP.Core.AuthenticationManager();
             if (realm == null)
@@ -35,6 +36,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 connectionType = ConnectionType.O365;
             }
+
             if (skipAdminCheck == false)
             {
                 if (IsTenantAdminSite(context))
@@ -42,14 +44,29 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                     connectionType = ConnectionType.TenantAdmin;
                 }
             }
-            return new SPIaCConnection(context, connectionType, minimalHealthScore, retryCount, retryWait, null, url.ToString());
+
+            var connection = new SPIaCConnection(context, connectionType, minimalHealthScore, retryCount, retryWait, null, url.ToString())
+            {
+                AzureConfig = new AzureADConfig()
+                {
+                    ClientId = clientId,
+                    ClientSecret = clientSecret,
+                    TenantDomain = appDomain,
+                    RedirectUri = resourceUri,
+                    TenantId = realm
+                }
+            };
+            return connection;
         }
 
         internal static SPIaCConnection InstantiateSPOnlineConnection(Uri url, PSCredential credentials, PSHost host, bool currentCredentials, int minimalHealthScore, int retryCount, int retryWait, int requestTimeout, bool skipAdminCheck = false)
         {
-            ClientContext context = new ClientContext(url.AbsoluteUri);
-            context.ApplicationName = Resources.ApplicationName;
-            context.RequestTimeout = requestTimeout;
+            ClientContext context = new ClientContext(url.AbsoluteUri)
+            {
+                ApplicationName = Resources.ApplicationName,
+                RequestTimeout = requestTimeout
+            };
+
             if (!currentCredentials)
             {
                 try
@@ -111,6 +128,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             {
                 connectionType = ConnectionType.O365;
             }
+
             if (skipAdminCheck == false)
             {
                 if (IsTenantAdminSite(context))
@@ -118,6 +136,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
                     connectionType = ConnectionType.TenantAdmin;
                 }
             }
+
             return new SPIaCConnection(context, connectionType, minimalHealthScore, retryCount, retryWait, credentials, url.ToString());
         }
 
