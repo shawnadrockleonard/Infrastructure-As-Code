@@ -34,8 +34,15 @@ $graphparms = @{
 # arbitrary date
 	$reportDate = (Get-Date).AddDays(-20)
 
+# Connect using the Azure AD Application Details
+	Connect-SPIaC @graphparms -Url "https://[tenant]-admin.sharepoint.com" -SkipTenantAdminCheck
 
-Connect-SPIaC @graphparms -Url "https://[tenant]-admin.sharepoint.com" -SkipTenantAdminCheck
+
+# use the v1.0 endpoint
+	Report-IaCUsageAnalytics -ReportType NONE -Date $reportDate -Period D30 -Verbose
+
+# use the beta endpoint
+	Report-IaCUsageAnalytics -ReportType NONE -Date $reportDate -Period D30 -BetaEndPoint -Verbose
 
 
 # Office 365 Groups
