@@ -46,6 +46,11 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             {
                 rowdx++;
                 totaldx--;
+
+                if(rowdx % throttle == 0 || totaldx <= 0)
+                {
+                    Logger.LogWarning($"Now running storage processing for {rowdx} batch of records");
+                }
             }
 
             Logger.LogInformation("Processed Activity Files {0} rows", rowprocessed);

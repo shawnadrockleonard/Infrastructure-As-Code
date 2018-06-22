@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.oAuth
 {
+    /// <summary>
+    /// Represents a generic token cache to pull Tokens or Refresh Tokens
+    /// </summary>
     public class AzureADTokenCache : IOAuthTokenCache
     {
         private readonly IAzureADConfig _aadConfig;
@@ -39,9 +42,9 @@ namespace InfrastructureAsCode.Core.oAuth
         /// Validate the current token in the cache
         /// </summary>
         /// <returns></returns>
-        async public Task<string> AccessToken()
+        async public Task<string> AccessTokenAsync()
         {
-            var result = await AccessTokenResult();
+            var result = await AccessTokenResultAsync();
             return result.AccessToken;
         }
 
@@ -50,13 +53,13 @@ namespace InfrastructureAsCode.Core.oAuth
         /// </summary>
         /// <param name="redirectUri">(OPTIONAL) a redirect to the resource URI</param>
         /// <returns>Return an Authentication Result which contains the Token/Refresh Token</returns>
-        async public Task<AuthenticationResult> TryGetAccessTokenResult(string redirectUri)
+        async public Task<AuthenticationResult> TryGetAccessTokenResultAsync(string redirectUri)
         {
             AuthenticationResult token = null; var cleanToken = false;
 
             try
             {
-                token = await AccessTokenResult();
+                token = await AccessTokenResultAsync();
                 cleanToken = true;
             }
             catch (Exception ex)
@@ -68,8 +71,8 @@ namespace InfrastructureAsCode.Core.oAuth
             {
                 // Failed to retrieve, reup the token
                 redirectUri = (string.IsNullOrEmpty(redirectUri) ? GetRedirectUri() : redirectUri);
-                await RedeemAuthCodeForAadGraph(string.Empty, redirectUri);
-                token = await AccessTokenResult();
+                await RedeemAuthCodeForAadGraphAsync(string.Empty, redirectUri);
+                token = await AccessTokenResultAsync();
             }
 
             return token;
@@ -79,12 +82,12 @@ namespace InfrastructureAsCode.Core.oAuth
         /// Validate the current token in the cache
         /// </summary>
         /// <returns></returns>
-        async public Task<AuthenticationResult> AccessTokenResult()
+        async public Task<AuthenticationResult> AccessTokenResultAsync()
         {
             if (AuthenticationToken == null
                 || AuthenticationToken.ExpiresOn <= DateTimeOffset.Now)
             {
-                AuthenticationToken = await GetTokenForAadGraph();
+                AuthenticationToken = await GetTokenForAadGraphAsync();
             }
 
             return AuthenticationToken;
@@ -98,13 +101,13 @@ namespace InfrastructureAsCode.Core.oAuth
             AuthenticationToken = null;
         }
 
-        async public Task<AuthenticationResult> GetTokenForAadGraph()
+        async public Task<AuthenticationResult> GetTokenForAadGraphAsync()
         {
-            await RedeemAuthCodeForAadGraph(string.Empty, _aadConfig.RedirectUri);
+            await RedeemAuthCodeForAadGraphAsync(string.Empty, _aadConfig.RedirectUri);
             return AuthenticationToken;
         }
 
-        async public Task RedeemAuthCodeForAadGraph(string code, string resource_uri)
+        async public Task RedeemAuthCodeForAadGraphAsync(string code, string resource_uri)
         {
             // Redeem the auth code and cache the result in the db for later use.
             var result = await _authContext.AcquireTokenAsync(resource_uri, _appCredentials);

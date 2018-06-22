@@ -61,6 +61,9 @@
     <Reference Include="Microsoft.Graph.Core, Version=1.9.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.Core.1.9.0\lib\net45\Microsoft.Graph.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Identity.Client, Version=1.1.4.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Identity.Client.1.1.4-preview0002\lib\net45\Microsoft.Identity.Client.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IdentityModel.6.1.7600.16394\lib\net35\Microsoft.IdentityModel.dll</HintPath>
       <Private>True</Private>
@@ -128,12 +131,13 @@
     <Reference Include="OfficeDevPnP.Core, Version=2.27.1806.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
       <HintPath>..\packages\SharePointPnPCoreOnline.2.27.1806\lib\net45\OfficeDevPnP.Core.dll</HintPath>
     </Reference>
-    <Reference Include="SharePointPnP.IdentityModel.Extensions, Version=1.2.4.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharePointPnP.IdentityModel.Extensions.1.2.4\lib\net45\SharePointPnP.IdentityModel.Extensions.dll</HintPath>
+    <Reference Include="SharePointPnP.IdentityModel.Extensions, Version=1.2.3.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharePointPnP.IdentityModel.Extensions.1.2.3\lib\net45\SharePointPnP.IdentityModel.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.IdentityModel.Selectors" />
@@ -155,6 +159,7 @@
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Services" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -163,6 +168,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants\ConstantsAuthentication.cs" />
+    <Compile Include="Constants\ConstantsConfigKeys.cs" />
     <Compile Include="Constants\ConstantsFields.cs" />
     <Compile Include="Constants\ConstantsLibraryFields.cs" />
     <Compile Include="Constants\ConstantsListFields.cs" />
@@ -183,8 +190,10 @@
     <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\TenantExtensions.cs" />
+    <Compile Include="Extensions\UriExtensions.cs" />
     <Compile Include="Extensions\UserExtensions.cs" />
     <Compile Include="Extensions\WebExtensions.cs" />
+    <Compile Include="HttpServices\GraphHttpHelper.cs" />
     <Compile Include="HttpServices\HttpRemoteOperation.cs" />
     <Compile Include="HttpServices\HttpRequestAccessRequestSettings.cs" />
     <Compile Include="HttpServices\UnifiedGroupsUtility.cs" />
@@ -245,8 +254,11 @@
     <Compile Include="Models\SPViewDefinitionModel.cs" />
     <Compile Include="Models\SPWebDefinitionModel.cs" />
     <Compile Include="Models\SPWorkflowInstance.cs" />
+    <Compile Include="oAuth\AppConfig.cs" />
+    <Compile Include="oAuth\AppConfigManager.cs" />
     <Compile Include="oAuth\AzureADConfig.cs" />
     <Compile Include="oAuth\AzureADConstants.cs" />
+    <Compile Include="oAuth\IAppConfig.cs" />
     <Compile Include="oAuth\IAzureADConfig.cs" />
     <Compile Include="oAuth\IOAuthTokenCache.cs" />
     <Compile Include="oAuth\AzureADTokenCache.cs" />
@@ -408,6 +420,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Reports\readme.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\AsyncUsageAnalyzers.1.0.0-alpha003\analyzers\dotnet\AsyncUsageAnalyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

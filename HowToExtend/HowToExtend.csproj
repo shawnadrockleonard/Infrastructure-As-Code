@@ -52,6 +52,7 @@
     <None Include="Gist\externalusers.md" />
     <None Include="Gist\Find-IaCSitePermissions.md" />
     <None Include="Gist\Get-IaCListDocumentSet.md" />
+    <None Include="Gist\get-IaCSiteClassification.md" />
     <None Include="Gist\set-IaCListViewMinimal.md" />
     <None Include="Gist\sample-calloutlinks.md" />
     <None Include="Gist\sample-add-iac-buffer-fileupload.md" />

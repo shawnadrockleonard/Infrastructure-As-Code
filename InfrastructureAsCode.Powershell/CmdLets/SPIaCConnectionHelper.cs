@@ -1,4 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Enums;
+using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.oAuth;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
@@ -24,7 +25,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             var authManager = new OfficeDevPnP.Core.AuthenticationManager();
             if (realm == null)
             {
-                realm = GetRealmFromTargetUrl(url);
+                realm = url.GetRealmFromTargetUrl();
             }
 
             var context = authManager.GetAppOnlyAuthenticatedContext(url.ToString(), realm, clientId, clientSecret);
@@ -138,54 +139,6 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             }
 
             return new SPIaCConnection(context, connectionType, minimalHealthScore, retryCount, retryWait, credentials, url.ToString());
-        }
-
-        public static string GetRealmFromTargetUrl(Uri targetApplicationUri)
-        {
-            WebRequest request = WebRequest.Create(targetApplicationUri + "/_vti_bin/client.svc");
-            request.Headers.Add("Authorization: Bearer ");
-
-            try
-            {
-                using (request.GetResponse())
-                {
-                }
-            }
-            catch (WebException e)
-            {
-                if (e.Response == null)
-                {
-                    return null;
-                }
-
-                string bearerResponseHeader = e.Response.Headers["WWW-Authenticate"];
-                if (string.IsNullOrEmpty(bearerResponseHeader))
-                {
-                    return null;
-                }
-
-                const string bearer = "Bearer realm=\"";
-                int bearerIndex = bearerResponseHeader.IndexOf(bearer, StringComparison.Ordinal);
-                if (bearerIndex < 0)
-                {
-                    return null;
-                }
-
-                int realmIndex = bearerIndex + bearer.Length;
-
-                if (bearerResponseHeader.Length >= realmIndex + 36)
-                {
-                    string targetRealm = bearerResponseHeader.Substring(realmIndex, 36);
-
-                    Guid realmGuid;
-
-                    if (Guid.TryParse(targetRealm, out realmGuid))
-                    {
-                        return targetRealm;
-                    }
-                }
-            }
-            return null;
         }
 
         private static bool IsTenantAdminSite(ClientContext clientContext)

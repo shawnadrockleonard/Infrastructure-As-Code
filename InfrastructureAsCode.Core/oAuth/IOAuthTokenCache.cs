@@ -21,7 +21,7 @@ namespace InfrastructureAsCode.Core.oAuth
         /// If the token is no longer fresh it will claim a new token
         /// </summary>
         /// <returns>Access Token as a string</returns>
-        Task<string> AccessToken();
+        Task<string> AccessTokenAsync();
 
         /// <summary>
         /// Retreive the access token from the ClientCredentials
@@ -29,19 +29,19 @@ namespace InfrastructureAsCode.Core.oAuth
         /// <param name="redirectUri">(TOPIONAL) a redirect to the resource URI</param>
         /// <returns></returns>
         /// <remarks>Will handle automatic refresh of the tokens</remarks>
-        Task<AuthenticationResult> TryGetAccessTokenResult(string redirectUri);
+        Task<AuthenticationResult> TryGetAccessTokenResultAsync(string redirectUri);
 
         /// <summary>
         /// If the token is no longer fresh it will claim a new token
         /// </summary>
         /// <returns>Authentication Result which contains a Token and ExpiresOn</returns>
-        Task<AuthenticationResult> AccessTokenResult();
+        Task<AuthenticationResult> AccessTokenResultAsync();
 
         /// <summary>
         /// Acquires AuthenticationResult without asking for user credential.
         /// </summary>
         /// <returns></returns>
-        Task<AuthenticationResult> GetTokenForAadGraph();
+        Task<AuthenticationResult> GetTokenForAadGraphAsync();
 
         /// <summary>
         ///     Acquires security token from the authority using an authorization code previously
@@ -50,7 +50,7 @@ namespace InfrastructureAsCode.Core.oAuth
         /// <param name="code"></param>
         /// <param name="redirect_uri"></param>
         /// <returns></returns>
-        Task RedeemAuthCodeForAadGraph(string code, string redirect_uri);
+        Task RedeemAuthCodeForAadGraphAsync(string code, string redirect_uri);
 
         /// <summary>
         /// Clears the user token cache

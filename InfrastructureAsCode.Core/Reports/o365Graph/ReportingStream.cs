@@ -83,7 +83,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                     graphBackoffInterval = backoffIntervalInSeconds;
 
                     // Retreive the Access Token
-                    var Token = GetAsyncResult(OAuthCache.TryGetAccessTokenResult(string.Empty));
+                    var Token = GetAsyncResult(OAuthCache.TryGetAccessTokenResultAsync(string.Empty));
 
                     // Establish the HTTP Request
                     var webRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(serviceFullUrl);

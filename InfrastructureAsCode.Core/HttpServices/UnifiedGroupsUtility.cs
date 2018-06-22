@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.HttpServices
 {
+    /// <summary>
+    /// HTTP Utility to interact with Office 365 Groups
+    /// </summary>
     public static class UnifiedGroupsUtility
     {
         private const int defaultRetryCount = 10;
@@ -20,6 +23,13 @@ namespace InfrastructureAsCode.Core.HttpServices
 
         private static GraphServiceClient graphClient = null;
 
+        /// <summary>
+        /// Initializes the Client with a Bearer token
+        /// </summary>
+        /// <param name="accessToken">Access Token provided by Auth N/Z</param>
+        /// <param name="retryCount">Number of retrys before return exception</param>
+        /// <param name="delay">Delay request milliseconds</param>
+        /// <returns></returns>
         public static GraphServiceClient CreateGraphClient(String accessToken, int retryCount = defaultRetryCount, int delay = defaultDelay)
         {
             // Creates a new GraphServiceClient instance using a custom PnPHttpProvider
@@ -247,7 +257,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                     if (owners != null && owners.Length > 0)
                     {
-                        await AddOwners(owners, graphClient, addedGroup);
+                        await AddOwnersAsync(owners, graphClient, addedGroup);
                     }
 
                     #endregion
@@ -256,7 +266,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                     if (members != null && members.Length > 0)
                     {
-                        await AddMembers(members, graphClient, addedGroup);
+                        await AddMembersAsync(members, graphClient, addedGroup);
                     }
 
                     #endregion
@@ -273,7 +283,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             return (result);
         }
 
-        private static async Task AddMembers(string[] members, GraphServiceClient graphClient, Group addedGroup)
+        private static async Task AddMembersAsync(string[] members, GraphServiceClient graphClient, Group addedGroup)
         {
             foreach (var m in members)
             {
@@ -308,7 +318,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
         }
 
-        private static async Task AddOwners(string[] owners, GraphServiceClient graphClient, Group addedGroup)
+        private static async Task AddOwnersAsync(string[] owners, GraphServiceClient graphClient, Group addedGroup)
         {
             foreach (var o in owners)
             {
@@ -405,7 +415,7 @@ namespace InfrastructureAsCode.Core.HttpServices
                     if (owners != null && owners.Length > 0)
                     {
                         // For each and every owner
-                        await AddOwners(owners, graphClient, groupToUpdate);
+                        await AddOwnersAsync(owners, graphClient, groupToUpdate);
                         updateGroup = true;
                     }
 
@@ -413,7 +423,7 @@ namespace InfrastructureAsCode.Core.HttpServices
                     if (members != null && members.Length > 0)
                     {
                         // For each and every owner
-                        await AddMembers(members, graphClient, groupToUpdate);
+                        await AddMembersAsync(members, graphClient, groupToUpdate);
                         updateGroup = true;
                     }
 

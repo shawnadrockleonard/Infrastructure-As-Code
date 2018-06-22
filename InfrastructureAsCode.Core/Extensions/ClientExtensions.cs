@@ -42,5 +42,16 @@ namespace InfrastructureAsCode.Core.Extensions
             }
             return surl;
         }
+
+        /// <summary>
+        /// Returns the [Tenant] admin URI from the established context
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static string GetTenantAdminUri(this ClientContext context)
+        {
+            var uri = new System.Uri(context.Url);
+            return uri.GetTenantAdminUri();
+        }
     }
 }
