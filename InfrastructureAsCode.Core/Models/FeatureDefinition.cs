@@ -15,5 +15,7 @@ namespace InfrastructureAsCode.Core.Models
         public Guid Id { get; set; }
 
         public FeatureDefinitionScope Scope { get; set; }
+
+        public bool IsActivated { get; set; }
     }
 }

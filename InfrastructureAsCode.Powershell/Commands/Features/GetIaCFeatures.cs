@@ -25,16 +25,24 @@ namespace InfrastructureAsCode.Powershell.Commands.Features
 
             var objects = new List<FeatureDefinition>();
 
+            var web = this.ClientContext.Web;
+            var site = this.ClientContext.Site;
+            this.ClientContext.Load(web);
+            this.ClientContext.Load(site);
+            this.ClientContext.ExecuteQueryRetry();
+
+
             // Site Features
             var siteFeatures = ClientContext.LoadQuery(ClientContext.Site.Features.Include(fctx => fctx.DefinitionId, fctx => fctx.DisplayName));
             ClientContext.ExecuteQueryRetry();
-            foreach (Feature SiteFeature in siteFeatures)
+            foreach (Feature siteFeature in siteFeatures)
             {
                 objects.Add(new FeatureDefinition()
                 {
-                    Id = SiteFeature.DefinitionId,
-                    DisplayName = SiteFeature.DisplayName,
-                    Scope = FeatureDefinitionScope.Site
+                    Id = siteFeature.DefinitionId,
+                    DisplayName = siteFeature.DisplayName,
+                    Scope = FeatureDefinitionScope.Site,
+                    IsActivated = FeatureExtensions.IsFeatureActive(site, siteFeature.DefinitionId)
                 });
             }
 
@@ -47,7 +55,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Features
                 {
                     Id = webFeature.DefinitionId,
                     DisplayName = webFeature.DisplayName,
-                    Scope = FeatureDefinitionScope.Web
+                    Scope = FeatureDefinitionScope.Web,
+                    IsActivated = FeatureExtensions.IsFeatureActive(web, webFeature.DefinitionId)
                 });
             }
 
