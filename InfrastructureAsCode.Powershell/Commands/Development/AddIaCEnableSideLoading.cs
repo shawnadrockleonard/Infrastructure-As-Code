@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using InfrastructureAsCode.Core.Extensions;
+using InfrastructureAsCode.Powershell.CmdLets;
+using Microsoft.SharePoint.Client;
+using System;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Development
 {
-    using InfrastructureAsCode.Powershell.CmdLets;
-    using OfficeDevPnP.Core.AppModelExtensions;
-    using OfficeDevPnP.Core.Extensions;
-    using OfficeDevPnP.Core.Utilities;
-    using Microsoft.SharePoint.Client;
-
     /// <summary>
     /// Enables Development Site Collection capabilities to deploy add-ins
     /// </summary>
@@ -26,11 +20,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Development
         {
             base.ExecuteCmdlet();
 
-            LogVerbose("Enables SharePoint app sideLoading");
 
             var sideLoadingGuid = OfficeDevPnP.Core.Constants.FeatureId_Site_AppSideLoading;
-            var siteurl = this.ClientContext.Url;
-            var outfilepath = siteurl.Replace(':', '_').Replace('/', '_');
+            var siteurl = this.ClientContext.Url.EnsureTrailingSlashLowered();
+            LogVerbose($"Enables SharePoint app sideLoading for {siteurl}");
+
 
             try
             {
