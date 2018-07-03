@@ -20,9 +20,9 @@ Report Period
 2017-10-29,All,860,65,2017-10-29,90
 2017-10-29,All,860,72,2017-10-28,90
      */
-    class SharePointSiteUsageSiteCountsMap : ClassMap<SharePointSiteUsageSiteCounts>
+    internal class SharePointSiteUsageSiteCountsMap : ClassMap<SharePointSiteUsageSiteCounts>
     {
-        public SharePointSiteUsageSiteCountsMap()
+        internal SharePointSiteUsageSiteCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

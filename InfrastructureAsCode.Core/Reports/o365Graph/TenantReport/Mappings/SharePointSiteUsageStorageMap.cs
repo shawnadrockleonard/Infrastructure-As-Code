@@ -18,9 +18,9 @@ Report Date,
 Report Period
 2017-10-29,All,6488883224233,2017-10-29,7
  */
-    class SharePointSiteUsageStorageMap : ClassMap<SharePointSiteUsageStorage>
+    internal class SharePointSiteUsageStorageMap : ClassMap<SharePointSiteUsageStorage>
     {
-        public SharePointSiteUsageStorageMap()
+        internal SharePointSiteUsageStorageMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

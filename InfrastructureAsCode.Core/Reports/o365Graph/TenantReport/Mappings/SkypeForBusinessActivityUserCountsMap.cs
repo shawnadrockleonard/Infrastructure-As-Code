@@ -12,9 +12,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
      * CSV mapping for v1.0 and beta endpoints
      * Report Refresh Date,Report Date,Report Period,Peer-to-peer,Organized,Participated
      */
-    class SkypeForBusinessActivityUserCountsMap : ClassMap<SkypeForBusinessActivityUserCounts>
+    internal class SkypeForBusinessActivityUserCountsMap : ClassMap<SkypeForBusinessActivityUserCounts>
     {
-        public SkypeForBusinessActivityUserCountsMap()
+        internal SkypeForBusinessActivityUserCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.ReportDate).Name("Report Date").Index(1).Default(default(DateTime));
@@ -33,6 +33,12 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         [JsonProperty("reportRefreshDate")]
         public DateTime ReportRefreshDate { get; set; }
 
+        [JsonProperty("reportDate")]
+        public DateTime ReportDate { get; set; }
+
+        [JsonProperty("reportPeriod")]
+        public int ReportPeriod { get; set; }
+
         [JsonProperty("peerToPeer")]
         public Nullable<Int64> PeerToPeer { get; set; }
 
@@ -41,11 +47,5 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
 
         [JsonProperty("participated")]
         public Nullable<Int64> Participated { get; set; }
-
-        [JsonProperty("reportDate")]
-        public DateTime ReportDate { get; set; }
-
-        [JsonProperty("reportPeriod")]
-        public int ReportPeriod { get; set; }
     }
 }

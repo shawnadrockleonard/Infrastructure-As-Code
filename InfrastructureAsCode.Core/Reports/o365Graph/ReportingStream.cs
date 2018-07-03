@@ -147,6 +147,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                     else
                     {
                         Logger.LogError(wex, "HTTP Failed to query URI {0} exception: {1}", serviceFullUrl, wex.ToString());
+                        LogWebException(wex);
                         throw;
                     }
                 }
@@ -160,6 +161,19 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
 
 
             return resultResponse;
+        }
+
+        private void LogWebException(System.Net.WebException wex)
+        {
+            WebException webEx = (WebException)wex.InnerException;
+            string response = string.Empty;
+
+            if (webEx.Response is HttpWebResponse myResponse)
+            {
+                StreamReader strm = new StreamReader(myResponse.GetResponseStream(), Encoding.UTF8);
+                response = strm.ReadToEnd();
+                Logger.LogWarning($"Inner WebEx Handler {response} from Graph Request");
+            }
         }
 
         /// <summary>

@@ -21,9 +21,9 @@ Report Date,
 Report Period
 2017-10-28,372,361,25,9,,2017-10-28,7
  */
-    class SharePointActivityUserCountsMap : ClassMap<SharePointActivityUserCounts>
+    internal class SharePointActivityUserCountsMap : ClassMap<SharePointActivityUserCounts>
     {
-        public SharePointActivityUserCountsMap()
+        internal SharePointActivityUserCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.VisitedPage).Name("Visited Page").Index(1).Default(0);

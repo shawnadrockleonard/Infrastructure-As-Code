@@ -12,9 +12,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
      * CSV Mapping for User activity
      * Report Refresh Date,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Report Period
      * */
-    class SkypeForBusinessActivityUserDetailMap : ClassMap<SkypeForBusinessActivityUserDetail>
+    internal class SkypeForBusinessActivityUserDetailMap : ClassMap<SkypeForBusinessActivityUserDetail>
     {
-        public SkypeForBusinessActivityUserDetailMap()
+        internal SkypeForBusinessActivityUserDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.UPN).Name("User Principal Name").Index(1).Default(string.Empty);
@@ -63,6 +63,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         [JsonProperty("reportRefreshDate")]
         public DateTime ReportRefreshDate { get; set; }
 
+        [JsonProperty("reportPeriod")]
+        public int ReportPeriod { get; set; }
+
         [JsonProperty("userPrincipalName")]
         public string UPN { get; set; }
 
@@ -73,7 +76,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public Nullable<DateTime> DeletedDate { get; set; }
 
         [JsonProperty("lastActivityDate")]
-        public Nullable<DateTime> LastActivityDate { get; set; }
+        public DateTime LastActivityDate { get; set; }
 
         [JsonProperty("totalPeerToPeerSessionCount")]
         public Nullable<Int64> TotalPeerToPeerSessionCount { get; set; }
@@ -188,7 +191,5 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
             }
         }
 
-        [JsonProperty("reportPeriod")]
-        public int ReportPeriod { get; set; }
     }
 }

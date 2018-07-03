@@ -24,9 +24,9 @@ Shared Externally File Count,
 Assigned Products,
 Report Period
      */
-    public class OneDriveActivityUserDetailMap : ClassMap<OneDriveActivityUserDetail>
+    internal class OneDriveActivityUserDetailMap : ClassMap<OneDriveActivityUserDetail>
     {
-        public OneDriveActivityUserDetailMap()
+        internal OneDriveActivityUserDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.UPN).Name("User Principal Name").Index(1).Default(string.Empty);

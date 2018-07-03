@@ -25,9 +25,9 @@ Storage Allocated (Byte),
 Root Web Template,
 Report Period
      */
-    class SharePointSiteUsageSiteDetailMap : ClassMap<SharePointSiteUsageSiteDetail>
+    internal class SharePointSiteUsageSiteDetailMap : ClassMap<SharePointSiteUsageSiteDetail>
     {
-        public SharePointSiteUsageSiteDetailMap()
+        internal SharePointSiteUsageSiteDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteURL).Name("Site URL").Index(1).Default(string.Empty);

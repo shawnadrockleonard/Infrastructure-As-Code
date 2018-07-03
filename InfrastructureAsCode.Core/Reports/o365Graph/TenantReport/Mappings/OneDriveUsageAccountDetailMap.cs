@@ -23,9 +23,9 @@ Storage Used (Byte)
 Storage Allocated (Byte)
 Report Period
      */
-    public class OneDriveUsageAccountDetailMap : ClassMap<OneDriveUsageAccountDetail>
+    internal class OneDriveUsageAccountDetailMap : ClassMap<OneDriveUsageAccountDetail>
     {
-        public OneDriveUsageAccountDetailMap()
+        internal OneDriveUsageAccountDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteURL).Name("Site URL").Index(1).Default(string.Empty);

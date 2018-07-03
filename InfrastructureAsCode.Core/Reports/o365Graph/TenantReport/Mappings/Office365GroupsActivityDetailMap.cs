@@ -14,9 +14,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
     * The CSV file has the following headers for columns.
     * Report Refresh Date,,,,,,,,,,,,,,,,,Report Period
      */
-    public class Office365GroupsActivityDetailMap : ClassMap<Office365GroupsActivityDetail>
+    internal class Office365GroupsActivityDetailMap : ClassMap<Office365GroupsActivityDetail>
     {
-        public Office365GroupsActivityDetailMap()
+        internal Office365GroupsActivityDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.GroupName).Name("Group Display Name").Index(1).Default(string.Empty);

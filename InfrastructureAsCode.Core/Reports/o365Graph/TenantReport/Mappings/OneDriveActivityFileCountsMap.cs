@@ -19,9 +19,9 @@ Shared Externally
 Report Date
 Report Period
  */
-    public class OneDriveActivityFileCountsMap : ClassMap<OneDriveActivityFileCounts>
+    internal class OneDriveActivityFileCountsMap : ClassMap<OneDriveActivityFileCounts>
     {
-        public OneDriveActivityFileCountsMap()
+        internal OneDriveActivityFileCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.FilesViewedModified).Name("Viewed Or Edited").Index(1).Default(0);

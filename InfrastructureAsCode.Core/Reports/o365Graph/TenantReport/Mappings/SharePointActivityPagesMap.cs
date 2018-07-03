@@ -17,9 +17,9 @@ Visited Page Count,
 Report Date,
 Report Period
  */
-    class SharePointActivityPagesMap : ClassMap<SharePointActivityPages>
+    internal class SharePointActivityPagesMap : ClassMap<SharePointActivityPages>
     {
-        public SharePointActivityPagesMap()
+        internal SharePointActivityPagesMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.VisitedPageCount).Name("Visited Page Count").Index(1).Default(0);

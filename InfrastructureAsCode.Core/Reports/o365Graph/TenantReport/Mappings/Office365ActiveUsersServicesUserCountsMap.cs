@@ -27,9 +27,9 @@ Teams Active
 Teams Inactive
 Report Period
      */
-    class Office365ActiveUsersServicesUserCountsMap : ClassMap<Office365ActiveUsersServicesUserCounts>
+    internal class Office365ActiveUsersServicesUserCountsMap : ClassMap<Office365ActiveUsersServicesUserCounts>
     {
-        public Office365ActiveUsersServicesUserCountsMap()
+        internal Office365ActiveUsersServicesUserCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.ExchangeActive).Name("Exchange Active").Index(1).Default(0);

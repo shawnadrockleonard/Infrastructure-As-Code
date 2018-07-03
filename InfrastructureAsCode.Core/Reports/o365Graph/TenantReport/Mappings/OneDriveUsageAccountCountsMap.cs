@@ -19,9 +19,9 @@ Active
 Report Date
 Report Period
      */
-    public class OneDriveUsageAccountCountsMap : ClassMap<OneDriveUsageAccountCounts>
+    internal class OneDriveUsageAccountCountsMap : ClassMap<OneDriveUsageAccountCounts>
     {
-        public OneDriveUsageAccountCountsMap()
+        internal OneDriveUsageAccountCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

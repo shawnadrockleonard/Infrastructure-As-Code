@@ -12,9 +12,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
      * CSV Mapping for Skype for Business app
      * Report Refresh Date,,,,,,,,Report Period
      * */
-    class SkypeForBusinessDeviceUsageUserCountsMap : ClassMap<SkypeForBusinessDeviceUsageUserCounts>
+    internal class SkypeForBusinessDeviceUsageUserCountsMap : ClassMap<SkypeForBusinessDeviceUsageUserCounts>
     {
-        public SkypeForBusinessDeviceUsageUserCountsMap()
+        internal SkypeForBusinessDeviceUsageUserCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.Windows).Name("Windows").Index(1).Default(0);
@@ -35,6 +35,12 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         [JsonProperty("reportRefreshDate")]
         public DateTime ReportRefreshDate { get; set; }
 
+        [JsonProperty("reportDate")]
+        public Nullable<DateTime> ReportDate { get; set; }
+
+        [JsonProperty("reportPeriod")]
+        public int ReportPeriod { get; set; }
+
         [JsonProperty("windows")]
         public Nullable<Int64> Windows { get; set; }
 
@@ -49,11 +55,5 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
 
         [JsonProperty("iPad")]
         public Nullable<Int64> iPad { get; set; }
-
-        [JsonProperty("reportDate")]
-        public Nullable<DateTime> ReportDate { get; set; }
-
-        [JsonProperty("reportPeriod")]
-        public int ReportPeriod { get; set; }
     }
 }

@@ -19,9 +19,9 @@ Shared Externally,
 Report Date,
 Report Period
      */
-    class SharePointActivityFileCountsMap : ClassMap<SharePointActivityFileCounts>
+    internal class SharePointActivityFileCountsMap : ClassMap<SharePointActivityFileCounts>
     {
-        public SharePointActivityFileCountsMap()
+        internal SharePointActivityFileCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.ViewedOrEdited).Name("Viewed Or Edited").Index(1).Default(0);

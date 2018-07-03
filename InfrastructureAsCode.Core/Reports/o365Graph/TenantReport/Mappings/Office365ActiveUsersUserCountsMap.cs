@@ -23,9 +23,9 @@ Teams
 Report Date
 Report Period
      */
-    class Office365ActiveUsersUserCountsMap : ClassMap<Office365ActiveUsersUserCounts>
+    internal class Office365ActiveUsersUserCountsMap : ClassMap<Office365ActiveUsersUserCounts>
     {
-        public Office365ActiveUsersUserCountsMap()
+        internal Office365ActiveUsersUserCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.Office365).Name("Office 365").Index(1).Default(0);

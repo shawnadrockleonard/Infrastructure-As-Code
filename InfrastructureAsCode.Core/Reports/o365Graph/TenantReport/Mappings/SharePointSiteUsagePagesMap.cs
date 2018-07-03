@@ -18,9 +18,9 @@ Report Date,
 Report Period
 2017-10-29,All,1335,2017-10-29,7
  */
-    public class SharePointSiteUsagePagesMap : ClassMap<SharePointSiteUsagePages>
+    internal class SharePointSiteUsagePagesMap : ClassMap<SharePointSiteUsagePages>
     {
-        public SharePointSiteUsagePagesMap()
+        internal SharePointSiteUsagePagesMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

@@ -25,9 +25,9 @@ Assigned Products,
 Report Period
 2017-10-28,<user>,False,,2017-10-28,25,0,1,0,4,E3,7
  */
-    public class SharePointActivityUserDetailMap : ClassMap<SharePointActivityUserDetail>
+    internal class SharePointActivityUserDetailMap : ClassMap<SharePointActivityUserDetail>
     {
-        public SharePointActivityUserDetailMap()
+        internal SharePointActivityUserDetailMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.UserPrincipalName).Name("User Principal Name").Index(1).Default(string.Empty);

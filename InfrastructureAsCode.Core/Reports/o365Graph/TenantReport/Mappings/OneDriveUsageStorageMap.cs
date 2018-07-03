@@ -17,9 +17,9 @@ Storage Used (Byte)
 Report Date
 Report Period
      */
-    public class OneDriveUsageStorageMap : ClassMap<OneDriveUsageStorage>
+    internal class OneDriveUsageStorageMap : ClassMap<OneDriveUsageStorage>
     {
-        public OneDriveUsageStorageMap()
+        internal OneDriveUsageStorageMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

@@ -12,9 +12,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
      * CSV Mapping
      * Report Refresh Date,Report Date,Report Period,,,,,
      * */
-    class SkypeForBusinessPeerToPeerActivityCountsMap : ClassMap<SkypeForBusinessPeerToPeerActivityCounts>
+    internal class SkypeForBusinessPeerToPeerActivityCountsMap : ClassMap<SkypeForBusinessPeerToPeerActivityCounts>
     {
-        SkypeForBusinessPeerToPeerActivityCountsMap()
+        internal SkypeForBusinessPeerToPeerActivityCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.ReportDate).Name("Report Date").Index(1).Default(default(Nullable<DateTime>));

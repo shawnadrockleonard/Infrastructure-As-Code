@@ -19,9 +19,9 @@ Report Date,
 Report Period
 2017-10-29,All,2617023,4279,2017-10-29,7
      */
-    class SharePointSiteUsageFileCountsMap : ClassMap<SharePointSiteUsageFileCounts>
+    internal class SharePointSiteUsageFileCountsMap : ClassMap<SharePointSiteUsageFileCounts>
     {
-        public SharePointSiteUsageFileCountsMap()
+        internal SharePointSiteUsageFileCountsMap()
         {
             Map(m => m.ReportRefreshDate).Name("Report Refresh Date").Index(0).Default(default(DateTime));
             Map(m => m.SiteType).Name("Site Type").Index(1).Default(string.Empty);

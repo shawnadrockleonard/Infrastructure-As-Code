@@ -16,12 +16,41 @@ namespace InfrastructureAsCode.Core.HttpServices
     /// <summary>
     /// HTTP Utility to interact with Office 365 Groups
     /// </summary>
-    public static class UnifiedGroupsUtility
+    public class UnifiedGroupsUtility
     {
         private const int defaultRetryCount = 10;
         private const int defaultDelay = 500;
+        private readonly ITraceLogger traceLogger = null;
 
-        private static GraphServiceClient graphClient = null;
+        /// <summary>
+        /// Initializes a Graph Utility
+        /// </summary>
+        public UnifiedGroupsUtility()
+        {
+            traceLogger = new DefaultUsageLogger(
+                (string fmt, object[] args) =>
+                {
+                    Trace.TraceInformation(fmt, args);
+                },
+                (string fmt, object[] args) =>
+                {
+                    Trace.TraceWarning(fmt, args);
+                },
+                (Exception ex, string msg, object[] args) =>
+                {
+                    Trace.TraceError(msg, args);
+                });
+        }
+
+        /// <summary>
+        /// Initializes a Graph Utility with the specified Logging mechanism
+        /// </summary>
+        /// <param name="trace"></param>
+        public UnifiedGroupsUtility(ITraceLogger trace)
+        {
+            traceLogger = trace;
+        }
+
 
         /// <summary>
         /// Initializes the Client with a Bearer token
@@ -35,7 +64,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             // Creates a new GraphServiceClient instance using a custom PnPHttpProvider
             // which natively supports retry logic for throttled requests
             // Default are 10 retries with a base delay of 500ms
-            graphClient = new GraphServiceClient(new DelegateAuthenticationProvider(
+            var result = new GraphServiceClient(new DelegateAuthenticationProvider(
                         async (requestMessage) =>
                         {
                             if (!String.IsNullOrEmpty(accessToken))
@@ -45,13 +74,9 @@ namespace InfrastructureAsCode.Core.HttpServices
                             }
                         }), new PnPHttpProvider(retryCount, delay));
 
-            return (graphClient);
+            return (result);
         }
 
-        public static void SignOutClient()
-        {
-            graphClient = null;
-        }
 
         /// <summary>
         /// Returns the URL of the Modern SharePoint Site backing an Office 365 Group (i.e. Unified Group)
@@ -61,8 +86,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>The URL of the modern site backing the Office 365 Group</returns>
-        public static String GetUnifiedGroupSiteUrl(String groupId, String accessToken,
-            int retryCount = 10, int delay = 500)
+        public String GetUnifiedGroupSiteUrl(String groupId, String accessToken, int retryCount = 10, int delay = 500)
         {
             if (String.IsNullOrEmpty(groupId))
             {
@@ -83,7 +107,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                     var graphClient = CreateGraphClient(accessToken, retryCount, delay);
 
-                    Drive groupDrive = await graphClient.Groups[groupId].Drive.Request().GetAsync();
+                    var groupDrive = await graphClient.Groups[groupId].Drive.Request().GetAsync();
                     if (groupDrive != null)
                     {
                         var rootFolder = await graphClient.Groups[groupId].Drive.Root.Request().GetAsync();
@@ -102,7 +126,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
             catch (ServiceException ex)
             {
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
             return (result);
@@ -122,7 +146,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>The just created Office 365 Group</returns>
-        public static UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname,
+        public UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname,
             string accessToken, string[] owners = null, string[] members = null, Stream groupLogo = null,
             bool isPrivate = false, int retryCount = 10, int delay = 500)
         {
@@ -257,7 +281,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                     if (owners != null && owners.Length > 0)
                     {
-                        await AddOwnersAsync(owners, graphClient, addedGroup);
+                        await UpdateOwnersAsync(owners, graphClient, addedGroup);
                     }
 
                     #endregion
@@ -266,7 +290,7 @@ namespace InfrastructureAsCode.Core.HttpServices
 
                     if (members != null && members.Length > 0)
                     {
-                        await AddMembersAsync(members, graphClient, addedGroup);
+                        await UpdateMembersAsync(members, graphClient, addedGroup);
                     }
 
                     #endregion
@@ -277,13 +301,13 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
             catch (ServiceException ex)
             {
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
             return (result);
         }
 
-        private static async Task AddMembersAsync(string[] members, GraphServiceClient graphClient, Group addedGroup)
+        private async Task UpdateMembersAsync(string[] members, GraphServiceClient graphClient, Group targetGroup)
         {
             foreach (var m in members)
             {
@@ -300,7 +324,7 @@ namespace InfrastructureAsCode.Core.HttpServices
                     try
                     {
                         // And if any, add it to the collection of group's owners
-                        await graphClient.Groups[addedGroup.Id].Members.References.Request().AddAsync(member);
+                        await graphClient.Groups[targetGroup.Id].Members.References.Request().AddAsync(member);
                     }
                     catch (ServiceException ex)
                     {
@@ -316,9 +340,50 @@ namespace InfrastructureAsCode.Core.HttpServices
                     }
                 }
             }
+
+            // Remove any leftover member
+            var fullListOfMembers = await graphClient.Groups[targetGroup.Id].Members.Request().Select("userPrincipalName, Id").GetAsync();
+            var pageExists = true;
+
+            while (pageExists)
+            {
+                foreach (var member in fullListOfMembers)
+                {
+                    var currentMemberPrincipalName = (member as Microsoft.Graph.User)?.UserPrincipalName;
+                    if (!String.IsNullOrEmpty(currentMemberPrincipalName) &&
+                        !members.Contains(currentMemberPrincipalName, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            // If it is not in the list of current owners, just remove it
+                            await graphClient.Groups[targetGroup.Id].Members[member.Id].Reference.Request().DeleteAsync();
+                        }
+                        catch (ServiceException ex)
+                        {
+                            if (ex.Error.Code == "Request_BadRequest")
+                            {
+                                // Skip any failing removal
+                            }
+                            else
+                            {
+                                throw ex;
+                            }
+                        }
+                    }
+                }
+
+                if (fullListOfMembers.NextPageRequest != null)
+                {
+                    fullListOfMembers = await fullListOfMembers.NextPageRequest.GetAsync();
+                }
+                else
+                {
+                    pageExists = false;
+                }
+            }
         }
 
-        private static async Task AddOwnersAsync(string[] owners, GraphServiceClient graphClient, Group addedGroup)
+        private async Task UpdateOwnersAsync(string[] owners, GraphServiceClient graphClient, Group targetGroup)
         {
             foreach (var o in owners)
             {
@@ -335,7 +400,7 @@ namespace InfrastructureAsCode.Core.HttpServices
                     try
                     {
                         // And if any, add it to the collection of group's owners
-                        await graphClient.Groups[addedGroup.Id].Owners.References.Request().AddAsync(owner);
+                        await graphClient.Groups[targetGroup.Id].Owners.References.Request().AddAsync(owner);
                     }
                     catch (ServiceException ex)
                     {
@@ -349,6 +414,47 @@ namespace InfrastructureAsCode.Core.HttpServices
                             throw ex;
                         }
                     }
+                }
+            }
+
+            // Remove any leftover owner
+            var fullListOfOwners = await graphClient.Groups[targetGroup.Id].Owners.Request().Select("userPrincipalName, Id").GetAsync();
+            var pageExists = true;
+
+            while (pageExists)
+            {
+                foreach (var owner in fullListOfOwners)
+                {
+                    var currentOwnerPrincipalName = (owner as Microsoft.Graph.User)?.UserPrincipalName;
+                    if (!String.IsNullOrEmpty(currentOwnerPrincipalName) &&
+                        !owners.Contains(currentOwnerPrincipalName, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            // If it is not in the list of current owners, just remove it
+                            await graphClient.Groups[targetGroup.Id].Owners[owner.Id].Reference.Request().DeleteAsync();
+                        }
+                        catch (ServiceException ex)
+                        {
+                            if (ex.Error.Code == "Request_BadRequest")
+                            {
+                                // Skip any failing removal
+                            }
+                            else
+                            {
+                                throw ex;
+                            }
+                        }
+                    }
+                }
+
+                if (fullListOfOwners.NextPageRequest != null)
+                {
+                    fullListOfOwners = await fullListOfOwners.NextPageRequest.GetAsync();
+                }
+                else
+                {
+                    pageExists = false;
                 }
             }
         }
@@ -367,7 +473,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>Declares whether the Office 365 Group has been updated or not</returns>
-        public static bool UpdateUnifiedGroup(string groupId,
+        public bool UpdateUnifiedGroup(string groupId,
             string accessToken, int retryCount = 10, int delay = 500,
             string displayName = null, string description = null, string[] owners = null, string[] members = null,
             Stream groupLogo = null, bool isPrivate = false)
@@ -411,19 +517,19 @@ namespace InfrastructureAsCode.Core.HttpServices
                         updateGroup = true;
                     }
 
-                    // Check if we are to add owners
+                    // Check if we need to update owners
                     if (owners != null && owners.Length > 0)
                     {
                         // For each and every owner
-                        await AddOwnersAsync(owners, graphClient, groupToUpdate);
+                        await UpdateOwnersAsync(owners, graphClient, groupToUpdate);
                         updateGroup = true;
                     }
 
-                    // Check if we are to add members
+                    // Check if we need to update members
                     if (members != null && members.Length > 0)
                     {
                         // For each and every owner
-                        await AddMembersAsync(members, graphClient, groupToUpdate);
+                        await UpdateMembersAsync(members, graphClient, groupToUpdate);
                         updateGroup = true;
                     }
 
@@ -458,7 +564,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
             catch (ServiceException ex)
             {
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
             return (result);
@@ -478,9 +584,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>The just created Office 365 Group</returns>
-        public static UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname,
-            string accessToken, string[] owners = null, string[] members = null, String groupLogoPath = null,
-            bool isPrivate = false, int retryCount = 10, int delay = 500)
+        public UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname, string accessToken, string[] owners = null, string[] members = null, String groupLogoPath = null, bool isPrivate = false, int retryCount = 10, int delay = 500)
         {
             if (!String.IsNullOrEmpty(groupLogoPath) && !System.IO.File.Exists(groupLogoPath))
             {
@@ -518,9 +622,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>The just created Office 365 Group</returns>
-        public static UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname,
-            string accessToken, string[] owners = null, string[] members = null,
-            bool isPrivate = false, int retryCount = 10, int delay = 500)
+        public UnifiedGroupEntity CreateUnifiedGroup(string displayName, string description, string mailNickname, string accessToken, string[] owners = null, string[] members = null, bool isPrivate = false, int retryCount = 10, int delay = 500)
         {
             return (CreateUnifiedGroup(displayName, description,
                 mailNickname, accessToken, owners, members,
@@ -535,8 +637,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="accessToken">The OAuth 2.0 Access Token to use for invoking the Microsoft Graph</param>
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
-        public static void DeleteUnifiedGroup(String groupId, String accessToken,
-            int retryCount = 10, int delay = 500)
+        public void DeleteUnifiedGroup(String groupId, String accessToken, int retryCount = 10, int delay = 500)
         {
             if (String.IsNullOrEmpty(groupId))
             {
@@ -561,9 +662,87 @@ namespace InfrastructureAsCode.Core.HttpServices
             catch (ServiceException ex)
             {
 
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
+        }
+
+        public Microsoft.Graph.Group GetGraphUnifiedGroup(String groupId, String accessToken, int retryCount = 10, int delay = 500, bool includeSite = true, bool includeAcceptedSenders = false, bool includeClassification = false)
+        {
+            if (String.IsNullOrEmpty(groupId))
+            {
+                throw new ArgumentNullException(nameof(groupId));
+            }
+
+            if (String.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentNullException(nameof(accessToken));
+            }
+
+            Microsoft.Graph.Group unifiedGroupResult = null;
+
+            try
+            {
+                unifiedGroupResult = Task.Run(async () =>
+                {
+                    var graphClient = CreateGraphClient(accessToken, retryCount, delay);
+
+                    var unifiedGroup = await graphClient.Groups[groupId].Request().GetAsync();
+
+                    if (includeAcceptedSenders)
+                    {
+                        try
+                        {
+                            unifiedGroup.AcceptedSenders = await graphClient.Groups[groupId].AcceptedSenders.Request().GetAsync();
+                        }
+                        catch (Microsoft.Graph.ServiceException gex)
+                        {
+                            traceLogger.LogWarning($"Failed AcceptedSenders of the Group {groupId} with Message {gex}");
+                        }
+                    }
+
+                    try
+                    {
+                        //unifiedGroup.Members = await graphClient.Groups[groupId].Members.Request().GetAsync();
+                    }
+                    catch (Microsoft.Graph.ServiceException gex)
+                    {
+                        traceLogger.LogWarning($"Failed Members of the Group {groupId} with Message {gex}");
+                    }
+
+
+                    if (includeSite)
+                    {
+                        try
+                        {
+                            var groupDrive = await graphClient.Groups[groupId].Drive.Request().GetAsync();
+                            if (groupDrive != null)
+                            {
+                                unifiedGroup.Drive = groupDrive;
+                                var rootFolder = await graphClient.Groups[groupId].Drive.Root.Request().GetAsync();
+                                if (rootFolder != null)
+                                {
+                                    unifiedGroup.Drive.Root = rootFolder;
+                                }
+                            }
+                        }
+                        catch (Microsoft.Graph.ServiceException gex)
+                        {
+                            traceLogger.LogWarning($"Failed Drive.Root of the Group {groupId} with Message {gex}");
+                        }
+                    }
+
+                    return (unifiedGroup);
+
+                }).GetAwaiter().GetResult();
+
+            }
+            catch (Microsoft.Graph.ServiceException gex)
+            {
+                traceLogger.LogWarning($"Failed to process MS Graph Group {groupId} with Message {gex}");
+            }
+
+            return unifiedGroupResult;
         }
 
         /// <summary>
@@ -574,7 +753,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="includeSite">Defines whether to return details about the Modern SharePoint Site backing the group. Default is true.</param>
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
-        public static UnifiedGroupEntity GetUnifiedGroup(String groupId, String accessToken, int retryCount = 10, int delay = 500, bool includeSite = true)
+        public UnifiedGroupEntity GetUnifiedGroup(String groupId, String accessToken, int retryCount = 10, int delay = 500, bool includeSite = true)
         {
             if (String.IsNullOrEmpty(groupId))
             {
@@ -606,6 +785,7 @@ namespace InfrastructureAsCode.Core.HttpServices
                         Mail = g.Mail,
                         MailNickname = g.MailNickname
                     };
+
                     if (includeSite)
                     {
                         try
@@ -623,7 +803,7 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
             catch (ServiceException ex)
             {
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
             return (result);
@@ -641,7 +821,7 @@ namespace InfrastructureAsCode.Core.HttpServices
         /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
         /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
         /// <returns>An IList of SiteEntity objects</returns>
-        public static List<UnifiedGroupEntity> ListUnifiedGroups(string accessToken,
+        public List<UnifiedGroupEntity> ListUnifiedGroups(string accessToken,
             String displayName = null, string mailNickname = null,
             int startIndex = 0, int endIndex = 999, bool includeSite = true,
             int retryCount = 10, int delay = 500)
@@ -723,10 +903,217 @@ namespace InfrastructureAsCode.Core.HttpServices
             }
             catch (ServiceException ex)
             {
-                Trace.TraceError("GraphExtensions_ErrorOccured {0}", ex.Error.Message);
+                traceLogger.LogError(ex, "GraphExtensions_ErrorOccured {0}", ex.Error.Message);
                 throw;
             }
             return (result);
+        }
+
+        /// <summary>
+        /// Returns all the Members of an Office 365 group.
+        /// </summary>
+        /// <param name="group">The Office 365 group object of type UnifiedGroupEntity</param>
+        /// <param name="accessToken">The OAuth 2.0 Access Token to use for invoking the Microsoft Graph</param>
+        /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
+        /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
+        /// <returns>Members of an Office 365 group as a list of UnifiedGroupUser entity</returns>
+        public List<UnifiedGroupUser> GetUnifiedGroupMembers(UnifiedGroupEntity group, string accessToken, int retryCount = 10, int delay = 500)
+        {
+            List<UnifiedGroupUser> unifiedGroupUsers = null;
+            List<User> unifiedGroupGraphUsers = null;
+            IGroupMembersCollectionWithReferencesPage groupUsers = null;
+
+            if (String.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentNullException(nameof(accessToken));
+            }
+            if (group == null)
+            {
+                throw new ArgumentNullException(nameof(group));
+            }
+
+            try
+            {
+                var result = Task.Run(async () =>
+                {
+                    var graphClient = CreateGraphClient(accessToken, retryCount, delay);
+
+                    // Get the members of an Office 365 group.
+                    groupUsers = await graphClient.Groups[group.GroupId].Members.Request().GetAsync();
+                    if (groupUsers.CurrentPage != null && groupUsers.CurrentPage.Count > 0)
+                    {
+                        unifiedGroupGraphUsers = new List<User>();
+
+                        GenerateGraphUserCollection(groupUsers.CurrentPage, unifiedGroupGraphUsers);
+                    }
+
+                    // Retrieve users when the results are paged.
+                    while (groupUsers.NextPageRequest != null)
+                    {
+                        groupUsers = groupUsers.NextPageRequest.GetAsync().GetAwaiter().GetResult();
+                        if (groupUsers.CurrentPage != null && groupUsers.CurrentPage.Count > 0)
+                        {
+                            GenerateGraphUserCollection(groupUsers.CurrentPage, unifiedGroupGraphUsers);
+                        }
+                    }
+
+                    // Create the collection of type OfficeDevPnP 'UnifiedGroupUser' after all users are retrieved, including paged data.
+                    if (unifiedGroupGraphUsers != null && unifiedGroupGraphUsers.Count > 0)
+                    {
+                        unifiedGroupUsers = new List<UnifiedGroupUser>();
+                        foreach (User usr in unifiedGroupGraphUsers)
+                        {
+                            UnifiedGroupUser groupUser = new UnifiedGroupUser
+                            {
+                                UserPrincipalName = usr.UserPrincipalName != null ? usr.UserPrincipalName : string.Empty,
+                                DisplayName = usr.DisplayName != null ? usr.DisplayName : string.Empty
+                            };
+                            unifiedGroupUsers.Add(groupUser);
+                        }
+                    }
+                    return unifiedGroupUsers;
+
+                }).GetAwaiter().GetResult();
+            }
+            catch (ServiceException ex)
+            {
+                traceLogger.LogError(ex, $"Graph Error occurred {ex.Error.Message}");
+                throw;
+            }
+            return unifiedGroupUsers;
+        }
+
+        /// <summary>
+        /// Returns all the Owners of an Office 365 group.
+        /// </summary>
+        /// <param name="group">The Office 365 group object of type UnifiedGroupEntity</param>
+        /// <param name="accessToken">The OAuth 2.0 Access Token to use for invoking the Microsoft Graph</param>
+        /// <param name="retryCount">Number of times to retry the request in case of throttling</param>
+        /// <param name="delay">Milliseconds to wait before retrying the request. The delay will be increased (doubled) every retry</param>
+        /// <returns>Owners of an Office 365 group as a list of UnifiedGroupUser entity</returns>
+        public List<UnifiedGroupUser> GetUnifiedGroupOwners(UnifiedGroupEntity group, string accessToken, int retryCount = 10, int delay = 500)
+        {
+            List<UnifiedGroupUser> unifiedGroupUsers = null;
+            List<User> unifiedGroupGraphUsers = null;
+            IGroupOwnersCollectionWithReferencesPage groupUsers = null;
+
+            if (String.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentNullException(nameof(accessToken));
+            }
+
+            try
+            {
+                var result = Task.Run(async () =>
+                {
+                    var graphClient = CreateGraphClient(accessToken, retryCount, delay);
+
+                    // Get the owners of an Office 365 group.
+                    groupUsers = await graphClient.Groups[group.GroupId].Owners.Request().GetAsync();
+                    if (groupUsers.CurrentPage != null && groupUsers.CurrentPage.Count > 0)
+                    {
+                        unifiedGroupGraphUsers = new List<User>();
+                        GenerateGraphUserCollection(groupUsers.CurrentPage, unifiedGroupGraphUsers);
+                    }
+
+                    // Retrieve users when the results are paged.
+                    while (groupUsers.NextPageRequest != null)
+                    {
+                        groupUsers = groupUsers.NextPageRequest.GetAsync().GetAwaiter().GetResult();
+                        if (groupUsers.CurrentPage != null && groupUsers.CurrentPage.Count > 0)
+                        {
+                            GenerateGraphUserCollection(groupUsers.CurrentPage, unifiedGroupGraphUsers);
+                        }
+                    }
+
+                    // Create the collection of type OfficeDevPnP 'UnifiedGroupUser' after all users are retrieved, including paged data.
+                    if (unifiedGroupGraphUsers != null && unifiedGroupGraphUsers.Count > 0)
+                    {
+                        unifiedGroupUsers = new List<UnifiedGroupUser>();
+                        foreach (User usr in unifiedGroupGraphUsers)
+                        {
+                            UnifiedGroupUser groupUser = new UnifiedGroupUser
+                            {
+                                UserPrincipalName = usr.UserPrincipalName != null ? usr.UserPrincipalName : string.Empty,
+                                DisplayName = usr.DisplayName != null ? usr.DisplayName : string.Empty
+                            };
+                            unifiedGroupUsers.Add(groupUser);
+                        }
+                    }
+                    return unifiedGroupUsers;
+
+                }).GetAwaiter().GetResult();
+            }
+            catch (ServiceException ex)
+            {
+                traceLogger.LogError(ex, $"Graph Error occurred {ex.Error.Message}");
+                throw;
+            }
+            return unifiedGroupUsers;
+        }
+
+        /// <summary>
+        /// Helper method. Generates a collection of Microsoft.Graph.User entity from directory objects.
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="unifiedGroupGraphUsers"></param>
+        /// <returns>Returns a collection of Microsoft.Graph.User entity</returns>
+        private List<User> GenerateGraphUserCollection(IList<DirectoryObject> page, List<User> unifiedGroupGraphUsers)
+        {
+            // Create a collection of Microsoft.Graph.User type
+            foreach (User usr in page)
+            {
+                if (usr != null)
+                {
+                    unifiedGroupGraphUsers.Add(usr);
+                }
+            }
+
+            return unifiedGroupGraphUsers;
+        }
+
+        /// <summary>
+        /// Returns the classification value of an Office 365 Group.
+        /// </summary>
+        /// <param name="groupId">ID of the unified Group</param>
+        /// <param name="accessToken">The OAuth 2.0 Access Token to use for invoking the Microsoft Graph</param>
+        /// <returns>Classification value of a Unified group</returns>
+        public static string GetGroupClassification(string groupId, string accessToken)
+        {
+            if (String.IsNullOrEmpty(groupId))
+            {
+                throw new ArgumentNullException(nameof(groupId));
+            }
+
+            if (String.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentNullException(nameof(accessToken));
+            }
+
+            string classification = string.Empty;
+
+            try
+            {
+                string getGroupUrl = $"{GraphHttpClient.MicrosoftGraphV1BaseUri}groups/{groupId}";
+
+                var getGroupResult = GraphHttpClient.MakeGetRequestForString(
+                    getGroupUrl,
+                    accessToken: accessToken);
+
+                var groupObject = Newtonsoft.Json.Linq.JObject.Parse(getGroupResult);
+
+                if (groupObject["classification"] != null)
+                {
+                    classification = Convert.ToString(groupObject["classification"]);
+                }
+
+            }
+            catch (ServiceException e)
+            {
+                classification = e.Error.Message;
+            }
+
+            return classification;
         }
     }
 }
