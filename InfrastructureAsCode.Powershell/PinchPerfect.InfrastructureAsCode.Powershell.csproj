@@ -215,6 +215,7 @@
     <Compile Include="Commands\Tenant\GetIaCSiteClassifications.cs" />
     <Compile Include="Commands\Workflow\GetIaCWebWorkflows.cs" />
     <Compile Include="Commands\Workflow\RestartIaCListItemWorkflows.cs" />
+    <Compile Include="Commands\Workflow\StopIaCWorkflowInstance.cs" />
     <Compile Include="Commands\Workflow\StartIaCWorkflowInstance.cs" />
     <Compile Include="Models\CalloutLinkModel.cs" />
     <Compile Include="Commands\Lists\GetIaCList.cs" />
@@ -258,7 +259,6 @@
     <Compile Include="Commands\Workflow\GetIaCWorkflowInstances.cs" />
     <Compile Include="Commands\Workflow\GetIaCWorkflowSubscription.cs" />
     <Compile Include="Commands\Workflow\ResumeIaCWorkflowInstance.cs" />
-    <Compile Include="Commands\Workflow\StopIaCWorkflowInstance.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="PipeBinds\AppPipeBind.cs" />
     <Compile Include="PipeBinds\ContentTypePipeBind.cs" />

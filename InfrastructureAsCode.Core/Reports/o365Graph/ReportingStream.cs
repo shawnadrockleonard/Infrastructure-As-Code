@@ -165,13 +165,19 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
 
         private void LogWebException(System.Net.WebException wex)
         {
-            WebException webEx = (WebException)wex.InnerException;
-            string response = string.Empty;
+            if(wex.Response != null && wex.Response is HttpWebResponse)
+            {
+                StreamReader strm = new StreamReader(wex.Response.GetResponseStream(), Encoding.UTF8);
+                var response = strm.ReadToEnd();
+                Logger.LogWarning($"WebEx Response Handler {response} from Graph Request");
+            }
 
-            if (webEx.Response is HttpWebResponse myResponse)
+
+            WebException webEx = (WebException)wex.InnerException;
+            if (webEx != null && webEx.Response is HttpWebResponse myResponse)
             {
                 StreamReader strm = new StreamReader(myResponse.GetResponseStream(), Encoding.UTF8);
-                response = strm.ReadToEnd();
+                var response = strm.ReadToEnd();
                 Logger.LogWarning($"Inner WebEx Handler {response} from Graph Request");
             }
         }

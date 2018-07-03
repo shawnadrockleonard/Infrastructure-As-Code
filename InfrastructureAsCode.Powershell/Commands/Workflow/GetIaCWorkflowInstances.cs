@@ -5,8 +5,10 @@ using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Powershell.CmdLets;
 using System;
 using System.Collections;
+using System.Linq;
 using InfrastructureAsCode.Core.Models;
 using System.Collections.Generic;
+using OfficeDevPnP.Core.Utilities;
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {
@@ -28,10 +30,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
 
 
         [Parameter(Mandatory = false)]
-        public Nullable<int> ListItemId { get; set; }
-
-
-        [Parameter(Mandatory = false)]
         public SwitchParameter DeepScan { get; set; }
 
         #endregion
@@ -45,54 +43,42 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
             var SelectedWeb = this.ClientContext.Web;
 
 
-                var list = List.GetList(SelectedWeb);
+            var list = List.GetList(SelectedWeb);
 
-                if (ListItemId.HasValue)
+
+            if (!string.IsNullOrEmpty(WorkflowName))
+            {
+                var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
+                var deploymentService = servicesManager.GetWorkflowInstanceService();
+
+                WorkflowSubscription workflowSubscription = list.GetWorkflowSubscription(WorkflowName);
+                WriteSubscriptionInstances(list, deploymentService, workflowSubscription);
+
+            }
+            else
+            {
+                var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
+                var deploymentService = servicesManager.GetWorkflowInstanceService();
+
+                var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
+                var subscriptions = subscriptionService.EnumerateSubscriptionsByList(list.Id);
+                ClientContext.Load(subscriptions);
+                ClientContext.ExecuteQueryRetry();
+
+                foreach (var subscription in subscriptions)
                 {
-                    var item = list.GetItemById("" + ListItemId);
-                    list.Context.Load(item, ictx => ictx.Id, ictx => ictx.ParentList.Id);
-                    list.Context.ExecuteQueryRetry();
-
-                    var instances = SelectedWeb.GetWorkflowInstances(item);
-                    foreach (var instance in instances)
-                    {
-                        WriteInstanceLog(instance);
-                    }
-                    
+                    WriteSubscriptionInstances(list, deploymentService, subscription);
                 }
-                else
-                {
-                    if (!string.IsNullOrEmpty(WorkflowName))
-                    {
-                        var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
-                        var deploymentService = servicesManager.GetWorkflowInstanceService();
+            }
 
-                        WorkflowSubscription workflowSubscription = list.GetWorkflowSubscription(WorkflowName);
-                        WriteSubscriptionInstances(deploymentService, workflowSubscription);
 
-                    }
-                    else
-                    {
-                        var servicesManager = new WorkflowServicesManager(ClientContext, SelectedWeb);
-                        var deploymentService = servicesManager.GetWorkflowInstanceService();
-
-                        var subscriptionService = servicesManager.GetWorkflowSubscriptionService();
-                        var subscriptions = subscriptionService.EnumerateSubscriptionsByList(list.Id);
-                        ClientContext.Load(subscriptions);
-                        ClientContext.ExecuteQueryRetry();
-
-                        foreach (var subscription in subscriptions)
-                        {
-                            WriteSubscriptionInstances(deploymentService, subscription);
-                        }
-                    }
-                }
-  
-                WriteObject(SelectedWeb.GetWorkflowInstances());
+            WriteObject(Instances);
         }
 
-        private void WriteSubscriptionInstances(WorkflowInstanceService deploymentService, WorkflowSubscription workflowSubscription)
+        private void WriteSubscriptionInstances(List list, WorkflowInstanceService deploymentService, WorkflowSubscription workflowSubscription)
         {
+            Instances = new List<SPWorkflowInstance>();
+
             if (workflowSubscription != null && !workflowSubscription.ServerObjectIsNull())
             {
                 var countTerminated = deploymentService.CountInstancesWithStatus(workflowSubscription, WorkflowStatus.Terminated);
@@ -117,23 +103,57 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                 LogVerbose("NotSpecified => {0}", countNotSpecified.Value);
 
 
-                var instances = deploymentService.Enumerate(workflowSubscription);
-                ClientContext.Load(instances);
-                ClientContext.ExecuteQueryRetry();
-                var wdx = instances.Count;
-
-                foreach (var instance in instances)
+                if (!DeepScan)
                 {
-                    WriteInstanceLog(instance);
+                    var instances = deploymentService.Enumerate(workflowSubscription);
+                    ClientContext.Load(instances);
+                    ClientContext.ExecuteQueryRetry();
+
+                    LogVerbose($"Instance {instances.Count}...");
+
+                    foreach (var instance in instances)
+                    {
+                        Instances.Add(new SPWorkflowInstance(instance));
+                    }
+
+                }
+                else
+                {
+                    var idx = 1;
+                    var viewCaml = new CamlQuery()
+                    {
+                        ViewXml = CAML.ViewQuery(string.Empty, string.Empty, 100),
+                        ListItemCollectionPosition = null
+                    };
+
+                    do
+                    {
+                        LogVerbose($"Deep search itr=>{idx++} paging => {viewCaml.ListItemCollectionPosition?.PagingInfo}");
+                        var items = list.GetItems(viewCaml);
+                        this.ClientContext.Load(items, ftx => ftx.ListItemCollectionPosition, ftx => ftx.Include(ftcx => ftcx.Id, ftcx => ftcx.ParentList.Id));
+                        this.ClientContext.ExecuteQueryRetry();
+                        viewCaml.ListItemCollectionPosition = items.ListItemCollectionPosition;
+
+                        foreach (var item in items)
+                        {
+                            // Load ParentList ID to Pull Workflow Instances
+                            var allinstances = ClientContext.Web.GetWorkflowInstances(item);
+                            if (allinstances.Any())
+                            {
+                                foreach (var instance in allinstances)
+                                {
+                                    Instances.Add(new SPWorkflowInstance(instance, item.Id));
+                                }
+                            }
+                        }
+
+                    }
+                    while (viewCaml.ListItemCollectionPosition != null);
                 }
 
             }
         }
 
-        private void WriteInstanceLog(WorkflowInstance instance)
-        {
-            LogVerbose("Instance {0} => Status {1} => WF Status {2} => Created {3} => LastUpdated {4} => Subscription {5}", instance.Id, instance.Status, instance.UserStatus, instance.InstanceCreated, instance.LastUpdated, instance.WorkflowSubscriptionId);
-        }
     }
 
 }

@@ -91,33 +91,11 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                 }
             }
 
-
-            var FieldDefinitions = new List<SPFieldDefinitionModel>
-            {
-                new SPFieldDefinitionModel(FieldType.Boolean)
-                {
-                    FieldGuid = new Guid("da2872c4-e9b6-4804-9837-6e9dd85ecd7e"),
-                    InternalName = FieldBoolean_RestartWorkflow,
-                    Description = "RestartWorkflow provides a way to identify items that should be restarted.",
-                    Title = FieldBoolean_RestartWorkflow,
-                    MaxLength = 255,
-                    DefaultValue = "No"
-                }
-            };
-
-            var workflowStati = new List<Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus>()
-            {
-                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Started,
-                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Suspended,
-                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Invalid
-            };
-
-
             // Check if the field exists
             var viewFields = new string[] { "Id", "Title", WorkflowColumnName };
             var viewFieldXml = CAML.ViewFields(viewFields.Select(s => CAML.FieldRef(s)).ToArray());
             var internalFields = new List<string>();
-            internalFields.AddRange(FieldDefinitions.Select(s => s.InternalName));
+            internalFields.AddRange(viewFields);
 
             try
             {
@@ -125,18 +103,10 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
             }
             catch (Exception ex)
             {
-                LogError(ex, "Failed to retreive the fields {0}", ex.Message);
-
-                foreach (var field in FieldDefinitions)
-                {
-                    // provision the column
-                    var provisionedColumn = list.CreateListColumn(field, ilogger, null);
-                    if (provisionedColumn != null)
-                    {
-                        internalFields.Add(provisionedColumn.InternalName);
-                    }
-                }
+                LogError(ex, $"Failed to retreive the fields {string.Join(";", viewFields)} with Msg {ex.Message}");
+                return;
             }
+
 
             var itemIds = new List<int>();
             var viewCaml = new CamlQuery()
@@ -169,6 +139,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Workflow
                 }
             }
 
+            // Workflow status to re-start!
+            var workflowStati = new List<Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus>()
+            {
+                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Started,
+                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Suspended,
+                Microsoft.SharePoint.Client.WorkflowServices.WorkflowStatus.Invalid
+            };
             foreach (var itemId in itemIds)
             {
                 // Retreive the ListItem
