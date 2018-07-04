@@ -4,6 +4,7 @@ using System.Management.Automation;
 using System.Security;
 using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Core.oAuth;
+using InfrastructureAsCode.Core.Models;
 
 namespace InfrastructureAsCode.Powershell.CmdLets
 {
@@ -34,6 +35,9 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// Contains the Azure AD Config to claim authorization
         /// </summary>
         public IAzureADConfig AzureConfig { get; set; }
+
+        public SPOAddInKeys AddInCredentials { get; set; }
+
 
         /// <summary>
         /// Initializes the OnlineConnection for connecting via Federation/Integrated/OAuth

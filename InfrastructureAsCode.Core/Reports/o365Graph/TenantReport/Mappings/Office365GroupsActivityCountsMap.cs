@@ -30,7 +30,7 @@ Report Period
             Map(m => m.YammerPostedMessageCount).Name("Yammer Messages Posted").Index(2).Default(0);
             Map(m => m.YammerReadMessageCount).Name("Yammer Messages Read").Index(3).Default(0);
             Map(m => m.YammerLikedMessageCount).Name("Yammer Messages Liked").Index(4).Default(0);
-            Map(m => m.ReportDate).Name("Report Date").Index(5).Default(default(Nullable<DateTime>));
+            Map(m => m.ReportDate).Name("Report Date").Index(5).Default(default(DateTime));
             Map(m => m.ReportPeriod).Name("Report Period").Index(6).Default(string.Empty);
         }
     }
@@ -56,7 +56,7 @@ Report Period
         public Nullable<Int64> YammerLikedMessageCount { get; set; }
 
         [JsonProperty("reportDate")]
-        public Nullable<DateTime> ReportDate { get; set; }
+        public DateTime ReportDate { get; set; }
 
         [JsonProperty("reportPeriod")]
         public string ReportPeriod { get; set; }

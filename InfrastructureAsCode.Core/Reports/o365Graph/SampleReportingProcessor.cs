@@ -210,11 +210,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
             DateTime.TryParse("2014-01-01", out DateTime nulldefaultdate);
 
             // Return the dates so we can filter the EF query to possible Key overlaps
-            var maxdates = results.Select(gb =>
-            {
-                if (gb.LastActivityDate.HasValue) return gb.LastActivityDate;
-                return nulldefaultdate;
-            }).Distinct();
+            var maxdates = results.Select(gb => gb.LastActivityDate).Distinct();
 
 
             var rowdx = 0; var totaldx = results.Count();

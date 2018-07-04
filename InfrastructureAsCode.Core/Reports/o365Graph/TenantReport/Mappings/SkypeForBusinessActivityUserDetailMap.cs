@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
             Map(m => m.UPN).Name("User Principal Name").Index(1).Default(string.Empty);
             Map(m => m.Deleted).Name("Is Deleted").Index(2).Default("false");
             Map(m => m.DeletedDate).Name("Deleted Date").Index(3).Default(default(Nullable<DateTime>));
-            Map(m => m.LastActivityDate).Name("Last Activity Date").Index(4).Default(default(Nullable<DateTime>));
+            Map(m => m.LastActivityDate).Name("Last Activity Date").Index(4).Default(default(DateTime));
             Map(m => m.TotalPeerToPeerSessionCount).Name("Total Peer-to-peer Session Count").Index(5).Default(0);
             Map(m => m.TotalOrganizedConferenceCount).Name("Total Organized Conference Count").Index(6).Default(0);
             Map(m => m.TotalParticipatedConferenceCount).Name("Total Participated Conference Count").Index(7).Default(0);

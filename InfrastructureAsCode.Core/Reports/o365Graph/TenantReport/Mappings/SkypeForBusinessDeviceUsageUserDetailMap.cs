@@ -44,7 +44,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public string UPN { get; set; }
 
         [JsonProperty("lastActivityDate")]
-        public DateTime LastActivityDate { get; set; }
+        public Nullable<DateTime> LastActivityDate { get; set; }
 
         [JsonProperty("usedWindows")]
         public string UsedWindows { get; set; }

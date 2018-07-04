@@ -1,5 +1,6 @@
 ﻿using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Core.Extensions;
+using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Core.oAuth;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
@@ -48,13 +49,11 @@ namespace InfrastructureAsCode.Powershell.CmdLets
 
             var connection = new SPIaCConnection(context, connectionType, minimalHealthScore, retryCount, retryWait, null, url.ToString())
             {
-                AzureConfig = new AzureADConfig()
+                AddInCredentials = new SPOAddInKeys()
                 {
-                    ClientId = clientId,
-                    ClientSecret = clientSecret,
-                    TenantDomain = appDomain,
-                    RedirectUri = resourceUri,
-                    TenantId = realm
+                    AppId = clientId,
+                    AppKey = clientSecret,
+                    Realm = realm
                 }
             };
             return connection;

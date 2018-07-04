@@ -225,6 +225,7 @@
     <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
     <Compile Include="Models\SPGroupPrincipalModel.cs" />
     <Compile Include="Models\SPId.cs" />
+    <Compile Include="Models\SPOAddInKeys.cs" />
     <Compile Include="Models\SPOSiteCollectionModel.cs" />
     <Compile Include="Models\SPOTaxonomyItemModel.cs" />
     <Compile Include="Models\SPOTaxonomyModel.cs" />
@@ -266,6 +267,7 @@
     <Compile Include="DefaultUsageLogger.cs" />
     <Compile Include="Reports\o365Graph\QueryFilter.cs" />
     <Compile Include="Reports\o365Graph\ReportingStream.cs" />
+    <Compile Include="Reports\o365Graph\ReportUsageEnum.cs" />
     <Compile Include="Reports\o365Graph\ReportUsageFormatEnum.cs" />
     <Compile Include="Reports\o365Graph\ReportUsagePeriodEnum.cs" />
     <Compile Include="Reports\o365Graph\ReportUsageTypeEnum.cs" />

@@ -57,7 +57,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public string OwnerPrincipalName { get; set; }
 
         [JsonProperty("lastActivityDate")]
-        public Nullable<DateTime> LastActivityDate { get; set; }
+        public DateTime LastActivityDate { get; set; }
 
         [JsonProperty("groupType")]
         public string GroupType { get; set; }

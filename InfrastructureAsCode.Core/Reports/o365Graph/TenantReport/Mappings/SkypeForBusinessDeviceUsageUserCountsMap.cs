@@ -22,7 +22,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
             Map(m => m.AndroidPhone).Name("Android Phone").Index(3).Default(0);
             Map(m => m.iPhone).Name("iPhone").Index(4).Default(0);
             Map(m => m.iPad).Name("iPad").Index(5).Default(0);
-            Map(m => m.ReportDate).Name("Report Date").Index(6).Default(default(Nullable<DateTime>));
+            Map(m => m.ReportDate).Name("Report Date").Index(6).Default(default(DateTime));
             Map(m => m.ReportPeriod).Name("Report Period").Index(7).Default(0);
         }
     }
@@ -36,7 +36,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings
         public DateTime ReportRefreshDate { get; set; }
 
         [JsonProperty("reportDate")]
-        public Nullable<DateTime> ReportDate { get; set; }
+        public DateTime ReportDate { get; set; }
 
         [JsonProperty("reportPeriod")]
         public int ReportPeriod { get; set; }
