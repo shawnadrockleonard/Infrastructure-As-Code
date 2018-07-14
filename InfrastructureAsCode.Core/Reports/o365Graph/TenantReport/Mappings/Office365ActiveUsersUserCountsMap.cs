@@ -34,7 +34,7 @@ Report Period
             Map(m => m.SharePoint).Name("SharePoint").Index(4).Default(0);
             Map(m => m.SkypeForBusiness).Name("Skype For Business").Index(5).Default(0);
             Map(m => m.Yammer).Name("Yammer").Index(6).Default(0);
-            Map(m => m.Yammer).Name("Teams").Index(7).Default(0);
+            Map(m => m.MSTeams).Name("Teams").Index(7).Default(0);
             Map(m => m.ReportDate).Name("Report Date").Index(8).Default(default(DateTime));
             Map(m => m.ReportingPeriodDays).Name("Report Period").Index(9).Default(0);
         }
