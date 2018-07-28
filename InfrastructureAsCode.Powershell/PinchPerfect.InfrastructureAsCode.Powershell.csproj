@@ -172,6 +172,8 @@
     <Compile Include="CmdLets\AzureADALv1Cmdlet.cs" />
     <Compile Include="CmdLets\AzureADALv1Connection.cs" />
     <Compile Include="CmdLets\CmdletHelpAttribute.cs" />
+    <Compile Include="CmdLets\CredentialManager.cs" />
+    <Compile Include="Commands\AddIaCStoredCredential.cs" />
     <Compile Include="Commands\ConnectIaCADALv1.cs" />
     <Compile Include="CmdLets\ExtendedPSCmdlet.cs" />
     <Compile Include="CmdLets\IaCWebCmdlet.cs" />

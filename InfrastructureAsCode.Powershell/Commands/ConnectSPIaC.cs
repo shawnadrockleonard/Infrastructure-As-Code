@@ -1,7 +1,7 @@
 ﻿using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Powershell.CmdLets;
 using InfrastructureAsCode.Powershell.PipeBinds;
-using OfficeDevPnP.Core.Utilities;
+//using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Management.Automation;
 using System.Reflection;
@@ -62,10 +62,6 @@ namespace InfrastructureAsCode.Powershell.Commands
         [Parameter(Mandatory = true, HelpMessage = "The URI of the resource to query", ParameterSetName = "Token")]
         public string ResourceUri { get; set; }
 
-
-        [Parameter(Mandatory = true, ParameterSetName = "UserCache")]
-        public string UserName { get; set; }
-
         /// <summary>
         /// Represents a parameter to pull from the stored credentials
         /// </summary>
@@ -95,56 +91,10 @@ namespace InfrastructureAsCode.Powershell.Commands
             }
             else if (ParameterSetName == "CredentialCache")
             {
-                var genericcreds = CredentialManager.GetCredential(CredentialName);
-                creds = new PSCredential(genericcreds.UserName, genericcreds.SecurePassword);
+                creds = CredentialManager.GetCredential(CredentialName);
+                //var genericcreds = CredentialManager.GetCredential(CredentialName);
+                //creds = new PSCredential(genericcreds.UserName, genericcreds.SecurePassword);
                 SPIaCConnection.CurrentConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), creds, Host, CurrentCredentials, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
-            }
-            else if (ParameterSetName == "UserCache")
-            {
-                var boolSaveToDisk = false;
-                var runningDirectory = this.SessionState.Path.CurrentFileSystemLocation;
-                var userPasswordConfig = string.Format("{0}\\{1}.pswd", runningDirectory, UserName).Replace("\\", @"\");
-                if (System.IO.File.Exists(userPasswordConfig))
-                {
-                    var encryptedUserPassword = System.IO.File.ReadAllText(userPasswordConfig);
-                    var encryptedSecureString = encryptedUserPassword.ConvertToSecureString();
-
-                    if (!CurrentCredentials && creds == null)
-                    {
-                        if (encryptedSecureString == null || encryptedSecureString.Length <= 0)
-                        {
-                            boolSaveToDisk = true;
-                            creds = Host.UI.PromptForCredential(Resources.EnterYourCredentials, "", UserName, "");
-                        }
-                        else
-                        {
-                            creds = new PSCredential(this.UserName, encryptedSecureString);
-                        }
-                    }
-                }
-                else
-                {
-                    // the password was not encrypted
-                    if (!CurrentCredentials && creds == null)
-                    {
-                        boolSaveToDisk = true;
-                        creds = Host.UI.PromptForCredential(Resources.EnterYourCredentials, "", UserName, "");
-                    }
-                }
-
-                var initializedConnection = SPIaCConnectionHelper.InstantiateSPOnlineConnection(new Uri(Url), creds, Host, CurrentCredentials, MinimalHealthScore, RetryCount, RetryWait, RequestTimeout, SkipTenantAdminCheck);
-                if (initializedConnection == null)
-                {
-                    throw new Exception(string.Format("Error establishing a connection to {0}.  Check the diagnostic logs.", Url));
-                }
-
-                SPIaCConnection.CurrentConnection = initializedConnection;
-
-                if (boolSaveToDisk)
-                {
-                    var encryptedSecureString = creds.Password.ConvertFromSecureString();
-                    System.IO.File.WriteAllText(userPasswordConfig, encryptedSecureString);
-                }
             }
             else
             {

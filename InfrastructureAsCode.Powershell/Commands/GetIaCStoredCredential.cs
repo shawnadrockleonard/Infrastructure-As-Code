@@ -1,5 +1,4 @@
 ﻿using System.Management.Automation;
-using OfficeDevPnP.Core.Utilities;
 using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Powershell.Extensions;
 using InfrastructureAsCode.Powershell.CmdLets;
@@ -27,7 +26,7 @@ namespace InfrastructureAsCode.Powershell.Commands
             {
                 case CredentialType.O365:
                     {
-                        WriteObject(CredentialManager.GetSharePointOnlineCredential(Name));
+                        WriteObject(OfficeDevPnP.Core.Utilities.CredentialManager.GetSharePointOnlineCredential(Name));
                         break;
                     }
                 case CredentialType.OnPrem:
@@ -39,7 +38,7 @@ namespace InfrastructureAsCode.Powershell.Commands
                 case CredentialType.PSCredential:
                     {
                         var item = CredentialManager.GetCredential(Name);
-                        WriteObject(item.GetPSCredentials());
+                        WriteObject(item);
                         break;
                     }
             }
