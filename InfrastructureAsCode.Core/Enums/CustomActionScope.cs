@@ -2,7 +2,17 @@
 {
     public enum CustomActionScope
     {
+        /// <summary>
+        /// SPWeb or Web
+        /// </summary>
         Web,
-        Site
+        /// <summary>
+        /// SPSite or Site
+        /// </summary>
+        Site,
+        /// <summary>
+        /// Both actions
+        /// </summary>
+        All
     }
 }

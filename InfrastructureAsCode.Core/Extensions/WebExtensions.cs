@@ -9,6 +9,7 @@ using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -47,26 +48,79 @@ namespace InfrastructureAsCode.Core.Extensions
             throw new Exception("Only Web, List, ListItem supported as SecurableObjects");
         }
 
-        public static Web GetWebById(this Web currentWeb, Guid guid)
+        /// <summary>
+        /// Retreives the Web by GUID, if <paramref name="expressions"/> are specified those properties will be loaded into the context
+        /// </summary>
+        /// <param name="currentWeb"></param>
+        /// <param name="guid"></param>
+        /// <param name="expressions"></param>
+        /// <returns></returns>
+        public static Web GetWebById(this Web currentWeb, Guid guid, Expression<Func<Web, object>>[] expressions = null)
         {
             var clientContext = currentWeb.Context as ClientContext;
             Site site = clientContext.Site;
             Web web = site.OpenWebById(guid);
-            clientContext.Load(web, w => w.Url, w => w.Title, w => w.Id);
-            clientContext.ExecuteQueryRetry();
 
+            if (expressions != null)
+            {
+                web.EnsureProperties(expressions);
+            }
+            else
+            {
+                web.EnsureProperties(w => w.Url, w => w.Title, w => w.Id, w => w.ServerRelativeUrl);
+            }
             return web;
         }
 
-        public static Web GetWebByUrl(this Web currentWeb, string url)
+        /// <summary>
+        /// Retreives the Web by relative URL, if <paramref name="expressions"/> are specified those properties will be loaded into the context
+        /// </summary>
+        /// <param name="currentWeb"></param>
+        /// <param name="url"></param>
+        /// <param name="expressions"></param>
+        /// <returns></returns>
+        public static Web GetWebByUrl(this Web currentWeb, string url, Expression<Func<Web, object>>[] expressions = null)
         {
             var clientContext = currentWeb.Context as ClientContext;
             Site site = clientContext.Site;
             Web web = site.OpenWeb(url);
-            clientContext.Load(web, w => w.Url, w => w.Title, w => w.Id);
-            clientContext.ExecuteQueryRetry();
 
+            if (expressions != null)
+            {
+                web.EnsureProperties(expressions);
+            }
+            else
+            {
+                web.EnsureProperties(w => w.Url, w => w.Title, w => w.Id, w => w.ServerRelativeUrl);
+            }
             return web;
+        }
+
+        /// <summary>
+        /// Recursively queries the Web Subwebs and recalls method until end of the tree
+        /// </summary>
+        /// <param name="currentWeb"></param>
+        /// <param name="expressions"></param>
+        /// <returns></returns>
+        public static IEnumerable<Web> GetAllWebsRecursive(this Web currentWeb, Expression<Func<Web, object>>[] expressions = null)
+        {
+            List<Expression<Func<Web, object>>> exps = new List<Expression<Func<Web, object>>>();
+            if (expressions != null) exps.AddRange(expressions);
+
+            exps.Add(item => item.Webs);
+
+            currentWeb.Context.Load(currentWeb, exps.ToArray());
+            currentWeb.Context.ExecuteQueryRetry();
+
+            foreach (var subWeb in currentWeb.Webs)
+            {
+                foreach (var subSubWeb in subWeb.GetAllWebsRecursive(expressions))
+                {
+                    yield return subSubWeb;
+                }
+
+                yield return subWeb;
+            }
         }
 
         /// <summary>
