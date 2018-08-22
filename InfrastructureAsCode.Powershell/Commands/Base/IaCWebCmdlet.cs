@@ -4,7 +4,7 @@ using Microsoft.SharePoint.Client;
 using System;
 using System.Management.Automation;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Represents a SPWeb instance

@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
+﻿using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using InfrastructureAsCode.Core.Extensions;
 using Microsoft.SharePoint.Client;

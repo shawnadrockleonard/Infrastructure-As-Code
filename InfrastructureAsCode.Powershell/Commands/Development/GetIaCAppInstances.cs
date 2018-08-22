@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.Development
 {
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using Microsoft.SharePoint.Client;
 
     /// <summary>

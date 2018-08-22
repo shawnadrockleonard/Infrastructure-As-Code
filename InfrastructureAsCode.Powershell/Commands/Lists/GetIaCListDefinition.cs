@@ -2,7 +2,7 @@
 using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Core.Utilities;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using System.Collections.Generic;

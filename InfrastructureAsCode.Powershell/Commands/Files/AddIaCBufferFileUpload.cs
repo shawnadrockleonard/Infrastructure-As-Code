@@ -1,6 +1,6 @@
 ﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Services;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using System;

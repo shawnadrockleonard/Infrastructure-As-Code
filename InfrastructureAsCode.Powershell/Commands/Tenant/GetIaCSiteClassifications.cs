@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
+﻿using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Core.HttpServices;
 using InfrastructureAsCode.Core.Extensions;
 using Microsoft.Online.SharePoint.TenantAdministration;

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Base class for all the Microsoft Graph related cmdlets

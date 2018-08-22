@@ -2,7 +2,7 @@
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.WorkflowServices;
 using InfrastructureAsCode.Powershell.Commands;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 
 namespace InfrastructureAsCode.Powershell.Commands.Workflow
 {

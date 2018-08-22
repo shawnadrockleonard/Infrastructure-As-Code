@@ -1,6 +1,6 @@
 ﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.oAuth;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using System;
 using System.Management.Automation;

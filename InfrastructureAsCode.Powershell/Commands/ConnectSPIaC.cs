@@ -1,7 +1,6 @@
 ﻿using InfrastructureAsCode.Core.Extensions;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
-//using OfficeDevPnP.Core.Utilities;
 using System;
 using System.Management.Automation;
 using System.Reflection;

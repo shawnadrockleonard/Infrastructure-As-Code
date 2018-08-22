@@ -6,7 +6,7 @@ using System.Text;
 using Microsoft.Win32.SafeHandles;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     internal static class CredentialManager
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class CmdletHelpAttribute : Attribute

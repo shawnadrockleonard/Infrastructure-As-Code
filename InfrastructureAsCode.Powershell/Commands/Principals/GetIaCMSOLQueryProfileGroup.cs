@@ -6,7 +6,7 @@ using PCommand = System.Management.Automation.Runspaces;
 
 namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using InfrastructureAsCode.Core.Utilities;
     using Microsoft.Online.SharePoint.TenantAdministration;
     using Microsoft.SharePoint.Client;

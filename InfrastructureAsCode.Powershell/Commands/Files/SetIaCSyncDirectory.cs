@@ -8,7 +8,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
     using CsvHelper;
     using InfrastructureAsCode.Core.Constants;
     using InfrastructureAsCode.Core.Models;
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using InfrastructureAsCode.Powershell.PipeBinds;
     using Microsoft.SharePoint.Client;
 

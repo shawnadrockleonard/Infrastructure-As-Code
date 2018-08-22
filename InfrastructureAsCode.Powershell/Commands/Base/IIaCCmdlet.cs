@@ -1,6 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Interface for every command to implement

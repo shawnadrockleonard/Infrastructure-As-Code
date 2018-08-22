@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
+﻿using InfrastructureAsCode.Powershell.Commands.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;

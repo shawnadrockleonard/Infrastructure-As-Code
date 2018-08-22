@@ -6,7 +6,7 @@ using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Core.oAuth;
 using InfrastructureAsCode.Core.Models;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Provides a connection object for operating on SharePoint instance

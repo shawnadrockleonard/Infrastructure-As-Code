@@ -1,7 +1,7 @@
 ﻿using System.Management.Automation;
 using InfrastructureAsCode.Core.Enums;
 using InfrastructureAsCode.Powershell.Extensions;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {

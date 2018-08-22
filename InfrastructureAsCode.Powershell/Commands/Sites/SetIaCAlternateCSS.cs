@@ -1,4 +1,4 @@
-﻿using InfrastructureAsCode.Powershell.CmdLets;
+﻿using InfrastructureAsCode.Powershell.Commands.Base;
 using Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;

@@ -2,7 +2,7 @@
 using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.Models;
 using InfrastructureAsCode.Core.Utilities;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
 using System;

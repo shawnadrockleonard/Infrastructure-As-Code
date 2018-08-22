@@ -1,6 +1,6 @@
 ﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Extensions;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.AppModelExtensions;
 using OfficeDevPnP.Core.Extensions;

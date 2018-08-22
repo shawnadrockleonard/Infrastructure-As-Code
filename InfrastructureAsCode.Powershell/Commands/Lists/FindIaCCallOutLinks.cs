@@ -1,5 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Extensions;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.Extensions;
 using InfrastructureAsCode.Powershell.Models;
 using InfrastructureAsCode.Powershell.PipeBinds;

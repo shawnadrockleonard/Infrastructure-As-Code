@@ -5,7 +5,7 @@ using System.Management.Automation;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 
 namespace InfrastructureAsCode.Powershell.Commands
 {
