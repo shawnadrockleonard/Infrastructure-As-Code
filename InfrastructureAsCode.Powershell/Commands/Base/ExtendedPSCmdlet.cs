@@ -17,12 +17,12 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <summary>
         /// the logger is available
         /// </summary>
-        internal bool loggerAvailable { get; private set; }
+        internal bool IsLoggerAvailable { get; private set; }
 
         /// <summary>
         /// initializer a logger
         /// </summary>
-        internal ConfigurationLogger logger { get; private set; }
+        internal ConfigurationLogger Logger { get; private set; }
 
         /// <summary>
         /// Storage for the cmdlet in the current thread
@@ -60,8 +60,8 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
             if (System.IO.File.Exists(appConfig))
             {
                 LogVerbose("AppSettings file found at {0}", appConfig);
-                logger = new ConfigurationLogger(appConfig, true, CmdLetName);
-                loggerAvailable = true;
+                Logger = new ConfigurationLogger(appConfig, true, CmdLetName);
+                IsLoggerAvailable = true;
             }
 
             OnBeginInitialize();
@@ -92,9 +92,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <returns></returns>
         protected virtual string GetAppSetting(string settingName)
         {
-            if (logger != null)
+            if (Logger != null)
             {
-                return logger.GetAppSetting(settingName);
+                return Logger.GetAppSetting(settingName);
             }
             return null;
         }
@@ -106,9 +106,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <returns></returns>
         protected virtual string GetConnectionString(string settingName)
         {
-            if (logger != null)
+            if (Logger != null)
             {
-                return logger.GetConnectionSetting(settingName);
+                return Logger.GetConnectionSetting(settingName);
             }
             return null;
         }
@@ -121,9 +121,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <param name="args"></param>
         protected virtual void LogError(Exception ex, string message, params object[] args)
         {
-            if (loggerAvailable)
+            if (IsLoggerAvailable)
             {
-                logger.Error(ex, message, args);
+                Logger.Error(ex, message, args);
             }
             System.Diagnostics.Trace.TraceError(message, args);
             System.Diagnostics.Trace.TraceError("Exception: {0}", ex.Message);
@@ -140,9 +140,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <param name="args"></param>
         protected virtual void LogDebugging(string message, params object[] args)
         {
-            if (loggerAvailable)
+            if (IsLoggerAvailable)
             {
-                logger.Debugging(message, args);
+                Logger.Debugging(message, args);
             }
             System.Diagnostics.Trace.TraceInformation(message, args);
             if (!Stopping)
@@ -158,9 +158,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <param name="args"></param>
         protected virtual void LogWarning(string message, params object[] args)
         {
-            if (loggerAvailable)
+            if (IsLoggerAvailable)
             {
-                logger.Warning(string.Format(message, args));
+                Logger.Warning(string.Format(message, args));
             }
             System.Diagnostics.Trace.TraceWarning(message, args);
             if (!Stopping)
@@ -176,9 +176,9 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <param name="args"></param>
         protected virtual void LogVerbose(string message, params object[] args)
         {
-            if (loggerAvailable)
+            if (IsLoggerAvailable)
             {
-                logger.Information(message, args);
+                Logger.Information(message, args);
             }
             System.Diagnostics.Trace.TraceInformation(message, args);
             if (!Stopping)

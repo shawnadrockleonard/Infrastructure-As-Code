@@ -25,9 +25,8 @@ namespace InfrastructureAsCode.Core.Extensions
                 return (Web)securable;
             }
 
-            if (securable is List)
+            if (securable is List list)
             {
-                var list = (List)securable;
                 var web = list.ParentWeb;
                 securable.Context.Load(web);
                 securable.Context.ExecuteQueryRetry();
@@ -35,9 +34,8 @@ namespace InfrastructureAsCode.Core.Extensions
                 return web;
             }
 
-            if (securable is ListItem)
+            if (securable is ListItem listItem)
             {
-                var listItem = (ListItem)securable;
                 var web = listItem.ParentList.ParentWeb;
                 securable.Context.Load(web);
                 securable.Context.ExecuteQueryRetry();
@@ -135,9 +133,11 @@ namespace InfrastructureAsCode.Core.Extensions
             var context = hostWeb.Context;
 
             // Create Group
-            var groupCreationInfo = new GroupCreationInformation();
-            groupCreationInfo.Title = groupDef.Title;
-            groupCreationInfo.Description = groupDef.Description;
+            var groupCreationInfo = new GroupCreationInformation
+            {
+                Title = groupDef.Title,
+                Description = groupDef.Description
+            };
 
             var oGroup = hostWeb.SiteGroups.Add(groupCreationInfo);
             context.Load(oGroup);
@@ -736,8 +736,10 @@ namespace InfrastructureAsCode.Core.Extensions
 
             wikiField = brRegex.Replace(wikiField, "<br/>");
 
-            XmlDocument xd = new XmlDocument();
-            xd.PreserveWhitespace = true;
+            XmlDocument xd = new XmlDocument
+            {
+                PreserveWhitespace = true
+            };
             xd.LoadXml(wikiField);
 
             // Sometimes the wikifield content seems to be surrounded by an additional div? 

@@ -1,5 +1,6 @@
 ﻿using InfrastructureAsCode.Powershell.Commands.Base;
 using Microsoft.SharePoint.Client;
+using OfficeDevPnP.Core.Utilities;
 using System;
 using System.IO;
 using System.Management.Automation;
@@ -190,8 +191,10 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 
                 List lParentList = cContext.Web.Lists.GetByTitle(ParentListName);
 
-                CamlQuery camlQuery = new CamlQuery();
-                camlQuery.ViewXml = "<Where><Eq><FieldRef Name=\"Title\" /><Value Type=\"Text\">" + ItemName + "</Value></Eq></Where>";
+                CamlQuery camlQuery = new CamlQuery
+                {
+                    ViewXml = CAML.Where(CAML.Eq(CAML.FieldValue("Title", FieldType.Text.ToString("f"), ItemName)))
+                };
                 ListItemCollection collListItem = lParentList.GetItems(camlQuery);
 
                 cContext.Load(collListItem);

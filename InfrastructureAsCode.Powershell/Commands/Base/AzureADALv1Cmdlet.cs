@@ -39,14 +39,14 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
             }
         }
 
-        internal ITraceLogger Logger { get; private set; }
+        internal ITraceLogger UsageLogger { get; private set; }
 
 
         protected override void OnBeginInitialize()
         {
             base.OnBeginInitialize();
 
-            Logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
+            UsageLogger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
 
             if (Connection == null || Connection.AuthenticationResult == null)
