@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>PinchPerfect.InfrastructureAsCode.Core</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Shawn Leonard</authors>
+    <owners>Shawn Leonard</owners>
+    <licenseUrl>https://github.com/pinch-perfect/Infrastructure-As-Code/license.md</licenseUrl>
+    <projectUrl>https://github.com/pinch-perfect/Infrastructure-As-Code</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Core functionality for Infrastructure as Code</description>
+    <releaseNotes>None at this time.</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>Pinch-Perfect Infrastructure-As-Code PinchPerfect InfrastructureAsCode</tags>
+  </metadata>
+</package>

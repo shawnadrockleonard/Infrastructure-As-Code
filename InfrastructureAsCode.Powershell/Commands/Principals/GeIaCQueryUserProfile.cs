@@ -1,5 +1,5 @@
 ﻿using InfrastructureAsCode.Powershell;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.HttpServices;
 using Microsoft.SharePoint.Client;

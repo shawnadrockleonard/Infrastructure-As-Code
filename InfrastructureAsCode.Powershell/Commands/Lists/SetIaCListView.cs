@@ -1,5 +1,5 @@
 ﻿using InfrastructureAsCode.Core.Models.Enums;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using System;
 using System.Collections.Generic;

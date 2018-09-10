@@ -19,22 +19,22 @@ namespace InfrastructureAsCode.Core.Extensions
         /// <summary>
         /// represents an additional Salt
         /// </summary>
-        private static byte[] entropy { get; set; }
+        private static byte[] Entropy { get; set; }
 
         /// <summary>
         /// Contains a regular expression that are not valid for Windows or SharePoint storage
         /// </summary>
-        private static string escapedRegExpression { get; set; }
+        private static string EscapedRegExpression { get; set; }
 
         /// <summary>
         /// Contains a regular expression that are not valid for Windows/SharePoint storage
         /// </summary>
-        private static string escapedPathRegExpression { get; set; }
+        private static string EscapedPathRegExpression { get; set; }
 
         /// <summary>
         /// Represents invalid Hex Codes for invalid quickr formatting
         /// </summary>
-        private static string escapedHexExpression { get; set; }
+        private static string EscapedHexExpression { get; set; }
 
         /// <summary>
         /// Compiled regular expression for performance.
@@ -46,21 +46,21 @@ namespace InfrastructureAsCode.Core.Extensions
         /// </summary>
         static HelperExtensions()
         {
-            entropy = System.Text.Encoding.Unicode.GetBytes("PoSH_Automation");
+            Entropy = System.Text.Encoding.Unicode.GetBytes("PoSH_Automation");
 
             // clean filename of invalid characters
             // setup the characters that the file system does not like
             var invalidChars = System.IO.Path.GetInvalidFileNameChars().ToList();
             invalidChars.Add('–'); //adding hard dash as winzip doesn't like it
             invalidChars.AddRange(new char[] { '#', '%', '&', '+', ':' }); //adding sharepoint online sync characters
-            escapedRegExpression = string.Format("[{0}]", Regex.Escape(string.Join("", invalidChars)));
+            EscapedRegExpression = string.Format("[{0}]", Regex.Escape(string.Join("", invalidChars)));
 
             var invalidPathChars = System.IO.Path.GetInvalidPathChars().ToList();
             invalidPathChars.Add('–'); //adding hard dash as winzip doesn't like it
             invalidPathChars.AddRange(new char[] { '#', '%', ':' }); //adding sharepoint online sync characters
-            escapedPathRegExpression = string.Format("[{0}]", Regex.Escape(string.Join("", invalidPathChars)));
+            EscapedPathRegExpression = string.Format("[{0}]", Regex.Escape(string.Join("", invalidPathChars)));
 
-            escapedHexExpression = "[\x00-\x08\x0B\x0C\x0E-\x1F\x26]";
+            EscapedHexExpression = "[\x00-\x08\x0B\x0C\x0E-\x1F\x26]";
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace InfrastructureAsCode.Core.Extensions
 
         public static string ConvertFromSecureString(this System.Security.SecureString input)
         {
-            byte[] encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToInsecureString(input)), entropy, DataProtectionScope.CurrentUser);
+            byte[] encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToInsecureString(input)), Entropy, DataProtectionScope.CurrentUser);
             return Convert.ToBase64String(encryptedData);
         }
 
@@ -101,7 +101,7 @@ namespace InfrastructureAsCode.Core.Extensions
         {
             try
             {
-                byte[] decryptedData = ProtectedData.Unprotect(Convert.FromBase64String(encryptedData), entropy, DataProtectionScope.CurrentUser);
+                byte[] decryptedData = ProtectedData.Unprotect(Convert.FromBase64String(encryptedData), Entropy, DataProtectionScope.CurrentUser);
                 return ToSecureString(Encoding.Unicode.GetString(decryptedData));
             }
             catch (Exception ex)
@@ -146,9 +146,9 @@ namespace InfrastructureAsCode.Core.Extensions
         public static string GetCleanFileName(this string fileName, string replaceValue = "")
         {
             var newFileName = fileName;
-            if (Regex.IsMatch(fileName, escapedRegExpression))
+            if (Regex.IsMatch(fileName, EscapedRegExpression))
             {
-                newFileName = Regex.Replace(fileName, escapedRegExpression, replaceValue, RegexOptions.IgnoreCase, new TimeSpan(10000));
+                newFileName = Regex.Replace(fileName, EscapedRegExpression, replaceValue, RegexOptions.IgnoreCase, new TimeSpan(10000));
             }
 
             var invalidChars = new char[] { '[', ']' };
@@ -236,9 +236,9 @@ namespace InfrastructureAsCode.Core.Extensions
         {
             var trimmedFolder = directoryName.Trim();
             // Remove invalid characters
-            if (Regex.IsMatch(directoryName, escapedPathRegExpression))
+            if (Regex.IsMatch(directoryName, EscapedPathRegExpression))
             {
-                trimmedFolder = Regex.Replace(trimmedFolder, escapedPathRegExpression, replaceValue, RegexOptions.IgnoreCase, new TimeSpan(10000));
+                trimmedFolder = Regex.Replace(trimmedFolder, EscapedPathRegExpression, replaceValue, RegexOptions.IgnoreCase, new TimeSpan(10000));
             }
             return trimmedFolder;
         }
@@ -253,9 +253,9 @@ namespace InfrastructureAsCode.Core.Extensions
         {
             var trimmedContent = content.Trim();
             // Remove invalid characters
-            if (Regex.IsMatch(trimmedContent, escapedHexExpression))
+            if (Regex.IsMatch(trimmedContent, EscapedHexExpression))
             {
-                trimmedContent = Regex.Replace(trimmedContent, escapedHexExpression, replaceValue, RegexOptions.Compiled);
+                trimmedContent = Regex.Replace(trimmedContent, EscapedHexExpression, replaceValue, RegexOptions.Compiled);
             }
             return trimmedContent;
         }

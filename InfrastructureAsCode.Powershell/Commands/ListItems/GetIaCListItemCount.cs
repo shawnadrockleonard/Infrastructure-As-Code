@@ -9,7 +9,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
     using Microsoft.SharePoint.Client;
     using InfrastructureAsCode.Powershell.PipeBinds;
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using InfrastructureAsCode.Core.Models;
     using InfrastructureAsCode.Powershell;
     using OfficeDevPnP.Core.Utilities;

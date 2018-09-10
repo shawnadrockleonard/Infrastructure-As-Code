@@ -11,24 +11,24 @@ using System.Linq;
 using System.Management.Automation;
 using Resources = InfrastructureAsCode.Core.Properties.Resources;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// SharePoint Online base command for tenant level administration
     /// </summary>
     public abstract class IaCAdminCmdlet : IaCCmdlet
     {
-        private Tenant _tenant;
+        private Microsoft.Online.SharePoint.TenantAdministration.Tenant _tenant;
         /// <summary>
         /// Create client context to tenant admin
         /// </summary>
-        public Tenant TenantContext
+        public Microsoft.Online.SharePoint.TenantAdministration.Tenant TenantContext
         {
             get
             {
                 if (_tenant == null)
                 {
-                    _tenant = new Tenant(this.ClientContext);
+                    _tenant = new Microsoft.Online.SharePoint.TenantAdministration.Tenant(this.ClientContext);
                 }
                 return _tenant;
             }

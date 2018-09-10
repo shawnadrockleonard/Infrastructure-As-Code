@@ -10,7 +10,7 @@ using System.Management.Automation.Host;
 using System.Net;
 using Resources = InfrastructureAsCode.Core.Properties.Resources;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Helper class to instantiate the proper authentication manager for onpremise, online
@@ -144,7 +144,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         {
             try
             {
-                var tenant = new Tenant(clientContext);
+                var tenant = new Microsoft.Online.SharePoint.TenantAdministration.Tenant(clientContext);
                 clientContext.ExecuteQueryRetry();
                 return true;
             }

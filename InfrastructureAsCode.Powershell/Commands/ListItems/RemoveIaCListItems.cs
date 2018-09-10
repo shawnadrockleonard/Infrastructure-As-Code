@@ -1,19 +1,14 @@
-﻿using System;
+﻿using InfrastructureAsCode.Powershell.Commands.Base;
+using InfrastructureAsCode.Powershell.PipeBinds;
+using Microsoft.SharePoint.Client;
+using OfficeDevPnP.Core.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
-    using Microsoft.SharePoint.Client;
-    using InfrastructureAsCode.Powershell.PipeBinds;
-    using InfrastructureAsCode.Powershell.CmdLets;
-    using InfrastructureAsCode.Core.Models;
-    using InfrastructureAsCode.Powershell;
-    using OfficeDevPnP.Core.Utilities;
-
     /// <summary>
     /// Demonstrates how to delete specific items based on the query specified. 
     ///     You can't modified an collection that is being enumerated so this presents a pattern to load up and process.

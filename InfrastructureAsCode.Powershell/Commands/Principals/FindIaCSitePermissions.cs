@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace InfrastructureAsCode.Powershell.Commands.Principals
 {
     using InfrastructureAsCode.Powershell;
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using InfrastructureAsCode.Core.Models;
     using InfrastructureAsCode.Core.Extensions;
     using Microsoft.Online.SharePoint.TenantAdministration;

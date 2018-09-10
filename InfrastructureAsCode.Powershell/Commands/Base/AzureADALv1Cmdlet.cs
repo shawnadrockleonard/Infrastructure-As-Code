@@ -6,7 +6,7 @@ using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// Azure AD v1 EndPoint 
@@ -39,14 +39,14 @@ namespace InfrastructureAsCode.Powershell.CmdLets
             }
         }
 
-        internal ITraceLogger Logger { get; private set; }
+        internal ITraceLogger UsageLogger { get; private set; }
 
 
         protected override void OnBeginInitialize()
         {
             base.OnBeginInitialize();
 
-            Logger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
+            UsageLogger = new DefaultUsageLogger(LogVerbose, LogWarning, LogError);
 
 
             if (Connection == null || Connection.AuthenticationResult == null)

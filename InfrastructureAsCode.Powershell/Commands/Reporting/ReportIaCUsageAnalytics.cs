@@ -3,7 +3,7 @@ using InfrastructureAsCode.Core.oAuth;
 using InfrastructureAsCode.Core.Reports;
 using InfrastructureAsCode.Core.Reports.o365Graph;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using System;
 using System.Management.Automation;
 

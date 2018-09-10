@@ -10,7 +10,7 @@ namespace InfrastructureAsCode.Powershell.Commands.ListItems
 {
     using Microsoft.SharePoint.Client;
     using InfrastructureAsCode.Powershell.PipeBinds;
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
 
     [Cmdlet(VerbsCommon.Get, "IaCListItems")]
     public class GetIaCListItems : IaCWebCmdlet

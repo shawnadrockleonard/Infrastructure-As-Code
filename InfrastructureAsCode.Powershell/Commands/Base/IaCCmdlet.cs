@@ -9,7 +9,7 @@ using System.Threading;
 using System.Xml.Linq;
 using Resources = InfrastructureAsCode.Core.Properties.Resources;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     public abstract class IaCCmdlet : ExtendedPSCmdlet, IIaCCmdlet
     {

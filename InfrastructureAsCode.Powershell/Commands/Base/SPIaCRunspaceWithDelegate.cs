@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using PCommand = System.Management.Automation.Runspaces;
 
-namespace InfrastructureAsCode.Powershell.CmdLets
+namespace InfrastructureAsCode.Powershell.Commands.Base
 {
     /// <summary>
     /// /Initializes a runspace to import modules and execute cmdlets
@@ -20,7 +20,7 @@ namespace InfrastructureAsCode.Powershell.CmdLets
         /// Execution stack
         /// </summary>
         /// <remarks>This must be disposed</remarks>
-        internal Runspace psRunSpace { get; private set; }
+        internal PCommand.Runspace psRunSpace { get; private set; }
 
         /// <summary>
         /// Initialize the PS cmdlet to connect

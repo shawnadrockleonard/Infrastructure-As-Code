@@ -1,7 +1,7 @@
 ﻿using InfrastructureAsCode.Core;
 using InfrastructureAsCode.Core.Constants;
 using InfrastructureAsCode.Core.Extensions;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using InfrastructureAsCode.Powershell.PipeBinds;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.DocumentSet;

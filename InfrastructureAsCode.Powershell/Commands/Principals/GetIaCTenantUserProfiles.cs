@@ -1,7 +1,7 @@
 ﻿using InfrastructureAsCode.Core.Extensions;
 using InfrastructureAsCode.Core.HttpServices;
 using InfrastructureAsCode.Core.Models;
-using InfrastructureAsCode.Powershell.CmdLets;
+using InfrastructureAsCode.Powershell.Commands.Base;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;

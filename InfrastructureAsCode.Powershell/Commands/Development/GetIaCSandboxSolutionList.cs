@@ -10,7 +10,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Development
     using Microsoft.SharePoint.Client;
     using InfrastructureAsCode.Core.Extensions;
     using InfrastructureAsCode.Core.Models;
-    using InfrastructureAsCode.Powershell.CmdLets;
+    using InfrastructureAsCode.Powershell.Commands.Base;
     using Microsoft.Online.SharePoint.TenantAdministration;
     using OfficeDevPnP.Core.Entities;
     using OfficeDevPnP.Core.Utilities;
