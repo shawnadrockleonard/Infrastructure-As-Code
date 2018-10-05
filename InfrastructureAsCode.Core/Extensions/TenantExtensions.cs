@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
 using Microsoft.Online.SharePoint.TenantManagement;
 using InfrastructureAsCode.Core.Reports;
+using InfrastructureAsCode.Core.HttpServices;
 
 namespace InfrastructureAsCode.Core.Extensions
 {
@@ -39,8 +40,8 @@ namespace InfrastructureAsCode.Core.Extensions
                         model = new SPOSiteCollectionModel()
                         {
                             Url = sp.Url.EnsureTrailingSlashLowered(),
-                            title = sp.Title,
-                            sandbox = sp.SandboxedCodeActivationCapability,
+                            Title = sp.Title,
+                            Sandbox = sp.SandboxedCodeActivationCapability,
                             AverageResourceUsage = sp.AverageResourceUsage,
                             CompatibilityLevel = sp.CompatibilityLevel,
                             CurrentResourceUsage = sp.CurrentResourceUsage,
@@ -66,7 +67,7 @@ namespace InfrastructureAsCode.Core.Extensions
                         model = new SPOSiteCollectionModel()
                         {
                             Url = sp.Url.EnsureTrailingSlashLowered(),
-                            title = sp.Title
+                            Title = sp.Title
                         };
                     }
 
@@ -76,6 +77,113 @@ namespace InfrastructureAsCode.Core.Extensions
             }
 
             return urls;
+        }
+
+        /// <summary>
+        /// Retreive all of the OneDrive for Business profiles
+        /// </summary>
+        /// <param name="adminSiteContext"></param>
+        /// <param name="traceLogger"></param>
+        /// <param name="MySiteUrl"></param>
+        /// <param name="includeProperties"></param>
+        /// <returns></returns>
+        public static List<OD4BSiteCollectionModel> GetOneDriveSiteCollections(this ClientContext adminSiteContext, ITraceLogger traceLogger, string MySiteUrl, bool includeProperties = false)
+        {
+            var results = new List<OD4BSiteCollectionModel>();
+            MySiteUrl = MySiteUrl.EnsureTrailingSlashLowered();
+            MySiteUrl = MySiteUrl.Substring(0, MySiteUrl.Length - 1);
+
+            using (var _UserProfileService = new UserProfileService(adminSiteContext, adminSiteContext.Url))
+            {
+                var userProfileResult = _UserProfileService.OWService.GetUserProfileByIndex(-1);
+                var userProfilesCount = _UserProfileService.OWService.GetUserProfileCount();
+                var rowIndex = 1;
+
+                // As long as the next User profile is NOT the one we started with (at -1)...
+                while (int.TryParse(userProfileResult.NextValue, out int nextValueIndex) && nextValueIndex != -1)
+                {
+                    if ((rowIndex % 50) == 0 || rowIndex > userProfilesCount)
+                    {
+                        traceLogger.LogInformation($"Next set {rowIndex} of {userProfilesCount}");
+                    }
+
+                    try
+                    {
+                        var personalSpace = userProfileResult.RetrieveUserProperty("PersonalSpace");
+                        var personalSpaceUrl = $"{MySiteUrl}{personalSpace}";
+                        var model = new OD4BSiteCollectionModel();
+
+                        if (includeProperties == false)
+                        {
+                            model = new OD4BSiteCollectionModel
+                            {
+                                PersonalSpaceProperty = personalSpace,
+                                Url = personalSpaceUrl,
+                                NameProperty = userProfileResult.RetrieveUserProperty("PreferredName"),
+                                UserName = userProfileResult.RetrieveUserProperty("UserName"),
+                                Title = userProfileResult.RetrieveUserProperty("Title")
+                            };
+                        }
+                        else
+                        {
+                            model = new OD4BSiteCollectionModel
+                            {
+                                PersonalSpaceProperty = personalSpace,
+                                Url = personalSpaceUrl,
+                                NameProperty = userProfileResult.RetrieveUserProperty("PreferredName"),
+                                UserName = userProfileResult.RetrieveUserProperty("UserName"),
+                                PictureUrl = userProfileResult.RetrieveUserProperty("PictureURL"),
+                                AboutMe = userProfileResult.RetrieveUserProperty("AboutMe"),
+                                SpsSkills = userProfileResult.RetrieveUserProperty("SPS-Skills"),
+                                Manager = userProfileResult.RetrieveUserProperty("Manager"),
+                                WorkPhone = userProfileResult.RetrieveUserProperty("WorkPhone"),
+                                Department = userProfileResult.RetrieveUserProperty("Department"),
+                                Company = userProfileResult.RetrieveUserProperty("Company"),
+                                AccountName = userProfileResult.RetrieveUserProperty("AccountName"),
+                                DistinguishedName = userProfileResult.RetrieveUserProperty("SPS-DistinguishedName"),
+                                FirstName = userProfileResult.RetrieveUserProperty("FirstName"),
+                                LastName = userProfileResult.RetrieveUserProperty("LastName"),
+                                UserPrincipalName = userProfileResult.RetrieveUserProperty("SPS-UserPrincipalName"),
+                                Title = userProfileResult.RetrieveUserProperty("Title"),
+                                WorkEmail = userProfileResult.RetrieveUserProperty("WorkEmail"),
+                                HomePhone = userProfileResult.RetrieveUserProperty("HomePhone"),
+                                CellPhone = userProfileResult.RetrieveUserProperty("CellPhone"),
+                                Office = userProfileResult.RetrieveUserProperty("Office"),
+                                Location = userProfileResult.RetrieveUserProperty("SPS-Location"),
+                                Fax = userProfileResult.RetrieveUserProperty("Fax"),
+                                MailingAddress = userProfileResult.RetrieveUserProperty("MailingAddress"),
+                                School = userProfileResult.RetrieveUserProperty("SPS-School"),
+                                WebSite = userProfileResult.RetrieveUserProperty("WebSite"),
+                                Education = userProfileResult.RetrieveUserProperty("Education"),
+                                JobTitle = userProfileResult.RetrieveUserProperty("SPS-JobTitle"),
+                                Assistant = userProfileResult.RetrieveUserProperty("Assistant"),
+                                HireDate = userProfileResult.RetrieveUserProperty("SPS-HireDate"),
+                                TimeZone = userProfileResult.RetrieveUserProperty("SPS-TimeZone"),
+                                Locale = userProfileResult.RetrieveUserProperty("SPS-Locale"),
+                                EmailOptin = userProfileResult.RetrieveUserProperty("SPS-EmailOptin"),
+                                PrivacyPeople = userProfileResult.RetrieveUserProperty("SPS-PrivacyPeople"),
+                                PrivacyActivity = userProfileResult.RetrieveUserProperty("SPS-PrivacyActivity"),
+                                MySiteUpgrade = userProfileResult.RetrieveUserProperty("SPS-MySiteUpgrade"),
+                                ProxyAddresses = userProfileResult.RetrieveUserProperty("SPS-ProxyAddresses"),
+                                OWAUrl = userProfileResult.RetrieveUserProperty("SPS-OWAUrl")
+                            };
+                        }
+                        results.Add(model);
+
+                        userProfileResult = _UserProfileService.OWService.GetUserProfileByIndex(int.Parse(userProfileResult.NextValue));
+                        rowIndex++;
+                    }
+                    catch (Exception e)
+                    {
+                        traceLogger.LogWarning("Failed to execute while loop {0}", e.Message);
+                    }
+                }
+
+                // Final processing
+                traceLogger.LogWarning($"Total Profiles {rowIndex} processed...");
+            }
+
+            return results;
         }
 
         /// <summary>

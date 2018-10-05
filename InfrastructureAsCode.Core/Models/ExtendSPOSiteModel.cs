@@ -17,8 +17,8 @@ namespace InfrastructureAsCode.Core.Models
         {
             this.AverageResourceUsage = self.AverageResourceUsage;
             this.Url = self.Url;
-            this.title = self.title;
-            this.sandbox = self.sandbox;
+            this.Title = self.Title;
+            this.Sandbox = self.Sandbox;
             this.AverageResourceUsage = self.AverageResourceUsage;
             this.CompatibilityLevel = self.CompatibilityLevel;
             this.CurrentResourceUsage = self.CurrentResourceUsage;

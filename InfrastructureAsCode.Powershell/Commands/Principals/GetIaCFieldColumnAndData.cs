@@ -56,7 +56,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 {
                     var _siteUrl = siteCollection.Url;
                     var _totalWebs = siteCollection.WebsCount;
-                    LogVerbose("Processing {0} owner {1}", siteCollection.title, siteCollection.Owner);
+                    LogVerbose("Processing {0} owner {1}", siteCollection.Title, siteCollection.Owner);
 
                     try
                     {

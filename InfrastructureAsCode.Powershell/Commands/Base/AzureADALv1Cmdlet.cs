@@ -33,7 +33,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
                 }
                 else
                 {
-                    WriteError(new ErrorRecord(new InvalidOperationException("NoAzureADAccessToken"), "NO_OAUTH_TOKEN", ErrorCategory.ConnectionError, null));
+                    WriteError(new ErrorRecord(new InvalidOperationException("NoAzureADAccessToken"), "NO_OAUTH_TOKEN", ErrorCategory.ResourceUnavailable, null));
                     return (null);
                 }
             }

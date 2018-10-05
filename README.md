@@ -15,6 +15,9 @@ Check more details on the PnP-Powershell structure https://github.com/OfficeDev/
 # Microsoft Infrastructure as Code Solutions #
 Complex reusable project. Demonstrating and including various extensions for administring, deploying, reporting on your SharePoint environments.
 
+## Nuget Spec ##
+(https://www.nuget.org/downloads) Nuget download for building the package
+
 ### Disclaimer ###
 **THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
 

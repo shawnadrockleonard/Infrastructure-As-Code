@@ -9,7 +9,12 @@ namespace InfrastructureAsCode.Core.Extensions
 {
     public static class UserExtensions
     {
-
+        /// <summary>
+        /// Retreive the property from the UserProfile result object
+        /// </summary>
+        /// <param name="UserProfileResult"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         public static string RetrieveUserProperty(this GetUserProfileByIndexResult UserProfileResult, string propertyName)
         {
             var propertyValue = string.Empty;
