@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>Shawn Leonard</authors>
     <owners>Shawn Leonard</owners>
-    <licenseUrl>https://github.com/pinch-perfect/Infrastructure-As-Code/license.md</licenseUrl>
+    <licenseUrl>https://github.com/pinch-perfect/Infrastructure-As-Code/blob/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/pinch-perfect/Infrastructure-As-Code</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Core functionality for Infrastructure as Code</description>
