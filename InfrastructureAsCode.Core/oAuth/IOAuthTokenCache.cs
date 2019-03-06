@@ -1,8 +1,4 @@
 ﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace InfrastructureAsCode.Core.oAuth
@@ -21,7 +17,7 @@ namespace InfrastructureAsCode.Core.oAuth
         /// If the token is no longer fresh it will claim a new token
         /// </summary>
         /// <returns>Access Token as a string</returns>
-        Task<string> AccessTokenAsync();
+        Task<string> AccessTokenAsync(string redirectUri);
 
         /// <summary>
         /// Retreive the access token from the ClientCredentials
@@ -35,22 +31,13 @@ namespace InfrastructureAsCode.Core.oAuth
         /// If the token is no longer fresh it will claim a new token
         /// </summary>
         /// <returns>Authentication Result which contains a Token and ExpiresOn</returns>
-        Task<AuthenticationResult> AccessTokenResultAsync();
+        Task<AuthenticationResult> AccessTokenResultAsync(string redirectUri);
 
         /// <summary>
         /// Acquires AuthenticationResult without asking for user credential.
         /// </summary>
         /// <returns></returns>
-        Task<AuthenticationResult> GetTokenForAadGraphAsync();
-
-        /// <summary>
-        ///     Acquires security token from the authority using an authorization code previously
-        ///     received. This method does not lookup token cache, but stores the result in it,
-        /// </summary>
-        /// <param name="code"></param>
-        /// <param name="redirect_uri"></param>
-        /// <returns></returns>
-        Task RedeemAuthCodeForAadGraphAsync(string code, string redirect_uri);
+        Task<AuthenticationResult> GetTokenForAadGraphAsync(string redirectUri);
 
         /// <summary>
         /// Clears the user token cache

@@ -4,6 +4,7 @@ using InfrastructureAsCode.Core.Reports;
 using InfrastructureAsCode.Core.Reports.o365Graph;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
 using InfrastructureAsCode.Powershell.Commands.Base;
+using OfficeDevPnP.Core;
 using System;
 using System.Management.Automation;
 
@@ -39,6 +40,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
         {
             base.ExecuteCmdlet();
 
+            var productionEnvironment = AzureEnvironment.Production;
             var defaultRows = 500;
             var _dateLog = DateTime.UtcNow;
             var _fileName = ReportType.ToString("f");
@@ -53,14 +55,14 @@ namespace InfrastructureAsCode.Powershell.Commands.Reporting
                 // Deleting log file;
                 logFileModel.ResetCSVFile();
 
-                var _reportingProcessor = new ReportingProcessor(this.Connection.AzureADCredentials, _logger);
+                var _reportingProcessor = new ReportingProcessor(productionEnvironment, this.Connection.AzureADCredentials, _logger);
                 var response = _reportingProcessor.ProcessReport(ReportUsageType, Period, Date, defaultRows, BetaEndPoint);
                 logFileModel.WriteToCSVFile(response);
             }
             else
             {
 
-                var _reportingProcessor = new ReportingProcessor(this.Connection.AzureADCredentials, _logger);
+                var _reportingProcessor = new ReportingProcessor(productionEnvironment, this.Connection.AzureADCredentials, _logger);
 
                 if (ReportType == ReportUsageEnum.Office365)
                 {

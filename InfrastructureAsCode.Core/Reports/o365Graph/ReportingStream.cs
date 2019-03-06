@@ -2,6 +2,7 @@
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;
+using OfficeDevPnP.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,11 +42,14 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// </summary>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public ReportingStream(IAzureADConfig config, ITraceLogger logger)
+        public ReportingStream(AzureEnvironment environment, IAzureADConfig config, ITraceLogger logger)
         {
+            var authenticationEndpoint = environment.GetAzureADLoginEndPoint();
+            var endpoint = string.Format(AzureADConstants.AuthorityTenantFormat, authenticationEndpoint, config.TenantDomain);
+
             this.ADConfig = config;
             this.Logger = logger;
-            this.OAuthCache = new AzureADTokenCache(config, logger);
+            this.OAuthCache = new AzureADTokenCache(endpoint, config, logger);
         }
 
         /// <summary>
@@ -165,7 +169,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
 
         private void LogWebException(System.Net.WebException wex)
         {
-            if(wex.Response != null && wex.Response is HttpWebResponse)
+            if (wex.Response != null && wex.Response is HttpWebResponse)
             {
                 StreamReader strm = new StreamReader(wex.Response.GetResponseStream(), Encoding.UTF8);
                 var response = strm.ReadToEnd();

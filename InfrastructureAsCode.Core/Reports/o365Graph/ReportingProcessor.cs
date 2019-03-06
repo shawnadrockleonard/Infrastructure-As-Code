@@ -2,6 +2,7 @@
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport;
 using InfrastructureAsCode.Core.Reports.o365Graph.TenantReport.Mappings;
 using Newtonsoft.Json;
+using OfficeDevPnP.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,13 +38,14 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
         /// <summary>
         /// Supply Azure AD Credentials and associated logging utility
         /// </summary>
+        /// <param name="environment">The Azure AD environment to which this is bound</param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public ReportingProcessor(IAzureADConfig config, ITraceLogger logger)
+        public ReportingProcessor(AzureEnvironment environment, IAzureADConfig config, ITraceLogger logger)
         {
             Logger = logger;
             AzureADConfig = config;
-            ResponseReader = new ReportingStream(config, logger);
+            ResponseReader = new ReportingStream(environment, config, logger);
         }
 
         /// <summary>

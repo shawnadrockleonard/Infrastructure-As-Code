@@ -35,18 +35,16 @@ namespace InfrastructureAsCode.Core.oAuth
 
         /// <summary>
         /// OAuth common endpoint supports Multi-Tenant authentication
+        /// First index (login authority: login.microsoftonline.com)
         /// </summary>
-        public static string AuthorityCommon = "https://login.windows.net/common/oauth2/token";
+        public static string AuthorityCommon = "{0}/common/oauth2/token";
 
         /// <summary>
         /// OAuth endpoint for a specific tenant
+        /// 1st index (login authority: login.microsoftonline.com)
+        /// 2nd index (tenant domain: tenant.onmicrosoft.com)
         /// </summary>
-        public static string AuthorityTenantFormat = "https://login.windows.net/{0}/oauth2/token?api-version=1.0";
-
-        /// <summary>
-        /// MSA supported endpoint
-        /// </summary>
-        public static string AuthorityFormat = "https://login.microsoftonline.com/{0}";
+        public static string AuthorityTenantFormat = "{0}/{1}/oauth2/token?api-version=1.0";
 
         /// <summary>
         /// Call back for Client token services
@@ -67,5 +65,10 @@ namespace InfrastructureAsCode.Core.oAuth
         /// Office 365 management endpoint
         /// </summary>
         public static string O365ResourceId = "https://manage.office.com";
+
+        /// <summary>
+        /// Office 365 default endpoint
+        /// </summary>
+        public static string O365DefaultId = "https://outlook.office365.com";
     }
 }
