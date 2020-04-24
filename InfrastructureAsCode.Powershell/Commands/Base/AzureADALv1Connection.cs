@@ -43,12 +43,13 @@ namespace InfrastructureAsCode.Powershell.Commands.Base
         /// <summary>
         /// Initialize the Azure AD Connection with config and diagnostics
         /// </summary>
+        /// <param name="authenticationEndpoint">The authentication endpoint used to send the user to an Azure AD login screen</param>
         /// <param name="azureADCredentials"></param>
         /// <param name="traceLogger"></param>
-        public AzureADALv1Connection(AzureADConfig azureADCredentials, ITraceLogger traceLogger)
+        public AzureADALv1Connection(string authenticationEndpoint, AzureADConfig azureADCredentials, ITraceLogger traceLogger)
         {
             _iLogger = traceLogger;
-            AzureADCache = new AzureADTokenCache(azureADCredentials, traceLogger);
+            AzureADCache = new AzureADTokenCache(authenticationEndpoint, azureADCredentials, traceLogger);
             AzureADCredentials = azureADCredentials;
         }
 
