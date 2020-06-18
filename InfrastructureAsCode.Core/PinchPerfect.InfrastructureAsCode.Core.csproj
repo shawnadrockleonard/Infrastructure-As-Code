@@ -1,448 +1,57 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EA0D6CF4-74A7-4E3C-9BCD-F25B60C7716F}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>InfrastructureAsCode.Core</RootNamespace>
-    <AssemblyName>PinchPerfect.InfrastructureAsCode.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-	  <LangVersion>8.0</LangVersion>
-    <TargetFrameworkProfile />
+    <TargetFramework>net462</TargetFramework>
+    <LangVersion>8.0</LangVersion>
+    <AssemblyTitle>PinchPerfect Infrastructure as Code Core</AssemblyTitle>
+    <Company>Shawn Leonard</Company>
+    <Product>PinchPerfect.InfrastructureAsCode.Core</Product>
+    <Description>Core functionality for Infrastructure as Code</Description>
+    <Copyright>Copyright 2016</Copyright>
+    <Version>1.0.35.0</Version>
+    <AssemblyVersion>1.0.35.0</AssemblyVersion>
+    <FileVersion>1.0.35.0</FileVersion>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <Authors>Shawn Leonard</Authors>
+    <PackageId>PinchPerfect.InfrastructureAsCode.Core</PackageId>
+    <PackageLicenseUrl>https://github.com/pinch-perfect/Infrastructure-As-Code/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/pinch-perfect/Infrastructure-As-Code</PackageProjectUrl>
+    <PackageReleaseNotes>None at this time.</PackageReleaseNotes>
+    <PackageTags>Pinch-Perfect Infrastructure-As-Code PinchPerfect InfrastructureAsCode</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AngleSharp, Version=0.14.0.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>..\packages\AngleSharp.0.14.0\lib\net461\AngleSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="CsvHelper, Version=15.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
-      <HintPath>..\packages\CsvHelper.15.0.5\lib\net45\CsvHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Azure.ActiveDirectory.GraphClient, Version=2.1.10.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.ActiveDirectory.GraphClient.2.1.1\lib\portable-net4+sl5+win+wpa+wp8\Microsoft.Azure.ActiveDirectory.GraphClient.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.Edm, Version=5.8.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.Edm.5.8.4\lib\net40\Microsoft.Data.Edm.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.8.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.OData.5.8.4\lib\net40\Microsoft.Data.OData.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.Services.Client, Version=5.8.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.Services.Client.5.8.4\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Graph, Version=1.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Graph.1.15.0\lib\net45\Microsoft.Graph.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Graph.Core, Version=1.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Graph.Core.1.15.0\lib\net45\Microsoft.Graph.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Identity.Client, Version=1.1.4.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Identity.Client.1.1.4-preview0002\lib\net45\Microsoft.Identity.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.6.1.7600.16394\lib\net35\Microsoft.IdentityModel.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.19.8.16603, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.8\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.19.8.16603, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.8\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.JsonWebTokens, Version=5.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.JsonWebTokens.5.4.0\lib\net461\Microsoft.IdentityModel.JsonWebTokens.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Logging, Version=5.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Logging.5.4.0\lib\net461\Microsoft.IdentityModel.Logging.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Tokens, Version=5.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Tokens.5.4.0\lib\net461\Microsoft.IdentityModel.Tokens.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Office.Client.Policy, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.Office.Client.Policy.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Office.Client.TranslationServices, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.Office.Client.TranslationServices.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Office.SharePoint.Tools, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.Office.SharePoint.Tools.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Online.SharePoint.Client.Tenant, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.Online.SharePoint.Client.Tenant.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.ProjectServer.Client, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.ProjectServer.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.DocumentManagement, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.DocumentManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Publishing, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Publishing.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Runtime, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Runtime.Windows, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Runtime.Windows.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Search, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Search.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Search.Applications, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Search.Applications.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Taxonomy, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.Taxonomy.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.UserProfiles, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.UserProfiles.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.WorkflowServices, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SharePointOnline.CSOM.16.1.20122.12000\lib\net45\Microsoft.SharePoint.Client.WorkflowServices.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.2.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=8.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\WindowsAzure.Storage.8.7.0\lib\net45\Microsoft.WindowsAzure.Storage.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="OfficeDevPnP.Core, Version=3.22.2006.2, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharePointPnPCoreOnline.3.22.2006.2\lib\net461\OfficeDevPnP.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="SharePointPnP.IdentityModel.Extensions, Version=1.2.4.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharePointPnP.IdentityModel.Extensions.1.2.4\lib\net45\SharePointPnP.IdentityModel.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.IdentityModel.Selectors" />
-    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=5.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.5.4.0\lib\net461\System.IdentityModel.Tokens.Jwt.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.7.1\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
-    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.1\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.2, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.2\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
-    </Reference>
     <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Spatial, Version=5.8.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Spatial.5.8.4\lib\net40\System.Spatial.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Encoding.CodePages, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encoding.CodePages.4.7.1\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
-    </Reference>
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\ConstantsAuthentication.cs" />
-    <Compile Include="Constants\ConstantsConfigKeys.cs" />
-    <Compile Include="Constants\ConstantsFields.cs" />
-    <Compile Include="Constants\ConstantsLibraryFields.cs" />
-    <Compile Include="Constants\ConstantsListFields.cs" />
-    <Compile Include="Constants\ConstantsXmlNamespaces.cs" />
-    <Compile Include="Enums\AssociatedGroupType.cs" />
-    <Compile Include="Enums\AuthenticationType.cs" />
-    <Compile Include="Enums\ConnectionType.cs" />
-    <Compile Include="Enums\CredentialType.cs" />
-    <Compile Include="Enums\CustomActionScope.cs" />
-    <Compile Include="Enums\FeatureScope.cs" />
-    <Compile Include="Enums\NavigationNodeTypeEnum.cs" />
-    <Compile Include="Extensions\ClientExtensions.cs" />
-    <Compile Include="Extensions\ClientObjectExtensions.cs" />
-    <Compile Include="Extensions\FieldDefinitionExtensions.cs" />
-    <Compile Include="Extensions\HelperExtensions.cs" />
-    <Compile Include="Extensions\ListExtensions.cs" />
-    <Compile Include="Extensions\ListItemExtensions.cs" />
-    <Compile Include="Extensions\SendMailExtensions.cs" />
-    <Compile Include="Extensions\SiteExtensions.cs" />
-    <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Extensions\TenantExtensions.cs" />
-    <Compile Include="Extensions\UriExtensions.cs" />
-    <Compile Include="Extensions\UserExtensions.cs" />
-    <Compile Include="Extensions\WebExtensions.cs" />
-    <Compile Include="HttpServices\GraphHttpHelper.cs" />
-    <Compile Include="HttpServices\HttpRemoteOperation.cs" />
-    <Compile Include="HttpServices\HttpRequestAccessRequestSettings.cs" />
-    <Compile Include="HttpServices\UnifiedGroupsUtility.cs" />
-    <Compile Include="HttpServices\UserProfileService.cs" />
-    <Compile Include="Models\Enums\ViewToolBarEnum.cs" />
-    <Compile Include="Models\ExtendSPOSiteModel.cs" />
-    <Compile Include="Models\FeatureDefinition.cs" />
-    <Compile Include="Models\FieldMappings.cs" />
-    <Compile Include="Models\FileTagModel.cs" />
-    <Compile Include="Models\ICollectionModel.cs" />
-    <Compile Include="Models\Minimal\DefinitionFieldModel.cs" />
-    <Compile Include="Models\Minimal\DefinitionListModel.cs" />
-    <Compile Include="Models\NativeCSOM\NativeFieldLookupValue.cs" />
-    <Compile Include="Models\NativeCSOM\NativeFieldUserValue.cs" />
-    <Compile Include="Models\OD4BSiteCollectionModel.cs" />
-    <Compile Include="Models\REST\IRestListItemObj.cs" />
-    <Compile Include="Models\REST\RestBaseMinimalObject.cs" />
-    <Compile Include="Models\REST\RestBaseObject.cs" />
-    <Compile Include="Models\REST\RestDeferredObj.cs" />
-    <Compile Include="Models\REST\RestDeferredUri.cs" />
-    <Compile Include="Models\REST\RestListItemMinimalObj.cs" />
-    <Compile Include="Models\REST\RestListItemResponseMinimalObject.cs" />
-    <Compile Include="Models\REST\RestMetaDataObject.cs" />
-    <Compile Include="Models\REST\RestListItemObj.cs" />
-    <Compile Include="Models\REST\RestListItemResponseVerboseObject.cs" />
-    <Compile Include="Models\SiteProvisionerFieldChoiceModel.cs" />
-    <Compile Include="Models\SPChoiceModelComparer.cs" />
-    <Compile Include="Models\SPCustomAction.cs" />
-    <Compile Include="Models\SPExternalUserEntity.cs" />
-    <Compile Include="Models\SPFieldLinkDefinitionModel.cs" />
-    <Compile Include="Models\SPGroupMSOnlineDefinition.cs" />
-    <Compile Include="Models\SPGroupPrincipalModel.cs" />
-    <Compile Include="Models\SPId.cs" />
-    <Compile Include="Models\SPOAddInKeys.cs" />
-    <Compile Include="Models\SPOSiteCollectionModel.cs" />
-    <Compile Include="Models\SPOTaxonomyItemModel.cs" />
-    <Compile Include="Models\SPOTaxonomyModel.cs" />
-    <Compile Include="Models\SPOTaxonomyTermSetModel.cs" />
-    <Compile Include="Models\SPOTaxonomyTermStoreModel.cs" />
-    <Compile Include="Models\SPPrincipalModel.cs" />
-    <Compile Include="Models\SPPrincipalUserDefinition.cs" />
-    <Compile Include="Models\SPRecycleBinElement.cs" />
-    <Compile Include="Models\SPRecycleBinRestoreModel.cs" />
-    <Compile Include="Models\SiteProvisionerModel.cs" />
-    <Compile Include="Models\SPAppManifestModel.cs" />
-    <Compile Include="Models\SPAppScopePermissionModel.cs" />
-    <Compile Include="Models\SPChoiceModel.cs" />
-    <Compile Include="Models\SPContentTypeDefinition.cs" />
-    <Compile Include="Models\SPFieldDefinitionModel.cs" />
-    <Compile Include="Models\SPGroupDefinitionModel.cs" />
-    <Compile Include="Models\SPHostedParameters.cs" />
-    <Compile Include="Models\SPListDefinition.cs" />
-    <Compile Include="Models\SPListItemDefinition.cs" />
-    <Compile Include="Models\SPListItemFieldDefinition.cs" />
-    <Compile Include="Models\SPSiteModel.cs" />
-    <Compile Include="Models\SPSiteUsageModel.cs" />
-    <Compile Include="Models\SPThresholdEnumerationModel.cs" />
-    <Compile Include="Models\SPUniqueId.cs" />
-    <Compile Include="Models\SPUserAlertDefinition.cs" />
-    <Compile Include="Models\SPUserDefinitionModel.cs" />
-    <Compile Include="Models\SPViewDefinitionModel.cs" />
-    <Compile Include="Models\SPWebDefinitionModel.cs" />
-    <Compile Include="Models\SPWorkflowInstance.cs" />
-    <Compile Include="oAuth\AppConfig.cs" />
-    <Compile Include="oAuth\AppConfigManager.cs" />
-    <Compile Include="oAuth\AuthenticationExtension.cs" />
-    <Compile Include="oAuth\AzureADConfig.cs" />
-    <Compile Include="oAuth\AzureADConstants.cs" />
-    <Compile Include="oAuth\IAppConfig.cs" />
-    <Compile Include="oAuth\IAzureADConfig.cs" />
-    <Compile Include="oAuth\IOAuthTokenCache.cs" />
-    <Compile Include="oAuth\AzureADTokenCache.cs" />
-    <Compile Include="Reports\o365Graph\ReportingProcessor.cs" />
-    <Compile Include="DefaultUsageLogger.cs" />
-    <Compile Include="Reports\o365Graph\QueryFilter.cs" />
-    <Compile Include="Reports\o365Graph\ReportingStream.cs" />
-    <Compile Include="Reports\o365Graph\ReportUsageEnum.cs" />
-    <Compile Include="Reports\o365Graph\ReportUsageFormatEnum.cs" />
-    <Compile Include="Reports\o365Graph\ReportUsagePeriodEnum.cs" />
-    <Compile Include="Reports\o365Graph\ReportUsageTypeEnum.cs" />
-    <Compile Include="Reports\o365Graph\IReportVisitor.cs" />
-    <Compile Include="Reports\o365Graph\SampleReportingProcessor.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\JSONResult.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\JSONAuditCollection.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\JSONODataBase.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\Office365GroupsActivityCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\Office365GroupsActivityDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessActivityActivityCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessActivityUserDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessDeviceUsageUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessDeviceUsageDistributionUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessDeviceUsageUserDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\Office365ActiveUsersUserDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\Office365ActiveUsersServicesUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\Office365ActiveUsersUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveActivityUserDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveActivityFileCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveUsageAccountCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveUsageAccountDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveUsageFileCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\OneDriveUsageStorageMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointActivityFileCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointActivityPagesMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointActivityUserDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointSiteUsageSiteDetailMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointSiteUsageFileCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointSiteUsagePagesMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointSiteUsageSiteCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SharePointSiteUsageStorageMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessParticipantActivityMinuteCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessPeerToPeerActivityMinuteCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessPeerToPeerActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessPeerToPeerActivityCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessParticipantActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessParticipantActivityCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityMinuteCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityUserCountsMap.cs" />
-    <Compile Include="Reports\o365Graph\TenantReport\Mappings\SkypeForBusinessOrganizerActivityCountsMap.cs" />
-    <Compile Include="DefaultLogger.cs" />
-    <Compile Include="Reports\o365rwsclient\DefaultReportVisitor.cs" />
-    <Compile Include="Reports\o365rwsclient\ReportVisitor.cs" />
-    <Compile Include="ITraceLogger.cs" />
-    <Compile Include="Reports\o365rwsclient\QueryFilter.cs" />
-    <Compile Include="Reports\o365rwsclient\QueryRange.cs" />
-    <Compile Include="Reports\o365rwsclient\ReportingContext.cs" />
-    <Compile Include="Reports\o365rwsclient\ReportingStream.cs" />
-    <Compile Include="Reports\o365rwsclient\ReportObject.cs" />
-    <Compile Include="Reports\o365rwsclient\ReportProvider.cs" />
-    <Compile Include="Reports\o365rwsclient\StreamProgress.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ClientSoftwareBrowserDetail.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ClientSoftwareBrowserSummary.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ClientSoftwareOSDetail.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ClientSoftwareOSSummary.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientType.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDetail.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDetailDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDetailMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDetailWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeDetailYearly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\ConnectionByClientTypeYearly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\CsConferenceWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\GroupActivity.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\GroupActivityDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\GroupActivityMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\GroupActivityWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\GroupActivityYearly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxActivity.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxActivityDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxActivityMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxActivityWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxActivityYearly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxUsage.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\MailboxUsageDetail.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOActiveUser.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOActiveUserDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOActiveUserMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOActiveUserWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOOneDriveForBusinessFileActivity.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProDeployed.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProDeployedMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProDeployedWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProStorage.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProStorageMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOSkyDriveProStorageWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteDeployed.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteDeployedMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteDeployedWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteStorage.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteStorageMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTeamSiteStorageWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTenantStorageMetric.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTenantStorageMetricDaily.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTenantStorageMetricMonthly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\SPOTenantStorageMetricWeekly.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\StaleMailbox.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\StaleMailboxDetail.cs" />
-    <Compile Include="Reports\o365rwsclient\TenantReport\TenantReportObject.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
+    <Compile Update="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Extensions\NumericExtensions.cs" />
-    <Compile Include="Reports\ReportDirectoryHandler.cs" />
-    <Compile Include="Services\FileUploadService.cs" />
-    <Compile Include="Utilities\AzureDynamicLoggingEventEntity.cs" />
-    <Compile Include="Utilities\AzureLayoutLoggingEventEntity.cs" />
-    <Compile Include="Utilities\AzureLoggingEventEntity.cs" />
-    <Compile Include="Utilities\AzureTableAppender.cs" />
-    <Compile Include="Utilities\ConfigurationLogger.cs" />
-    <Compile Include="Utilities\ConfigurationReader.cs" />
-    <Compile Include="Utilities\ElasticTableEntity.cs" />
-    <Compile Include="Utilities\LoggingEventExtensions.cs" />
-    <Compile Include="Utilities\PartitionKeyTypeEnum.cs" />
-    <Compile Include="Utilities\TokenHelper.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -450,29 +59,32 @@
     <None Include="readme.md" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Reports\readme.md" />
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\packages\AsyncUsageAnalyzers.1.0.0-alpha003\analyzers\dotnet\AsyncUsageAnalyzers.dll" />
+    <PackageReference Include="AngleSharp" Version="0.14.0" />
+    <PackageReference Include="CsvHelper" Version="15.0.5" />
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Microsoft.Azure.ActiveDirectory.GraphClient" Version="2.1.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.4" />
+    <PackageReference Include="Microsoft.Graph" Version="1.15.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="2.6.1" />
+    <PackageReference Include="Microsoft.WindowsAzure.ConfigurationManager" Version="3.2.3" />
+    <PackageReference Include="SharePointPnPCoreOnline" Version="3.22.2006.2" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.4.0" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.1" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="4.7.1" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.7.0" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
