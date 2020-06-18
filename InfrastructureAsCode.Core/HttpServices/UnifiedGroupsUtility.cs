@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
 
@@ -70,7 +69,10 @@ namespace InfrastructureAsCode.Core.HttpServices
                             if (!String.IsNullOrEmpty(accessToken))
                             {
                                 // Configure the HTTP bearer Authorization Header
-                                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
+                                await Task.Run(() =>
+                                {
+                                    requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
+                                });
                             }
                         }), new PnPHttpProvider(retryCount, delay));
 

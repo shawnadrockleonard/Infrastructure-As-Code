@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using OfficeDevPnP.Core;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -85,7 +86,7 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                 // Switch to CSV Output
                 reportingFilters.FormattedOutput = ReportUsageFormatEnum.Default;
                 reportingFilters.BetaEndPoint = false;
-                var CSVConfig = new CSVConfig.Configuration()
+                var CSVConfig = new CSVConfig.CsvConfiguration(CultureInfo.CurrentCulture)
                 {
                     Delimiter = ",",
                     HasHeaderRecord = true

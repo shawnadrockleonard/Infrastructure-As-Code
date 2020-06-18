@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using CSVConfig = CsvHelper.Configuration;
 
 namespace InfrastructureAsCode.Powershell.Commands.Files
 {
@@ -11,6 +12,7 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
     using InfrastructureAsCode.Powershell.Commands.Base;
     using InfrastructureAsCode.Powershell.PipeBinds;
     using Microsoft.SharePoint.Client;
+    using System.Globalization;
 
     /// <summary>
     /// Uploads a document or file to a library specified 
@@ -80,15 +82,21 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
             {
                 if (System.IO.File.Exists(this.MetaDataCsvFile))
                 {
-                    using (var fileInfo = System.IO.File.OpenText(this.MetaDataCsvFile))
-                    {
-                        var csv = new CsvReader(fileInfo);
-                        csv.Configuration.HasHeaderRecord = true;
-                        csv.Configuration.Delimiter = ",";
-                        csv.Configuration.RegisterClassMap<FileTagModelMap>();
 
-                        this.MetadataList.AddRange(csv.GetRecords<FileTagModel>());
-                    }
+                    var CSVConfig = new CSVConfig.CsvConfiguration(CultureInfo.CurrentCulture)
+                    {
+                        Delimiter = ",",
+                        HasHeaderRecord = true
+                    };
+                    CSVConfig.RegisterClassMap<FileTagModelMap>();
+
+
+                    using var fileInfo = System.IO.File.OpenText(this.MetaDataCsvFile);
+
+                    var csv = new CsvReader(fileInfo, CSVConfig);
+
+                    this.MetadataList.AddRange(csv.GetRecords<FileTagModel>());
+
                 }
             }
             catch (System.IO.FileNotFoundException fex)
