@@ -44,35 +44,29 @@ namespace InfrastructureAsCode.Powershell.Commands.Principals
                 LogVerbose("Querying UserProfile service");
                 GetUserProfileInformation(userPrincipalName);
 
-
-
-            
                 LogVerbose("Querying UserProfiles.PeopleManager");
                 GetUserInformation(userPrincipalName);
 
+                LogVerbose("Executing runspace to query Get-MSOLUser(-UserPrincipalName {0})", this.UserName);
+                using var runspace = new SPIaCRunspaceWithDelegate(SPIaCConnection.CurrentConnection);
 
-                using (var runspace = new SPIaCRunspaceWithDelegate(SPIaCConnection.CurrentConnection))
+                var getUserCommand = new PCommand.Command("Get-MsolUser");
+                getUserCommand.Parameters.Add((new PCommand.CommandParameter("UserPrincipalName", this.UserName)));
+
+                var results = runspace.ExecuteRunspace(getUserCommand, string.Format("Unable to get user with UserPrincipalName : " + userPrincipalName));
+                if (results.Count() > 0)
                 {
-                    LogVerbose("Executing runspace to query Get-MSOLUser(-UserPrincipalName {0})", this.UserName);
-
-                    var getUserCommand = new PCommand.Command("Get-MsolUser");
-                    getUserCommand.Parameters.Add((new PCommand.CommandParameter("UserPrincipalName", this.UserName)));
-
-                    var results = runspace.ExecuteRunspace(getUserCommand, string.Format("Unable to get user with UserPrincipalName : " + userPrincipalName));
-                    if (results.Count() > 0)
+                    foreach (PSObject itemUser in results)
                     {
-                        foreach (PSObject itemUser in results)
-                        {
-                            var userProperties = itemUser.Properties;
+                        var userProperties = itemUser.Properties;
 
-                            GetPSObjectValue(userProperties, "DisplayName");
-                            GetPSObjectValue(userProperties, "FirstName");
-                            GetPSObjectValue(userProperties, "LastName");
-                            GetPSObjectValue(userProperties, "UserPrincipalName");
-                            GetPSObjectValue(userProperties, "Department");
-                            GetPSObjectValue(userProperties, "Country");
-                            GetPSObjectValue(userProperties, "UsageLocation");
-                        }
+                        GetPSObjectValue(userProperties, "DisplayName");
+                        GetPSObjectValue(userProperties, "FirstName");
+                        GetPSObjectValue(userProperties, "LastName");
+                        GetPSObjectValue(userProperties, "UserPrincipalName");
+                        GetPSObjectValue(userProperties, "Department");
+                        GetPSObjectValue(userProperties, "Country");
+                        GetPSObjectValue(userProperties, "UsageLocation");
                     }
                 }
             }
