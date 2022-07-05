@@ -88,8 +88,6 @@ namespace InfrastructureAsCode.Powershell.Commands.Files
                         Delimiter = ",",
                         HasHeaderRecord = true
                     };
-                    CSVConfig.RegisterClassMap<FileTagModelMap>();
-
 
                     using var fileInfo = System.IO.File.OpenText(this.MetaDataCsvFile);
 

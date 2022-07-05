@@ -89,9 +89,9 @@ namespace InfrastructureAsCode.Core.Reports.o365Graph
                 var CSVConfig = new CSVConfig.CsvConfiguration(CultureInfo.CurrentCulture)
                 {
                     Delimiter = ",",
-                    HasHeaderRecord = true
+                    HasHeaderRecord = true,
+                    NewLine = Environment.NewLine,
                 };
-                CSVConfig.RegisterClassMap<U>();
                 var resultscsv = new CSV.CsvReader(ResponseReader.RetrieveDataAsStream(reportingFilters), CSVConfig);
                 results.AddRange(resultscsv.GetRecords<T>());
             }
